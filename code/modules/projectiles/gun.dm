@@ -678,7 +678,7 @@ As sniper rifles have both and weapon mods can change them as well. ..() deals w
 
 /obj/item/weapon/gun/proc/handle_jam_fire(mob/living/user)
 	var/bullet_duraloss = 0.05 // if there isnt a traditional projectile, then we need to return something for the calculation, otherwise itll runtime
-	var/bullet_duramage = BULLET_DURABILITY_DAMAGE_DEFAULT // for guns that dont fire bullets traditionally e.g. flamer, lets make sure they actually lose durability by default
+	var/bullet_duramage = 0 // for guns that dont fire bullets traditionally e.g. flamer, lets make sure they actually lose durability by default
 	if(in_chamber && in_chamber.ammo)
 		bullet_duraloss = in_chamber.ammo.bullet_duraloss
 		bullet_duramage = in_chamber.ammo.bullet_duramage
@@ -2197,18 +2197,35 @@ not all weapons use normal magazines etc. load_into_chamber() itself is designed
 		set_light_on(FALSE)
 
 
-/obj/item/weapon/gun/attack_alien(mob/living/carbon/xenomorph/xeno)
+/obj/item/weapon/gun/attack_alien(mob/living/carbon/xenomorph/M, mob/living/carbon/xenomorph/attacking_xeno, mob/living/user)
 	..()
+	var/damage = (attacking_xeno.melee_damage_upper)
+
 	var/slashed_light = FALSE
 	for(var/slot in attachments)
 		if(istype(attachments[slot], /obj/item/attachable/flashlight))
 			var/obj/item/attachable/flashlight/flashlight = attachments[slot]
-			if(flashlight.activate_attachment(src, xeno, TRUE))
+			if(flashlight.activate_attachment(src, M, TRUE))
 				slashed_light = TRUE
-	if(slashed_light)
-		playsound(loc, "alien_claw_metal", 25, 1)
-		xeno.animation_attack_on(src)
-		xeno.visible_message(SPAN_XENOWARNING("\The [xeno] slashes the lights on \the [src]!"), SPAN_XENONOTICE("You slash the lights on \the [src]!"))
+
+	if(M.a_intent == INTENT_HARM) // since we're attacking the gun directly
+		M.animation_attack_on(src)
+		M.visible_message(SPAN_DANGER("[M] has slashed [src]!"),
+		SPAN_DANGER("We slash [src]!"))
+
+		if(slashed_light)
+			playsound(loc, "alien_claw_metal", 25, 1)
+			M.animation_attack_on(src)
+			M.visible_message(SPAN_DANGER("[M] slashes the lights on \the [src]!"),
+			SPAN_DANGER("We slash the lights on \the [src]!"))
+
+		damage_gun_durability(damage) // damages the gun using the formula
+		return XENO_ATTACK_ACTION
+
+	if(M.a_intent == INTENT_HELP)
+		to_chat(M, SPAN_XENONOTICE("We tap the weapon softly. It could be damaged if attacked.")) // just to let people know to harm intent it similar to a claymore
+		return XENO_NO_DELAY_ACTION
+
 	return XENO_ATTACK_ACTION
 
 /// Setter proc to toggle burst firing

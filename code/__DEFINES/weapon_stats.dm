@@ -385,6 +385,7 @@ Fire Variant = Markers for special fire types that behave outside of chemfire co
 
 
 //bullet durability loss defines
+#define BULLET_DURABILITY_LOSS_NONE 0
 #define BULLET_DURABILITY_LOSS_INSUBSTANTIAL 0.05
 #define BULLET_DURABILITY_LOSS_LOW 0.10
 #define BULLET_DURABILITY_LOSS_FAIR 0.15
@@ -397,6 +398,7 @@ Fire Variant = Markers for special fire types that behave outside of chemfire co
 #define BULLET_DURABILITY_LOSS_SPECIAL 0.50
 
 //bullet durability damage defines
+#define BULLET_DURABILITY_DAMAGE_NONE 0
 #define BULLET_DURABILITY_DAMAGE_DEFAULT 1
 #define BULLET_DURABILITY_DAMAGE_INSUBSTANTIAL 2
 #define BULLET_DURABILITY_DAMAGE_LOW 3

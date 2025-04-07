@@ -50,6 +50,14 @@
 				if(hivenumber == attacked_wall.hivenumber)
 					return FALSE
 
+	else if(istype(target, /obj/item))
+		var/obj/item/I = target
+		if(istype(I, /obj/item/weapon/gun) || istype(I, /obj/item/weapon/gun)) // allows weapon targeting for the durability system in gun.dm
+			playsound(loc, 'sound/weapons/slice.ogg', 10, 1)
+			I.attack_alien(src, src, src, src)
+			xeno_attack_delay(src)
+			return TRUE
+
 	target = target.handle_barriers(src, , (PASS_MOB_THRU_XENO|PASS_TYPE_CRAWLER)) // Checks if target will be attacked by the current alien OR if the blocker will be attacked
 	switch(target.attack_alien(src))
 		if(XENO_ATTACK_ACTION)

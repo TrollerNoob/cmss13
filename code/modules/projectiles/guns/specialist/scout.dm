@@ -21,9 +21,8 @@
 	unacidable = TRUE
 	explo_proof = TRUE
 	can_jam = TRUE
-	initial_jam_chance = GUN_JAM_CHANCE_SCOUT
+	initial_jam_chance = GUN_JAM_CHANCE_MEDIUM // lowered from 0.25 to 0.15, factoring in the duraloss on shooting removal
 	unjam_chance = GUN_UNJAM_CHANCE_SCOUT
-	durability_loss = GUN_DURABILITY_LOSS_SCOUT
 	force = 26
 	flags_gun_features = GUN_AUTO_EJECTOR|GUN_SPECIALIST|GUN_CAN_POINTBLANK|GUN_AMMO_COUNTER
 	map_specific_decoration = TRUE
@@ -104,6 +103,7 @@
 	damage_mult = BASE_BULLET_DAMAGE_MULT + BULLET_DAMAGE_MULT_TIER_2
 	recoil = RECOIL_AMOUNT_TIER_5
 	damage_falloff_mult = 0
+	durability_loss = GUN_DURABILITY_LOSS_SCOUT
 
 /obj/item/weapon/gun/rifle/m4ra_custom/able_to_fire(mob/living/user)
 	. = ..()
