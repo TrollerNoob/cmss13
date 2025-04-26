@@ -23,9 +23,27 @@ const sortWeapons = (a: DropshipEquipment, b: DropshipEquipment) => {
 const CreateFiremissionPanel = (props: {
   readonly fmName: string;
   readonly setFmName: React.Dispatch<React.SetStateAction<string>>;
+  readonly fmLength: string;
+  readonly setFmLength: React.Dispatch<React.SetStateAction<string>>;
 }) => {
   const { act } = useBackend();
-  const { fmName, setFmName } = props;
+  const { fmName, setFmName, fmLength, setFmLength } = props;
+
+  const handleCreate = () => {
+    const parsedLength = parseInt(fmLength, 10);
+    if (fmName === '' || isNaN(parsedLength) || parsedLength <= 0) {
+      return;
+    }
+
+    act('firemission-create', {
+      firemission_name: fmName,
+      firemission_length: parsedLength,
+    });
+
+    setFmName('');
+    setFmLength('');
+  };
+
   return (
     <Stack align="center" vertical>
       <Stack.Item>
@@ -36,16 +54,18 @@ const CreateFiremissionPanel = (props: {
         <Input
           value={fmName}
           onInput={(e, value) => setFmName(value)}
-          onEnter={() => {
-            if (fmName === '') {
-              return;
-            }
-            act('firemission-create', {
-              firemission_name: fmName,
-              firemission_length: 12,
-            });
-            setFmName('');
-          }}
+          onEnter={handleCreate}
+        />
+      </Stack.Item>
+      <Stack.Item>
+        Input FM Length{' '}
+        <Input
+          value={fmLength}
+          type="number"
+          min={1}
+          max={12}
+          onInput={(e, value) => setFmLength(value)}
+          onEnter={handleCreate}
         />
       </Stack.Item>
     </Stack>
@@ -73,6 +93,7 @@ const FiremissionList = (props) => {
 const FiremissionMfdHomePage = (props: MfdProps) => {
   const { setSelectedFm } = fmState(props.panelStateId);
   const [fmName, setFmName] = useState<string>('');
+  const [fmLength, setFmLength] = useState<string>('');
   const { data, act } = useBackend<FiremissionContext>();
   const { setPanelState } = mfdState(props.panelStateId);
 
@@ -102,18 +123,25 @@ const FiremissionMfdHomePage = (props: MfdProps) => {
       topButtons={[
         {},
         {},
-        fmName
+        fmName && fmLength
           ? {
               children: 'SAVE',
               onClick: () => {
+                const parsedLength = parseInt(fmLength, 10);
+                if (isNaN(parsedLength) || parsedLength <= 0) {
+                  return;
+                }
+
                 act('firemission-create', {
                   firemission_name: fmName,
-                  firemission_length: 12,
+                  firemission_length: parsedLength,
                 });
                 setFmName('');
+                setFmLength('');
               },
             }
           : {},
+
         {},
         {
           children: fmOffset > 0 ? <Icon name="arrow-up" /> : undefined,
@@ -151,7 +179,12 @@ const FiremissionMfdHomePage = (props: MfdProps) => {
           <Stack.Item width="300px">
             <Stack vertical align="center">
               <Stack.Item>
-                <CreateFiremissionPanel fmName={fmName} setFmName={setFmName} />
+                <CreateFiremissionPanel
+                  fmName={fmName}
+                  setFmName={setFmName}
+                  fmLength={fmLength}
+                  setFmLength={setFmLength}
+                />
               </Stack.Item>
               <Stack.Item>
                 <FiremissionList />
@@ -178,6 +211,9 @@ const ViewFiremissionMfdPanel = (
   const { setPanelState } = mfdState(props.panelStateId);
   const { setSelectedFm } = fmState(props.panelStateId);
   const { editFm, setEditFm } = fmEditState(props.panelStateId);
+  const [editFmLength, setEditFmLength] = useState(
+    firemission.mission_length.toString(),
+  );
   const { editFmWeapon, setEditFmWeapon } = fmWeaponEditState(
     props.panelStateId,
   );
@@ -239,6 +275,35 @@ const ViewFiremissionMfdPanel = (
                   </Stack.Item>
                   <Stack.Item>
                     <h3>{firemission.name}</h3>
+                  </Stack.Item>
+                </Stack>
+              </Stack.Item>
+              <Stack.Item>
+                <Stack>
+                  <Stack.Item>
+                    <h4>Length:</h4>
+                  </Stack.Item>
+                  <Stack.Item>
+                    {editFm ? (
+                      <Input
+                        value={editFmLength}
+                        type="number"
+                        min={1}
+                        max={12}
+                        onInput={(e, value) => setEditFmLength(value)}
+                        onEnter={() => {
+                          const parsed = parseInt(editFmLength, 10);
+                          if (!isNaN(parsed) && parsed > 0) {
+                            act('firemission-edit', {
+                              tag: firemission.mission_tag,
+                              length: parsed,
+                            });
+                          }
+                        }}
+                      />
+                    ) : (
+                      <h4>{firemission.mission_length}</h4>
+                    )}
                   </Stack.Item>
                 </Stack>
               </Stack.Item>

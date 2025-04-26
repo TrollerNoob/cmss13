@@ -745,7 +745,7 @@
 		to_chat(weapon_operator, SPAN_WARNING("Incorrect input format."))
 		return FALSE
 	if(firemission_length > firemission_envelope.fire_length)
-		to_chat(weapon_operator, SPAN_WARNING("Fire Mission is longer than allowed by this vehicle."))
+		to_chat(weapon_operator, SPAN_WARNING("Fire Mission is longer than allowed by this vehicle. Re-input name and length."))
 		return FALSE
 	if(firemission_envelope.stat != FIRE_MISSION_STATE_IDLE)
 		to_chat(weapon_operator, SPAN_WARNING("Vehicle has to be idle to allow Fire Mission editing and creation."))
