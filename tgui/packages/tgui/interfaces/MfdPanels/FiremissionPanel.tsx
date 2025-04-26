@@ -211,9 +211,6 @@ const ViewFiremissionMfdPanel = (
   const { setPanelState } = mfdState(props.panelStateId);
   const { setSelectedFm } = fmState(props.panelStateId);
   const { editFm, setEditFm } = fmEditState(props.panelStateId);
-  const [editFmLength, setEditFmLength] = useState(
-    firemission.mission_length.toString(),
-  );
   const { editFmWeapon, setEditFmWeapon } = fmWeaponEditState(
     props.panelStateId,
   );
@@ -284,26 +281,7 @@ const ViewFiremissionMfdPanel = (
                     <h4>Length:</h4>
                   </Stack.Item>
                   <Stack.Item>
-                    {editFm ? (
-                      <Input
-                        value={editFmLength}
-                        type="number"
-                        min={1}
-                        max={12}
-                        onInput={(e, value) => setEditFmLength(value)}
-                        onEnter={() => {
-                          const parsed = parseInt(editFmLength, 10);
-                          if (!isNaN(parsed) && parsed > 0) {
-                            act('firemission-edit', {
-                              tag: firemission.mission_tag,
-                              length: parsed,
-                            });
-                          }
-                        }}
-                      />
-                    ) : (
-                      <h4>{firemission.mission_length}</h4>
-                    )}
+                    <h4>{firemission.mission_length}</h4>
                   </Stack.Item>
                 </Stack>
               </Stack.Item>
