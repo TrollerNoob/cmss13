@@ -313,7 +313,7 @@
 	addtimer(CALLBACK(GLOBAL_PROC, GLOBAL_PROC_REF(fire_spread), impact, create_cause_data(initial(name), source_mob), 4, 15, 50, "#00b8ff"), 1 SECONDS) //Very intense but the fire doesn't last very long
 	spawn(3)
 		var/datum/effect_system/smoke_spread/phosphorus/WPSmoke = new/datum/effect_system/smoke_spread/phosphorus()
-		WPSmoke.set_up(4, 0, impact, null, 4)
+		WPSmoke.set_up(4, 0, impact, null, 8)
 		WPSmoke.start(40,50)
 	if(!ammo_count && loc)
 		qdel(src)
