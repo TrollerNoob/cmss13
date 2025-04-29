@@ -441,6 +441,7 @@
 	point_cost = 600 //handled by printer
 	accuracy_range = 0 // pinpoint
 	max_inaccuracy = 0
+	fire_mission_delay = 0 //0 means unusable
 	/// Special structures it needs to break with drop pod
 	var/list/breakeable_structures = list(/obj/structure/barricade, /obj/structure/surface/table)
 
