@@ -309,7 +309,7 @@
 
 /obj/structure/ship_ammo/rocket/banshee/detonate_on(turf/impact, obj/structure/dropship_equipment/weapon/fired_from)
 	impact.ceiling_debris_check(3)
-	addtimer(CALLBACK(GLOBAL_PROC, GLOBAL_PROC_REF(cell_explosion), impact, 225, 35, EXPLOSION_FALLOFF_SHAPE_LINEAR, null, create_cause_data(initial(name), source_mob)), 0.5 SECONDS) //Small explosive power with a small fall off for a big explosion range
+	addtimer(CALLBACK(GLOBAL_PROC, GLOBAL_PROC_REF(cell_explosion), impact, 225, 40, EXPLOSION_FALLOFF_SHAPE_LINEAR, null, create_cause_data(initial(name), source_mob)), 0.5 SECONDS) //Small explosive power compensated by its fire + white phosphorous effect
 	addtimer(CALLBACK(GLOBAL_PROC, GLOBAL_PROC_REF(fire_spread), impact, create_cause_data(initial(name), source_mob), 4, 15, 50, "#00b8ff"), 1 SECONDS) //Very intense but the fire doesn't last very long
 	spawn(3)
 		var/datum/effect_system/smoke_spread/phosphorus/WPSmoke = new/datum/effect_system/smoke_spread/phosphorus()
