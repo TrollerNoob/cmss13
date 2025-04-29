@@ -311,7 +311,7 @@ const BaseMfdPanel = (props: MfdProps) => {
           <h1>U.S.C.M.</h1>
           <h1>Dropship Weapons Control System</h1>
           <h3>UA Northbridge</h3>
-          <h3>V 0.1</h3>
+          <h3>V 0.2</h3>
         </div>
       </Box>
     </MfdPanel>

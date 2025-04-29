@@ -466,7 +466,7 @@
 	desc = "A cartidge containing several M97-P flares packed tightly into individual silos. These parachute flares are designed to be launched out of a dropship's flare launcher to provide battlefield illumination during hours of darkness."
 	icon_state = "m94"
 	icon = 'icons/obj/items/storage/packets.dmi'
-	equipment_type = /obj/structure/dropship_equipment/electronics/flare_launcher
+	equipment_type = /obj/structure/dropship_equipment/weapon/flare_launcher
 	point_cost = 250
 	ammo_count = 6
 	max_ammo_count = 6

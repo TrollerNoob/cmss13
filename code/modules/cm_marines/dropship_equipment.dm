@@ -555,17 +555,6 @@
 	.["health_max"] = initial(health)
 	.["deployed"] = is_deployed
 
-
-
-/obj/structure/dropship_equipment/electronics/flare_launcher
-	name = "\improper AN/ALE-557 Flare Launcher"
-	desc = "A flare launcher that usually gets mounted onto dropships to help survivability against infrared tracking missiles. This one has been tweaked to allow battlefield illumination capabilities."
-	icon_state = "flare_launcher"
-	uses_ammo = TRUE
-	is_interactable = TRUE
-	combat_equipment = TRUE
-	point_cost = 500
-
 /obj/structure/dropship_equipment/electronics/targeting_system
 	name = "\improper AN/AAQ-178 Weapon Targeting System"
 	shorthand = "Targeting"
@@ -871,6 +860,21 @@
 	else
 		icon_state = "launch_bay"
 
+/obj/structure/dropship_equipment/weapon/flare_launcher
+	name = "\improper AN/ALE-557 Flare Launcher"
+	desc = "A flare launcher that usually gets mounted onto dropships to help survivability against infrared tracking missiles. This one has been tweaked to allow battlefield illumination capabilities."
+	icon_state = "flare_launcher"
+	icon = 'icons/obj/structures/props/dropship/dropship_equipment.dmi'
+	bound_height = 32
+	firing_sound = 'sound/weapons/gun_flare_explode.ogg'
+	firing_delay = 20 //2 seconds
+	fire_mission_only = FALSE
+	shorthand = "Flare"
+	uses_ammo = TRUE
+	is_interactable = TRUE
+	combat_equipment = TRUE
+	equip_categories = list(DROPSHIP_ELECTRONICS) //fits inside the front parts next to the weapons
+	point_cost = 500
 //================= OTHER EQUIPMENT =================//
 
 

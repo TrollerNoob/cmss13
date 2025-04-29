@@ -324,15 +324,15 @@ export const EquipmentMfdPanel = (props: MfdProps) => {
       leftButtons={[
         weap2 ? generateButton(weap2) : {},
         weap1 ? generateButton(weap1) : {},
+        elec1 ? generateButton(elec1) : {},
         support1 ? generateButton(support1) : {},
         support2 ? generateButton(support2) : {},
-        support3 ? generateButton(support3) : {},
       ]}
       rightButtons={[
         weap3 ? generateButton(weap3) : {},
         weap4 ? generateButton(weap4) : {},
-        elec1 ? generateButton(elec1) : {},
         elec2 ? generateButton(elec2) : {},
+        support3 ? generateButton(support3) : {},
         {},
       ]}
       bottomButtons={[
