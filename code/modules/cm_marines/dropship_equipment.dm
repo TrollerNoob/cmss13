@@ -559,8 +559,12 @@
 
 /obj/structure/dropship_equipment/electronics/flare_launcher
 	name = "\improper AN/ALE-557 Flare Launcher"
+	desc = "A flare launcher that usually gets mounted onto dropships to help survivability against infrared tracking missiles. This one has been tweaked to allow battlefield illumination capabilities."
 	icon_state = "flare_launcher"
-	point_cost = 0
+	uses_ammo = TRUE
+	is_interactable = TRUE
+	combat_equipment = TRUE
+	point_cost = 500
 
 /obj/structure/dropship_equipment/electronics/targeting_system
 	name = "\improper AN/AAQ-178 Weapon Targeting System"

@@ -427,6 +427,8 @@
 	spawn(5)
 		fire_spread(impact, create_cause_data(initial(name), source_mob), 3, 25, 20, "#EE6515")
 
+//utility
+
 /obj/structure/ship_ammo/sentry
 	name = "\improper A/C-49-P Air Deployable Sentry"
 	desc = "An omni-directional sentry, capable of defending an area from lightly armored hostile incursion. Can be loaded into the LAG-14 Internal Sentry Launcher."
@@ -458,3 +460,20 @@
 		to_chat(user, SPAN_WARNING("The selected drop site is a sheer wall!"))
 		return FALSE
 	return TRUE
+
+/obj/structure/ship_ammo/flare/
+	name = "\improper AN/ALE-557 Flare Launcher cartridge"
+	desc = "A cartidge containing several M97-P flares packed tightly into individual silos. These parachute flares are designed to be launched out of a dropship's flare launcher to provide battlefield illumination during hours of darkness."
+	icon_state = "m94"
+	icon = 'icons/obj/items/storage/packets.dmi'
+	equipment_type = /obj/structure/dropship_equipment/electronics/flare_launcher
+	point_cost = 250
+	ammo_count = 6
+	max_ammo_count = 6
+	travelling_time = 20 // parachute flares light up the sky very quickly
+	accuracy_range = 4 // though not very accurate
+	max_inaccuracy = 6
+
+/obj/structure/ship_ammo/flare/detonate_on(turf/impact, obj/structure/dropship_equipment/weapon/fired_from)
+	new /obj/item/device/flashlight/flare/on/illumination(impact)
+	playsound(impact, 'sound/weapons/gun_flare.ogg', 50, 1, 4)
