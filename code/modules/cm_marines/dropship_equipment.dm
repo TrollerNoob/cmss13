@@ -860,6 +860,76 @@
 	else
 		icon_state = "launch_bay"
 
+/obj/structure/dropship_equipment/weapon/heavygun/bay
+	name = "\improper GAU-24/B Belly Gunner Station System"
+	icon_state = "launch_bay"
+	desc = "A compartment that enables a gunner station underneath the dropship operated by crew, allowing manual fire of a GAU-24/B support rotary cannon. This version fits solely on crew compartment attach points of dropships. Utilizes the same 30mm ammunition as the standard GAU-21. You need a powerloader to lift it."
+	icon = 'icons/obj/structures/props/dropship/dropship_equipment.dmi'
+	bound_height = 32
+	equip_categories = list(DROPSHIP_CREW_WEAPON) //fits inside the central spot of the dropship
+	point_cost = 500
+	fire_mission_only = FALSE
+	is_weapon = FALSE
+	shorthand = "GAU-B"
+
+    // Declare role_reserved_slots variable
+	var/list/role_reserved_slots = list()
+
+	var/datum/interior/interior_map
+	var/required_skill = SKILL_PILOT
+	var/passengers_slots = 2
+	var/exit_time = 2
+	var/entrance_speed = 1
+	var/xenos_slots = 2
+	var/revivable_dead_slots = 2
+
+	var/list/entrances = list()
+
+/obj/structure/dropship_equipment/weapon/heavygun/bay/New()
+    . = ..()
+    entrances = list()
+    // Create the interior space when the equipment is created
+    interior_map = new /datum/interior(src)
+    interior_map.create_interior(/datum/map_template/interior/apc)
+
+    // Initialize role_reserved_slots
+    load_role_reserved_slots()
+
+/obj/structure/dropship_equipment/weapon/heavygun/bay/proc/load_role_reserved_slots()
+    // Initialize role-reserved slots for the gunner station
+    var/datum/role_reserved_slots/RRS = new
+    RRS.category_name = "Gunner Station Crew"
+    RRS.roles = list(JOB_CAS_PILOT, JOB_DROPSHIP_PILOT, JOB_DROPSHIP_CREW_CHIEF)
+    RRS.total = 2
+    role_reserved_slots += RRS
+
+/obj/structure/dropship_equipment/weapon/heavygun/bay/Destroy()
+    // Clean up the interior space when the equipment is destroyed
+    if(interior_map)
+        qdel(interior_map)
+    . = ..()
+
+/obj/structure/dropship_equipment/weapon/heavygun/bay/attack_hand(mob/user)
+    if(!ishuman(user))
+        return
+    if(!ship_base) //not installed
+        return
+    if(!skillcheck(user, SKILL_PILOT, SKILL_PILOT_TRAINED))
+        to_chat(user, SPAN_WARNING("You don't know how to use [src]."))
+        return
+
+    if(!linked_shuttle)
+        return
+
+    if(linked_shuttle.mode != SHUTTLE_CALL)
+        to_chat(user, SPAN_WARNING("[src] can only be used while in flight."))
+        return
+
+    // Allow the user to enter the interior
+    if(interior_map)
+        if(!interior_map.enter(user, null))
+            to_chat(user, SPAN_WARNING("You can't enter the gunner station right now."))
+
 /obj/structure/dropship_equipment/weapon/flare_launcher
 	name = "\improper AN/ALE-557 Flare Launcher"
 	desc = "A flare launcher that usually gets mounted onto dropships to help survivability against infrared tracking missiles. This one has been tweaked to allow battlefield illumination capabilities."
@@ -874,7 +944,7 @@
 	is_interactable = TRUE
 	combat_equipment = TRUE
 	equip_categories = list(DROPSHIP_ELECTRONICS) //fits inside the front parts next to the weapons
-	point_cost = 500
+	point_cost = 400
 //================= OTHER EQUIPMENT =================//
 
 
