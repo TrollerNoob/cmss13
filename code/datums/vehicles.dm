@@ -53,3 +53,7 @@
 /datum/map_template/interior/arc
 	name = "ARC"
 	interior_id = "arc"
+
+/datum/map_template/interior/belly_gun
+	name = "Belly Gun"
+	interior_id = "belly_gun"

@@ -1,3 +1,5 @@
+var/global/bellygun_shuttle_tag_counter = 0
+
 /obj/effect/landmark/interior
 	name = "interior marker"
 	var/datum/interior/parent
@@ -333,3 +335,28 @@
 	V.icon = icon
 
 	qdel(src)
+
+/obj/effect/landmark/interior/spawn/bellygun_computer
+    name = "belly gun computer spawner"
+    icon = 'icons/obj/structures/machinery/shuttle-parts.dmi'
+    icon_state = "consoleright"
+    color = "#00c5cc"
+
+/obj/effect/landmark/interior/spawn/bellygun_computer/on_load(datum/interior/I)
+    // Create a new instance of the belly gun dropship computer
+    var/obj/structure/machinery/computer/dropship_weapons/belly_gun/console = new(loc)
+
+    // Configure the console for the specific interior
+    console.icon = icon
+    console.icon_state = icon_state
+    console.layer = layer
+    console.pixel_x = pixel_x
+    console.pixel_y = pixel_y
+    console.setDir(dir)
+    console.update_icon()
+
+    // Generate a unique shuttle_tag
+    bellygun_shuttle_tag_counter += 1
+    console.shuttle_tag = "BELLYGUN_" + num2text(bellygun_shuttle_tag_counter)
+
+    qdel(src) // Delete the landmark after the console is created

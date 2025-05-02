@@ -44,3 +44,7 @@
 /area/interior/vehicle/arc
 	name = "\improper ARC interior"
 	icon_state = "arc"
+
+/area/interior/vehicle/belly_gun
+	name = "\improper GAU-24/B Belly Gunner Station interior"
+	icon_state = "belly_gun"

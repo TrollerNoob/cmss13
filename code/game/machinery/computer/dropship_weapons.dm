@@ -922,6 +922,13 @@
 	firemission_envelope = new /datum/cas_fire_envelope/uscm_dropship()
 	shuttle_tag = DROPSHIP_SAIPAN
 
+/obj/structure/machinery/computer/dropship_weapons/belly_gun
+	name = "\improper 'Belly Gun' weapons controls"
+	desc = "A computer to manage the belly gun's equipment and weapons."
+	req_one_access = list(ACCESS_MARINE_LEADER, ACCESS_MARINE_DROPSHIP, ACCESS_WY_FLIGHT)
+	firemission_envelope = new /datum/cas_fire_envelope/uscm_dropship()
+	shuttle_tag = DROPSHIP_BELLY
+
 /obj/structure/machinery/computer/dropship_weapons/proc/simulate_firemission(mob/living/user)
 	if(!configuration)
 		to_chat(user, SPAN_WARNING("Configure a firemission before attempting to run the simulation"))

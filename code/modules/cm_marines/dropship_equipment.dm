@@ -1,4 +1,3 @@
-
 /// Dropship equipment, mainly weaponry but also utility implements
 /obj/structure/dropship_equipment
 	density = TRUE
@@ -879,7 +878,7 @@
 	var/required_skill = SKILL_PILOT
 	var/passengers_slots = 2
 	var/exit_time = 2
-	var/entrance_speed = 1
+	var/entrance_speed = 2
 	var/xenos_slots = 2
 	var/revivable_dead_slots = 2
 
@@ -890,7 +889,7 @@
     entrances = list()
     // Create the interior space when the equipment is created
     interior_map = new /datum/interior(src)
-    interior_map.create_interior(/datum/map_template/interior/apc)
+    interior_map.create_interior(/datum/map_template/interior/belly_gun)
 
     // Initialize role_reserved_slots
     load_role_reserved_slots()
@@ -1453,6 +1452,137 @@
 
 /obj/structure/dropship_equipment/paradrop_system/attack_hand(mob/living/carbon/human/user)
 	return
+
+// Loader
+
+/obj/structure/dropship_equipment/loader_system
+	name = "\improper RMT-07 Automatic Loading System"
+	shorthand = "Loader"
+	desc = "An integrated storage bay capable of automatically reloading payloads while in flight. An assortment of sturdy clamps hold dropship munitions in place until needed. When activated, the munitions are carried through an internal compartment system into their designated armaments. Requires a powerloader to lift."
+	equip_categories = list(DROPSHIP_CREW_WEAPON)
+	icon_state = "fulton_system"
+	point_cost = 200
+	is_interactable = TRUE
+	combat_equipment = FALSE
+	faction_exclusive = FACTION_MARINE
+	uses_ammo = TRUE
+
+	// Variables for ammo storage and cooldown
+	var/list/stored_ammo = list() // List to store up to six ammo objects
+	var/reload_cooldown = 0 // Cooldown timer for reloading
+
+	// Maximum number of ammo slots
+	var/max_ammo_slots = 6
+
+/obj/structure/dropship_equipment/loader_system/proc/store_ammo(obj/item/powerloader_clamp/PC, mob/user)
+    // Ensure the powerloader clamp is holding ammo
+    if(!PC || !PC.loaded || !istype(PC.loaded, /obj/structure/ship_ammo))
+        to_chat(user, SPAN_WARNING("You need to use a powerloader holding dropship ammo to load [src]."))
+        return FALSE
+
+    var/obj/structure/ship_ammo/ammo = PC.loaded
+
+    // Check if the loader has reached its maximum capacity
+    if(length(stored_ammo) >= max_ammo_slots) // Ensure the limit is respected
+        to_chat(user, SPAN_WARNING("[src] cannot store more ammo. Maximum capacity reached."))
+        return FALSE
+
+    // Check if the ammo is already in the loader
+    if(ammo in stored_ammo)
+        to_chat(user, SPAN_WARNING("[ammo] is already stored in [src]."))
+        return FALSE
+
+    // Move the ammo into the loader system
+    stored_ammo += ammo
+    ammo.forceMove(src) // Move the ammo to the loader system
+    PC.loaded = null // Clear the powerloader clamp
+    PC.update_icon() // Update the clamp's icon
+    to_chat(user, SPAN_NOTICE("You load [ammo] into [src]."))
+    return TRUE
+
+/obj/structure/dropship_equipment/loader_system/proc/reload_weapon(obj/structure/dropship_equipment/weapon/target_weapon, mob/user)
+    if(world.time < reload_cooldown)
+        to_chat(user, SPAN_WARNING("[src] is still reloading. Please wait."))
+        return FALSE
+
+    if(!target_weapon || !target_weapon.uses_ammo)
+        to_chat(user, SPAN_WARNING("[target_weapon] cannot be reloaded."))
+        return FALSE
+
+    if(target_weapon.ammo_equipped)
+        to_chat(user, SPAN_WARNING("[target_weapon] is already loaded with [target_weapon.ammo_equipped]."))
+        return FALSE
+
+    for(var/obj/structure/ship_ammo/ammo in stored_ammo)
+        if(ammo.type == target_weapon.type)
+            target_weapon.ammo_equipped = ammo
+            stored_ammo -= ammo
+            to_chat(user, SPAN_NOTICE("You reload [target_weapon] with [ammo]."))
+            reload_cooldown = world.time + 10 SECONDS // Set cooldown
+            return TRUE
+
+    to_chat(user, SPAN_WARNING("[src] does not have compatible ammo for [target_weapon]."))
+    return FALSE
+
+/obj/structure/dropship_equipment/loader_system/proc/reload_weapon_console(obj/structure/dropship_equipment/weapon/target_weapon, mob/user)
+    if(world.time < reload_cooldown)
+        to_chat(user, SPAN_WARNING("[src] is still reloading. Please wait."))
+        return FALSE
+
+    if(!target_weapon || !target_weapon.uses_ammo)
+        to_chat(user, SPAN_WARNING("[target_weapon] cannot be reloaded."))
+        return FALSE
+
+    if(target_weapon.ammo_equipped)
+        to_chat(user, SPAN_WARNING("[target_weapon] is already loaded with [target_weapon.ammo_equipped]."))
+        return FALSE
+
+    for(var/obj/structure/ship_ammo/ammo in stored_ammo)
+        if(ammo.equipment_type == target_weapon.type)
+            target_weapon.ammo_equipped = ammo
+            stored_ammo -= ammo
+            to_chat(user, SPAN_NOTICE("You reload [target_weapon] with [ammo]."))
+            reload_cooldown = world.time + 10 SECONDS // Set cooldown
+            return TRUE
+
+    to_chat(user, SPAN_WARNING("[src] does not have compatible ammo for [target_weapon]."))
+    return FALSE
+
+/obj/structure/dropship_equipment/loader_system/equipment_interact(mob/user)
+    if(world.time < reload_cooldown)
+        to_chat(user, SPAN_WARNING("[src] is still reloading. Please wait."))
+        return
+
+    if(!linked_shuttle)
+        to_chat(user, SPAN_WARNING("[src] is not linked to a dropship."))
+        return
+
+    var/list/available_weapons = list()
+    for(var/obj/structure/dropship_equipment/weapon/W in linked_shuttle.equipments)
+        if(W.uses_ammo && !W.ammo_equipped)
+            available_weapons += W
+
+    if(!length(available_weapons))
+        to_chat(user, SPAN_WARNING("No weapons available for reloading."))
+        return
+
+    var/weapon_choice = tgui_input_list(user, "Select a weapon to reload", "Available Weapons", available_weapons)
+    if(!weapon_choice)
+        return
+
+    var/obj/structure/dropship_equipment/weapon/selected_weapon = available_weapons[weapon_choice]
+    reload_weapon_console(selected_weapon, user)
+
+/obj/structure/dropship_equipment/loader_system/ui_data(mob/user)
+    . = list()
+    .["stored_ammo"] = list()
+    for(var/obj/structure/ship_ammo/ammo in stored_ammo)
+        .["stored_ammo"] += list(
+            "name" = ammo.name,
+            "count" = ammo.ammo_count,
+            "max_count" = ammo.max_ammo_count
+        )
+    .["cooldown"] = max(0, reload_cooldown - world.time)
 
 // used in the simulation room for cas runs, removed the sound and ammo depletion methods.
 // copying code is definitely bad, but adding an unnecessary sim or not sim boolean check in the open_fire_firemission just doesn't seem right.
