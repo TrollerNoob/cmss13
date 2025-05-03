@@ -229,8 +229,8 @@
 /turf/open/shuttle/vehicle/floor_3_6,
 /area/interior/vehicle/belly_gun)
 "W" = (
-/obj/structure/dropship_equipment/weapon/heavygun,
-/turf/open/void/vehicle,
+/obj/effect/attach_point/weapon/belly_gun/underbelly,
+/turf/open/space/basic,
 /area/space)
 "X" = (
 /obj/structure/shuttle/part/dropship2/bottom_right_wall,
