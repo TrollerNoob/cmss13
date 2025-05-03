@@ -1,62 +1,362 @@
-"a" = (/obj/structure/shuttle/part/dropship2/lower_left_wall,/turf/open/void/vehicle,/area/space)
-"b" = (/obj/structure/lattice,/turf/closed/shuttle/dropship2{icon_state = "75"},/area/space)
-"c" = (/obj/structure/shuttle/part/dropship2/nose_front_left,/obj/structure/lattice,/turf/open/void/vehicle,/area/space)
-"e" = (/turf/closed/shuttle/dropship2{icon_state = "62"},/area/space)
-"f" = (/turf/open/shuttle/vehicle/floor_3_4,/area/interior/vehicle/belly_gun)
-"g" = (/turf/open/floor/almayer/black2/west,/area/interior/vehicle/belly_gun)
-"h" = (/obj/effect/decal/warning_stripes{icon_state = "N"; dir = 1},/obj/effect/decal/warning_stripes{icon_state = "E"; dir = 1},/turf/open/shuttle/vehicle/floor_1_8,/area/interior/vehicle/belly_gun)
-"i" = (/turf/closed/shuttle/dropship2/transparent{icon_state = "98"},/area/space)
-"j" = (/turf/open/floor/almayer/black2/northeast,/area/interior/vehicle/belly_gun)
-"k" = (/obj/structure/shuttle/part/dropship2/lower_right_wall,/turf/open/void/vehicle,/area/space)
-"l" = (/obj/effect/decal/warning_stripes{icon_state = "W"; dir = 1},/turf/open/shuttle/vehicle/floor_1_3_3,/area/interior/vehicle/belly_gun)
-"m" = (/obj/structure/catwalk,/obj/structure/ladder,/obj/effect/landmark/interior/spawn/entrance,/turf/open/shuttle/vehicle/floor_0_1_15,/area/interior/vehicle/belly_gun)
-"n" = (/turf/closed/shuttle/dropship2{icon_state = "10"},/area/space)
-"o" = (/turf/closed/shuttle/dropship2{icon_state = "48"},/area/space)
-"p" = (/obj/effect/decal/warning_stripes{icon_state = "N"; dir = 1},/turf/open/shuttle/vehicle/floor_0_1_15,/area/interior/vehicle/belly_gun)
-"q" = (/turf/open/shuttle/vehicle/floor_3_9_1,/area/interior/vehicle/belly_gun)
-"r" = (/obj/structure/shuttle/part/dropship2/lower_left_wall,/obj/structure/lattice,/turf/open/void/vehicle,/area/space)
-"t" = (/obj/structure/lattice,/turf/closed/shuttle/dropship2{icon_state = "81"},/area/space)
-"u" = (/obj/effect/decal/warning_stripes{icon_state = "W"; dir = 1},/obj/effect/decal/warning_stripes{icon_state = "S"; dir = 1},/turf/open/shuttle/vehicle/floor_1_10,/area/interior/vehicle/belly_gun)
-"w" = (/turf/closed/shuttle/dropship2{icon_state = "83"},/area/space)
-"x" = (/turf/closed/shuttle/dropship2{icon_state = "81"},/area/space)
-"y" = (/obj/structure/shuttle/part/dropship2/nose_front_right,/obj/structure/lattice,/turf/open/space/basic,/area/space)
-"z" = (/obj/structure/bed/chair/dropship/pilot{dir = 1},/turf/open/shuttle/vehicle/floor_3_6,/area/interior/vehicle/belly_gun)
-"A" = (/turf/open/shuttle/vehicle/floor_3_10_1,/area/interior/vehicle/belly_gun)
-"B" = (/turf/open/void/vehicle,/area/space)
-"C" = (/turf/open/floor/almayer/black2/southwest,/area/interior/vehicle/belly_gun)
-"D" = (/obj/structure/lattice,/turf/closed/shuttle/dropship2{icon_state = "83"},/area/space)
-"E" = (/turf/closed/shuttle/dropship2{icon_state = "75"},/area/space)
-"F" = (/obj/structure/lattice,/turf/open/void/vehicle,/area/space)
-"G" = (/obj/effect/decal/warning_stripes{icon_state = "E"; dir = 1},/turf/open/shuttle/vehicle/floor_0_1_15,/area/interior/vehicle/belly_gun)
-"H" = (/turf/closed/shuttle/dropship2/transparent{icon_state = "97"},/area/space)
-"I" = (/turf/open/floor/almayer/black2/northwest,/area/interior/vehicle/belly_gun)
-"J" = (/turf/open/shuttle/vehicle/floor_3_5,/area/interior/vehicle/belly_gun)
-"K" = (/turf/open/floor/almayer/black2/southeast,/area/interior/vehicle/belly_gun)
-"L" = (/obj/effect/decal/warning_stripes{icon_state = "N"; dir = 1},/obj/effect/decal/warning_stripes{icon_state = "W"; dir = 1},/turf/open/shuttle/vehicle/floor_1_7,/area/interior/vehicle/belly_gun)
-"M" = (/turf/open/floor/almayer/blackfull,/area/interior/vehicle/belly_gun)
-"N" = (/obj/structure/machinery/computer/dropship_weapons/belly_gun,/turf/open/floor/almayer/blackfull,/area/interior/vehicle/belly_gun)
-"O" = (/turf/closed/shuttle/dropship2/transparent{icon_state = "96"},/area/space)
-"P" = (/turf/closed/shuttle/dropship2{icon_state = "51"},/area/space)
-"Q" = (/obj/structure/shuttle/part/dropship2/bottom_right_wall,/obj/structure/lattice,/turf/open/void/vehicle,/area/space)
-"R" = (/obj/effect/decal/warning_stripes{icon_state = "S"; dir = 1},/obj/effect/decal/warning_stripes{icon_state = "E"; dir = 1},/turf/open/shuttle/vehicle/floor_1_9,/area/interior/vehicle/belly_gun)
-"T" = (/obj/effect/decal/warning_stripes{icon_state = "S"; dir = 1},/turf/open/shuttle/vehicle/floor_0_1_15,/area/interior/vehicle/belly_gun)
-"U" = (/turf/closed/shuttle/dropship2{icon_state = "47"},/area/space)
-"V" = (/turf/open/shuttle/vehicle/floor_3_6,/area/interior/vehicle/belly_gun)
-"W" = (/obj/structure/dropship_equipment/weapon/heavygun,/turf/open/void/vehicle,/area/space)
-"X" = (/obj/structure/shuttle/part/dropship2/bottom_right_wall,/turf/open/void/vehicle,/area/space)
-"Y" = (/turf/open/floor/almayer/black2/east,/area/interior/vehicle/belly_gun)
-"Z" = (/turf/open/space/basic,/area/space)
+//MAP CONVERTED BY dmm2tgm.py THIS HEADER COMMENT PREVENTS RECONVERSION, DO NOT REMOVE
+"a" = (
+/obj/structure/shuttle/part/dropship2/lower_left_wall,
+/turf/open/void/vehicle,
+/area/space)
+"b" = (
+/obj/structure/lattice,
+/turf/closed/shuttle/dropship2{
+	icon_state = "75"
+	},
+/area/space)
+"c" = (
+/obj/structure/shuttle/part/dropship2/nose_front_left,
+/obj/structure/lattice,
+/turf/open/void/vehicle,
+/area/space)
+"e" = (
+/turf/closed/shuttle/dropship2{
+	icon_state = "62"
+	},
+/area/space)
+"f" = (
+/turf/open/shuttle/vehicle/floor_3_4,
+/area/interior/vehicle/belly_gun)
+"g" = (
+/turf/open/floor/almayer/plating2/west,
+/area/interior/vehicle/belly_gun)
+"h" = (
+/obj/effect/decal/warning_stripes{
+	icon_state = "N";
+	dir = 1
+	},
+/obj/effect/decal/warning_stripes{
+	icon_state = "E";
+	dir = 1
+	},
+/turf/open/shuttle/vehicle/floor_1_8,
+/area/interior/vehicle/belly_gun)
+"i" = (
+/turf/closed/shuttle/dropship2/transparent{
+	icon_state = "98"
+	},
+/area/space)
+"j" = (
+/turf/open/floor/almayer/plating2/northeast,
+/area/interior/vehicle/belly_gun)
+"k" = (
+/obj/structure/shuttle/part/dropship2/lower_right_wall,
+/turf/open/void/vehicle,
+/area/space)
+"l" = (
+/obj/effect/decal/warning_stripes{
+	icon_state = "W";
+	dir = 1
+	},
+/turf/open/shuttle/vehicle/floor_1_3_3,
+/area/interior/vehicle/belly_gun)
+"m" = (
+/obj/structure/catwalk,
+/obj/structure/ladder,
+/obj/effect/landmark/interior/spawn/entrance,
+/turf/open/shuttle/vehicle/floor_0_1_15,
+/area/interior/vehicle/belly_gun)
+"n" = (
+/turf/closed/shuttle/dropship2{
+	icon_state = "10"
+	},
+/area/space)
+"o" = (
+/turf/closed/shuttle/dropship2{
+	icon_state = "48"
+	},
+/area/space)
+"p" = (
+/obj/effect/decal/warning_stripes{
+	icon_state = "N";
+	dir = 1
+	},
+/turf/open/shuttle/vehicle/floor_0_1_15,
+/area/interior/vehicle/belly_gun)
+"q" = (
+/turf/open/shuttle/vehicle/floor_3_9_1,
+/area/interior/vehicle/belly_gun)
+"r" = (
+/obj/structure/shuttle/part/dropship2/lower_left_wall,
+/obj/structure/lattice,
+/turf/open/void/vehicle,
+/area/space)
+"t" = (
+/obj/structure/lattice,
+/turf/closed/shuttle/dropship2{
+	icon_state = "81"
+	},
+/area/space)
+"u" = (
+/obj/effect/decal/warning_stripes{
+	icon_state = "W";
+	dir = 1
+	},
+/obj/effect/decal/warning_stripes{
+	icon_state = "S";
+	dir = 1
+	},
+/turf/open/shuttle/vehicle/floor_1_10,
+/area/interior/vehicle/belly_gun)
+"w" = (
+/turf/closed/shuttle/dropship2{
+	icon_state = "83"
+	},
+/area/space)
+"x" = (
+/turf/closed/shuttle/dropship2{
+	icon_state = "81"
+	},
+/area/space)
+"y" = (
+/obj/structure/shuttle/part/dropship2/nose_front_right,
+/obj/structure/lattice,
+/turf/open/space/basic,
+/area/space)
+"z" = (
+/obj/structure/bed/chair/dropship/pilot{
+	dir = 1
+	},
+/turf/open/shuttle/vehicle/floor_3_6,
+/area/interior/vehicle/belly_gun)
+"A" = (
+/turf/open/shuttle/vehicle/floor_3_10_1,
+/area/interior/vehicle/belly_gun)
+"B" = (
+/turf/open/void/vehicle,
+/area/space)
+"C" = (
+/turf/open/floor/almayer/plating2/southwest,
+/area/interior/vehicle/belly_gun)
+"D" = (
+/obj/structure/lattice,
+/turf/closed/shuttle/dropship2{
+	icon_state = "83"
+	},
+/area/space)
+"E" = (
+/turf/closed/shuttle/dropship2{
+	icon_state = "75"
+	},
+/area/space)
+"F" = (
+/obj/structure/lattice,
+/turf/open/void/vehicle,
+/area/space)
+"G" = (
+/obj/effect/decal/warning_stripes{
+	icon_state = "E";
+	dir = 1
+	},
+/turf/open/shuttle/vehicle/floor_0_1_15,
+/area/interior/vehicle/belly_gun)
+"H" = (
+/turf/closed/shuttle/dropship2/transparent{
+	icon_state = "97"
+	},
+/area/space)
+"I" = (
+/turf/open/floor/almayer/plating2/northwest,
+/area/interior/vehicle/belly_gun)
+"J" = (
+/turf/open/shuttle/vehicle/floor_3_5,
+/area/interior/vehicle/belly_gun)
+"K" = (
+/turf/open/floor/almayer/plating2/southeast,
+/area/interior/vehicle/belly_gun)
+"L" = (
+/obj/effect/decal/warning_stripes{
+	icon_state = "N";
+	dir = 1
+	},
+/obj/effect/decal/warning_stripes{
+	icon_state = "W";
+	dir = 1
+	},
+/turf/open/shuttle/vehicle/floor_1_7,
+/area/interior/vehicle/belly_gun)
+"M" = (
+/turf/open/floor/almayer/blackfull,
+/area/interior/vehicle/belly_gun)
+"N" = (
+/obj/structure/machinery/computer/dropship_weapons/belly_gun,
+/turf/open/floor/almayer/blackfull,
+/area/interior/vehicle/belly_gun)
+"O" = (
+/turf/closed/shuttle/dropship2/transparent{
+	icon_state = "96"
+	},
+/area/space)
+"P" = (
+/turf/closed/shuttle/dropship2{
+	icon_state = "51"
+	},
+/area/space)
+"Q" = (
+/obj/structure/shuttle/part/dropship2/bottom_right_wall,
+/obj/structure/lattice,
+/turf/open/void/vehicle,
+/area/space)
+"R" = (
+/obj/effect/decal/warning_stripes{
+	icon_state = "S";
+	dir = 1
+	},
+/obj/effect/decal/warning_stripes{
+	icon_state = "E";
+	dir = 1
+	},
+/turf/open/shuttle/vehicle/floor_1_9,
+/area/interior/vehicle/belly_gun)
+"T" = (
+/obj/effect/decal/warning_stripes{
+	icon_state = "S";
+	dir = 1
+	},
+/turf/open/shuttle/vehicle/floor_0_1_15,
+/area/interior/vehicle/belly_gun)
+"U" = (
+/turf/closed/shuttle/dropship2{
+	icon_state = "47"
+	},
+/area/space)
+"V" = (
+/turf/open/shuttle/vehicle/floor_3_6,
+/area/interior/vehicle/belly_gun)
+"W" = (
+/obj/structure/dropship_equipment/weapon/heavygun,
+/turf/open/void/vehicle,
+/area/space)
+"X" = (
+/obj/structure/shuttle/part/dropship2/bottom_right_wall,
+/turf/open/void/vehicle,
+/area/space)
+"Y" = (
+/turf/open/floor/almayer/plating2/east,
+/area/interior/vehicle/belly_gun)
+"Z" = (
+/turf/open/space/basic,
+/area/space)
 
 (1,1,1) = {"
-ZZZZBZZZZ
-ZZZZWZZZZ
-ZFcOHiyFZ
-FbtMNMtDF
-ExIqzAjxw
-eYVLphVgP
-eJVlmGfJP
-eYVuTRVgP
-aUCJJJKok
-FrUCJKoQF
-FFannnXFF
+Z
+Z
+Z
+F
+E
+e
+e
+e
+a
+F
+F
+"}
+(2,1,1) = {"
+Z
+Z
+F
+b
+x
+Y
+J
+Y
+U
+r
+F
+"}
+(3,1,1) = {"
+Z
+Z
+c
+t
+I
+V
+V
+V
+C
+U
+a
+"}
+(4,1,1) = {"
+Z
+Z
+O
+M
+q
+L
+l
+u
+J
+C
+n
+"}
+(5,1,1) = {"
+B
+W
+H
+N
+z
+p
+m
+T
+J
+J
+n
+"}
+(6,1,1) = {"
+Z
+Z
+i
+M
+A
+h
+G
+R
+J
+K
+n
+"}
+(7,1,1) = {"
+Z
+Z
+y
+t
+j
+V
+f
+V
+K
+o
+X
+"}
+(8,1,1) = {"
+Z
+Z
+F
+D
+x
+g
+J
+g
+o
+Q
+F
+"}
+(9,1,1) = {"
+Z
+Z
+Z
+F
+w
+P
+P
+P
+k
+F
+F
 "}
