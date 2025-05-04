@@ -982,6 +982,40 @@
     cavebreaker = TRUE // Can fire at caves
     uses_ammo = TRUE
     is_weapon = TRUE
+    var/locked_ammo = FALSE // Tracks whether the ammo is locked in place
+
+    // Use attack_hand to lock the ammo
+/obj/structure/dropship_equipment/weapon/bomb_bay/attack_hand(mob/user)
+	if(!ammo_equipped)
+		to_chat(user, SPAN_WARNING("[src] has no ammo loaded to lock in place."))
+		return
+	if(locked_ammo)
+		to_chat(user, SPAN_NOTICE("[src]'s ammo is already locked in place."))
+		return
+	if(user.action_busy)
+		to_chat(user, SPAN_WARNING("You are already performing an action."))
+		return
+
+	to_chat(user, SPAN_NOTICE("You begin locking the ammo in place for [src]."))
+	if(!do_after(user, 20, INTERRUPT_NO_NEEDHAND | BEHAVIOR_IMMOBILE, BUSY_ICON_BUILD, target = src))
+		to_chat(user, SPAN_WARNING("You stop locking the ammo in place for [src]."))
+		return
+
+	locked_ammo = TRUE
+	to_chat(user, SPAN_NOTICE("You successfully lock the ammo in place for [src]."))
+
+// Override the open_fire proc to check if ammo is locked
+/obj/structure/dropship_equipment/weapon/bomb_bay/open_fire(obj/selected_target, mob/user = usr)
+	if(!locked_ammo)
+		to_chat(user, SPAN_WARNING("[src]'s ammo is not locked in place and cannot be fired."))
+		return
+	..() // Call the parent open_fire logic
+
+// Reset locked_ammo when ammo is unloaded
+/obj/structure/dropship_equipment/weapon/bomb_bay/unload_ammo(obj/item/powerloader_clamp/PC, mob/living/user)
+	locked_ammo = FALSE // Reset the locked state
+	..() // Call the parent unload_ammo logic
+
 //================= OTHER EQUIPMENT =================//
 
 
