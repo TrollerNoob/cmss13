@@ -106,6 +106,20 @@ export type MapProps = {
   tactical_map_ref: string;
 };
 
+export type AutoreloaderSpec = {
+  name: string;
+  shorthand: string;
+  mount_point: number;
+  uses_ammo: boolean;
+  ammo_equipped: boolean;
+  cooldown: number;
+  stored_ammo: Array<{
+    name: string;
+    count: number;
+    max_count: number;
+  }>;
+};
+
 export const dirMap = (dir) => {
   switch (dir) {
     case 'NORTH':
