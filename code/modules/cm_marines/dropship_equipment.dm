@@ -729,6 +729,11 @@
     var/list/possible_turfs = RANGE_TURFS(ammo_accuracy_range, target_turf)
     var/turf/impact = pick(possible_turfs)
 
+    // Add mortar travel noise for bomb_bay
+    if(istype(src, /obj/structure/dropship_equipment/weapon/bomb_bay))
+        playsound(target_turf, 'sound/weapons/gun_mortar_travel.ogg', 50, 1) // Play mortar travel noise
+        sleep(25) // Wait 2.5 seconds before proceeding to the warning sound block
+
     if(ammo_travelling_time && istype(SA, /obj/structure/ship_ammo/rocket/thermobaric))
         playsound(impact, ammo_warn_sound, ammo_warn_sound_volume, 1, 15)
         var/total_seconds = max(floor(ammo_travelling_time / 10), 1)
