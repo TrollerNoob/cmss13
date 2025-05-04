@@ -960,7 +960,7 @@
 	firing_sound = 'sound/weapons/gun_flare_explode.ogg'
 	firing_delay = 20 //2 seconds
 	fire_mission_only = FALSE
-	shorthand = "Flare"
+	shorthand = "FLR"
 	uses_ammo = TRUE
 	is_interactable = TRUE
 	combat_equipment = TRUE
@@ -968,15 +968,15 @@
 	point_cost = 400
 
 /obj/structure/dropship_equipment/weapon/bomb_bay
-    name = "\improper Bomb Bay"
-    desc = "A bomb bay designed to hold and fire a single unguided heavy missile. Fits inside the dropship's crew weapon emplacement. Moving this will require some sort of lifter."
+    name = "\improper LAB-107 Bomb Bay"
+    desc = "A bomb bay capable of dropping unguided munitions using ejector racks. Ordinance released from these bomb cradles are capable of penetrating fortified bunkers, leading to it being commonly employed against CLF hideouts. Munitions must be manually locked into place after loading. Fits inside the dropship's crew weapon emplacement. Moving this will require some sort of lifter."
     icon_state = "launch_bay"
     icon = 'icons/obj/structures/props/dropship/dropship_equipment.dmi'
     firing_sound = 'sound/weapons/gun_flare_explode.ogg'
     firing_delay = 1800 // 3 minutes
     bound_height = 32
     equip_categories = list(DROPSHIP_CREW_WEAPON) // fits inside the central spot of the dropship
-    point_cost = 200
+    point_cost = 500
     fire_mission_only = FALSE
     shorthand = "BMB"
     cavebreaker = TRUE // Can fire at caves
@@ -1679,3 +1679,123 @@
 	sleep(3)
 	SA.source_mob = user
 	SA.detonate_on(impact, src)
+
+// Autoreloader System
+
+/obj/structure/dropship_equipment/autoreloader
+    name = "\improper RMT-08 Autoreloader System"
+    desc = "An automated reloading system capable of storing two munitions and reloading a selected dropship weapon. Fits inside the crew weapon emplacement."
+    icon_state = "medevac_system"
+    icon = 'icons/obj/structures/props/dropship/dropship_equipment.dmi'
+    equip_categories = list(DROPSHIP_CREW_WEAPON) // Fits inside the central spot of the dropship
+    point_cost = 300
+    is_interactable = TRUE
+    combat_equipment = FALSE
+    uses_ammo = FALSE
+
+    // Variables for ammo storage
+    var/list/stored_ammo = list() // List to store up to two ammo objects
+    var/max_ammo_slots = 2
+    var/reload_cooldown = 0 // Cooldown timer for reloading
+
+    // Store ammo into the autoreloader
+/obj/structure/dropship_equipment/autoreloader/proc/store_ammo(obj/item/powerloader_clamp/PC, mob/user)
+    if(!PC || !PC.loaded || !istype(PC.loaded, /obj/structure/ship_ammo))
+        to_chat(user, SPAN_WARNING("You need to use a powerloader holding dropship ammo to load [src]."))
+        return FALSE
+
+    var/obj/structure/ship_ammo/ammo = PC.loaded
+
+    if(length(stored_ammo) >= max_ammo_slots)
+        to_chat(user, SPAN_WARNING("[src] cannot store more ammo. Maximum capacity reached."))
+        return FALSE
+
+    if(ammo in stored_ammo)
+        to_chat(user, SPAN_WARNING("[ammo] is already stored in [src]."))
+        return FALSE
+
+    to_chat(user, SPAN_NOTICE("You begin loading [ammo] into [src]."))
+    if(!do_after(user, 20, INTERRUPT_NO_NEEDHAND | BEHAVIOR_IMMOBILE, BUSY_ICON_BUILD, target = src)) // 3 seconds
+        to_chat(user, SPAN_WARNING("You stop loading [ammo] into [src]."))
+        return FALSE
+
+    stored_ammo += ammo
+    ammo.forceMove(src) // Move the ammo to the autoreloader
+    PC.loaded = null // Clear the powerloader clamp
+    PC.update_icon() // Update the clamp's icon
+    to_chat(user, SPAN_NOTICE("You successfully load [ammo] into [src]."))
+    return TRUE
+
+// Reload a selected weapon
+/obj/structure/dropship_equipment/autoreloader/proc/reload_weapon(obj/structure/dropship_equipment/weapon/target_weapon, mob/user)
+	if(world.time < reload_cooldown)
+		to_chat(user, SPAN_WARNING("[src] is still reloading. Please wait."))
+		return FALSE
+
+	if(!target_weapon || !target_weapon.uses_ammo)
+		to_chat(user, SPAN_WARNING("[target_weapon] cannot be reloaded."))
+		return FALSE
+
+	if(target_weapon.ammo_equipped)
+		to_chat(user, SPAN_WARNING("[target_weapon] is already loaded with [target_weapon.ammo_equipped]."))
+		return FALSE
+
+	for(var/obj/structure/ship_ammo/ammo in stored_ammo)
+		if(istype(ammo, target_weapon.type))
+			target_weapon.ammo_equipped = ammo
+			stored_ammo -= ammo
+			to_chat(user, SPAN_NOTICE("You reload [target_weapon] with [ammo]."))
+			reload_cooldown = world.time + 10 SECONDS // Set cooldown
+			return TRUE
+
+	to_chat(user, SPAN_WARNING("[src] does not have compatible ammo for [target_weapon]."))
+	return FALSE
+
+    // Interact with the autoreloader to reload a weapon
+/obj/structure/dropship_equipment/autoreloader/equipment_interact(mob/user)
+	if(world.time < reload_cooldown)
+		to_chat(user, SPAN_WARNING("[src] is still reloading. Please wait."))
+		return
+
+	if(!linked_shuttle)
+		to_chat(user, SPAN_WARNING("[src] is not linked to a dropship."))
+		return
+
+	var/list/available_weapons = list()
+	for(var/obj/structure/dropship_equipment/weapon/W in linked_shuttle.equipments)
+		if(W.uses_ammo && !W.ammo_equipped)
+			available_weapons += W
+
+	if(!length(available_weapons))
+		to_chat(user, SPAN_WARNING("No weapons available for reloading."))
+		return
+
+	var/weapon_choice = tgui_input_list(user, "Select a weapon to reload", "Available Weapons", available_weapons)
+	if(!weapon_choice)
+		return
+
+	var/obj/structure/dropship_equipment/weapon/selected_weapon = available_weapons[weapon_choice]
+	reload_weapon(selected_weapon, user)
+
+    // Handle interaction with powerloader clamps
+/obj/structure/dropship_equipment/autoreloader/attackby(obj/item/I, mob/user)
+	if(istype(I, /obj/item/powerloader_clamp))
+		var/obj/item/powerloader_clamp/PC = I
+		if(PC.loaded)
+			if(istype(PC.loaded, /obj/structure/ship_ammo))
+				return store_ammo(PC, user)
+			to_chat(user, SPAN_WARNING("The powerloader clamp is not holding any compatible ammo."))
+			return TRUE
+	return ..()
+
+    // UI data for the autoreloader
+/obj/structure/dropship_equipment/autoreloader/ui_data(mob/user)
+	. = list()
+	.["stored_ammo"] = list()
+	for(var/obj/structure/ship_ammo/ammo in stored_ammo)
+		.["stored_ammo"] += list(
+			"name" = ammo.name,
+			"count" = ammo.ammo_count,
+			"max_count" = ammo.max_ammo_count
+		)
+	.["cooldown"] = max(0, reload_cooldown - world.time)

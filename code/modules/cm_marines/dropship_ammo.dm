@@ -271,7 +271,7 @@
 	name = "abstract rocket"
 	icon_state = "single"
 	icon = 'icons/obj/structures/props/dropship/dropship_ammo64.dmi'
-	equipment_type = /obj/structure/dropship_equipment/weapon/rocket_pod
+	equipment_type = list(/obj/structure/dropship_equipment/weapon/rocket_pod, /obj/structure/dropship_equipment/autoreloader)
 	ammo_count = 1
 	max_ammo_count = 1
 	ammo_name = "rocket"
