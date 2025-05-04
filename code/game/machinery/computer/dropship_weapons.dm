@@ -680,7 +680,7 @@
 		to_chat(weapon_operator, SPAN_WARNING("Dropship can only fire while in flight."))
 		return FALSE
 	if(!faction)
-		return FALSE//no faction, no weapons
+		return FALSE //no faction, no weapons
 	if(!selected_equipment || !selected_equipment.is_weapon)
 		to_chat(weapon_operator, SPAN_WARNING("No weapon selected."))
 		return FALSE
@@ -703,7 +703,7 @@
 	var/datum/cas_iff_group/cas_group = GLOB.cas_groups[faction]
 
 	if(!cas_group)
-		return FALSE//broken group. No fighting
+		return FALSE //broken group. No fighting
 
 	for(var/datum/cas_signal/LT in cas_group.cas_signals)
 		if(LT.target_id != targ_id || !LT.valid_signal())
@@ -719,7 +719,7 @@
 					is_outside = TRUE
 				if(CEILING_GLASS)
 					is_outside = TRUE
-		if(!is_outside && !cavebreaker) //cavebreaker doesn't care
+		if(!is_outside && !DEW.cavebreaker) // Use DEW's cavebreaker property
 			to_chat(weapon_operator, SPAN_WARNING("INVALID TARGET: target must be visible from high altitude."))
 			return FALSE
 		if (protected_by_pylon(TURF_PROTECTION_CAS, TU))
@@ -927,7 +927,7 @@
 	desc = "A computer to manage the belly gun's equipment and weapons."
 	req_one_access = list(ACCESS_MARINE_LEADER, ACCESS_MARINE_DROPSHIP, ACCESS_WY_FLIGHT)
 	firemission_envelope = new /datum/cas_fire_envelope/uscm_dropship()
-	shuttle_tag = DROPSHIP_BELLY
+	shuttle_tag = DROPSHIP_BELLYGUN
 
 /obj/structure/machinery/computer/dropship_weapons/proc/simulate_firemission(mob/living/user)
 	if(!configuration)

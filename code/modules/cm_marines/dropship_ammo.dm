@@ -352,6 +352,7 @@
 	desc = "The AGM-99 'Napalm' is an incendiary missile used to turn specific targeted areas into giant balls of fire for a long time. Can be loaded into the LAU-444 Guided Missile Launcher."
 	icon_state = "napalm"
 	ammo_id = "n"
+	equipment_type = list(/obj/structure/dropship_equipment/weapon/rocket_pod, /obj/structure/dropship_equipment/weapon/bomb_bay)
 	point_cost = 500
 	fire_mission_delay = 0 //0 means unusable
 

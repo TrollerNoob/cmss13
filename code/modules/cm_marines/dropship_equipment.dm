@@ -20,6 +20,7 @@
 	var/skill_required = SKILL_PILOT_TRAINED
 	var/combat_equipment = TRUE
 	var/faction_exclusive //if null all factions can print it
+	var/cavebreaker = FALSE //if TRUE, this equipment can be used to break through cave walls
 
 
 /obj/structure/dropship_equipment/Destroy()
@@ -66,26 +67,39 @@
 		return TRUE
 
 /obj/structure/dropship_equipment/proc/load_ammo(obj/item/powerloader_clamp/PC, mob/living/user)
-	if(!ship_base || !uses_ammo || ammo_equipped || !istype(PC.loaded, /obj/structure/ship_ammo))
-		return
-	var/obj/structure/ship_ammo/SA = PC.loaded
-	if(SA.equipment_type != type)
-		to_chat(user, SPAN_WARNING("[SA] doesn't fit in [src]."))
-		return
-	playsound(src, 'sound/machines/hydraulics_1.ogg', 40, 1)
-	var/point_loc = ship_base.loc
-	if(!do_after(user, 30 * user.get_skill_duration_multiplier(SKILL_ENGINEER), INTERRUPT_NO_NEEDHAND|BEHAVIOR_IMMOBILE, BUSY_ICON_BUILD))
-		return
-	if(!ship_base || ship_base.loc != point_loc)
-		return
-	if(!ammo_equipped && PC.loaded == SA && PC.linked_powerloader && PC.linked_powerloader.buckled_mob == user)
-		SA.forceMove(src)
-		PC.loaded = null
-		playsound(src, 'sound/machines/hydraulics_2.ogg', 40, 1)
-		PC.update_icon()
-		to_chat(user, SPAN_NOTICE("You load [SA] into [src]."))
-		ammo_equipped = SA
-		update_equipment()
+    if(!ship_base || !uses_ammo || ammo_equipped || !istype(PC.loaded, /obj/structure/ship_ammo))
+        return
+    var/obj/structure/ship_ammo/SA = PC.loaded
+
+    // Check if equipment_type is a list
+    if(istype(SA.equipment_type, /list))
+        var/eq_types = SA.equipment_type
+        var/found = FALSE
+        for(var/eq_type in eq_types)
+            if(istype(src, eq_type))  // Check if THIS object is of the allowed type
+                found = TRUE
+                break
+        if(!found)
+            to_chat(user, SPAN_WARNING("[SA] doesn't fit in [src]."))
+            return
+    else if(!istype(src, SA.equipment_type))
+        to_chat(user, SPAN_WARNING("[SA] doesn't fit in [src]."))
+        return
+
+    playsound(src, 'sound/machines/hydraulics_1.ogg', 40, 1)
+    var/point_loc = ship_base.loc
+    if(!do_after(user, 30 * user.get_skill_duration_multiplier(SKILL_ENGINEER), INTERRUPT_NO_NEEDHAND|BEHAVIOR_IMMOBILE, BUSY_ICON_BUILD))
+        return
+    if(!ship_base || ship_base.loc != point_loc)
+        return
+    if(!ammo_equipped && PC.loaded == SA && PC.linked_powerloader && PC.linked_powerloader.buckled_mob == user)
+        SA.forceMove(src)
+        PC.loaded = null
+        playsound(src, 'sound/machines/hydraulics_2.ogg', 40, 1)
+        PC.update_icon()
+        to_chat(user, SPAN_NOTICE("You load [SA] into [src]."))
+        ammo_equipped = SA
+        update_equipment()
 
 /obj/structure/dropship_equipment/proc/unload_ammo(obj/item/powerloader_clamp/PC, mob/living/user)
 	playsound(src, 'sound/machines/hydraulics_2.ogg', 40, 1)
@@ -532,7 +546,7 @@
 		set_light(0)
 		icon_state = "spotlights_off"
 		to_chat(user, SPAN_NOTICE("You turn off [src]."))
-	spotlights_cooldown = world.time + 50
+		spotlights_cooldown = world.time + 50
 
 /obj/structure/dropship_equipment/electronics/spotlights/update_equipment()
 	..()
@@ -679,52 +693,55 @@
 	update_icon()
 
 /obj/structure/dropship_equipment/weapon/proc/open_fire(obj/selected_target, mob/user = usr)
-	set waitfor = 0
-	var/turf/target_turf = get_turf(selected_target)
-	if(firing_sound)
-		playsound(loc, firing_sound, 70, 1)
-	var/obj/structure/ship_ammo/SA = ammo_equipped //necessary because we nullify ammo_equipped when firing big rockets
-	var/ammo_max_inaccuracy = SA.max_inaccuracy
-	var/ammo_accuracy_range = SA.accuracy_range
-	var/ammo_travelling_time = SA.travelling_time //how long the rockets/bullets take to reach the ground target.
-	var/ammo_warn_sound = SA.warning_sound
-	var/ammo_warn_sound_volume = SA.warning_sound_volume
-	deplete_ammo()
-	last_fired = world.time
-	if(linked_shuttle)
-		for(var/obj/structure/dropship_equipment/electronics/targeting_system/TS in linked_shuttle.equipments)
-			ammo_accuracy_range = max(ammo_accuracy_range-2, 0) //targeting system increase accuracy and reduce travelling time.
-			ammo_max_inaccuracy = max(ammo_max_inaccuracy -3, 1)
-			ammo_travelling_time = max(ammo_travelling_time - 20, 10)
-			break
+    set waitfor = 0
+    var/turf/target_turf = get_turf(selected_target)
+    if(firing_sound)
+        playsound(loc, firing_sound, 70, 1)
+    var/obj/structure/ship_ammo/SA = ammo_equipped //necessary because we nullify ammo_equipped when firing big rockets
+    var/ammo_max_inaccuracy = SA.max_inaccuracy
+    var/ammo_accuracy_range = SA.accuracy_range
+    var/ammo_travelling_time = SA.travelling_time //how long the rockets/bullets take to reach the ground target.
+    var/ammo_warn_sound = SA.warning_sound
+    var/ammo_warn_sound_volume = SA.warning_sound_volume
+    deplete_ammo()
+    last_fired = world.time
+    if(linked_shuttle)
+        for(var/obj/structure/dropship_equipment/electronics/targeting_system/TS in linked_shuttle.equipments)
+            // Skip applying targeting system effects if the weapon is a bomb bay
+            if(istype(src, /obj/structure/dropship_equipment/weapon/bomb_bay))
+                continue
+            ammo_accuracy_range = max(ammo_accuracy_range-2, 0) //targeting system increase accuracy and reduce travelling tie.
+            ammo_max_inaccuracy = max(ammo_max_inaccuracy -3,1)
+            ammo_travelling_time = max(ammo_travelling_time - 20, 10)
+            break
 
-	msg_admin_niche("[key_name(user)] is direct-firing [SA] onto [selected_target] at ([target_turf.x],[target_turf.y],[target_turf.z]) [ADMIN_JMP(target_turf)]")
-	if(ammo_travelling_time && !istype(SA, /obj/structure/ship_ammo/rocket/thermobaric))
-		var/total_seconds = max(floor(ammo_travelling_time/10),1)
-		for(var/i in 0 to total_seconds)
-			sleep(10)
-			if(!selected_target || !selected_target.loc)//if laser disappeared before we reached the target,
-				ammo_accuracy_range++ //accuracy decreases
+    msg_admin_niche("[key_name(user)] is direct-firing [SA] onto [selected_target] at ([target_turf.x],[target_turf.y],[target_turf.z]) [ADMIN_JMP(target_turf)]")
+    if(ammo_travelling_time && !istype(SA, /obj/structure/ship_ammo/rocket/thermobaric))
+        var/total_seconds = max(floor(ammo_travelling_time / 10), 1)
+        for(var/i in 0 to total_seconds)
+            sleep(10)
+            if(!selected_target || !selected_target.loc) //if laser disappeared before we reached the target,
+                ammo_accuracy_range++ //accuracy decreases
 
-	// clamp back to maximum inaccuracy
-	ammo_accuracy_range = min(ammo_accuracy_range, ammo_max_inaccuracy)
+    // clamp back to maximum inaccuracy
+    ammo_accuracy_range = min(ammo_accuracy_range, ammo_max_inaccuracy)
 
-	var/list/possible_turfs = RANGE_TURFS(ammo_accuracy_range, target_turf)
-	var/turf/impact = pick(possible_turfs)
+    var/list/possible_turfs = RANGE_TURFS(ammo_accuracy_range, target_turf)
+    var/turf/impact = pick(possible_turfs)
 
-	if(ammo_travelling_time && istype(SA, /obj/structure/ship_ammo/rocket/thermobaric))
-		playsound(impact, ammo_warn_sound, ammo_warn_sound_volume, 1, 15)
-		var/total_seconds = max(floor(ammo_travelling_time / 10), 1)
-		for(var/i in 0 to total_seconds)
-			sleep(1 SECONDS)
-			new /obj/effect/overlay/temp/blinking_laser (impact) //no decreased accuracy if laser dissapears, it will land where it is telegraphed to land
+    if(ammo_travelling_time && istype(SA, /obj/structure/ship_ammo/rocket/thermobaric))
+        playsound(impact, ammo_warn_sound, ammo_warn_sound_volume, 1, 15)
+        var/total_seconds = max(floor(ammo_travelling_time / 10), 1)
+        for(var/i in 0 to total_seconds)
+            sleep(1 SECONDS)
+            new /obj/effect/overlay/temp/blinking_laser(impact) //no decreased accuracy if laser disappears, it will land where it is telegraphed to land
 
-	if(ammo_warn_sound)
-		playsound(impact, ammo_warn_sound, ammo_warn_sound_volume, 1,15)
-	new /obj/effect/overlay/temp/blinking_laser (impact)
-	sleep(10)
-	SA.source_mob = user
-	SA.detonate_on(impact, src)
+    if(ammo_warn_sound)
+        playsound(impact, ammo_warn_sound, ammo_warn_sound_volume, 1, 15)
+    new /obj/effect/overlay/temp/blinking_laser(impact)
+    sleep(10)
+    SA.source_mob = user
+    SA.detonate_on(impact, src)
 
 /obj/structure/dropship_equipment/weapon/proc/open_fire_firemission(obj/selected_target, mob/user = usr)
 	set waitfor = 0
@@ -944,6 +961,22 @@
 	combat_equipment = TRUE
 	equip_categories = list(DROPSHIP_ELECTRONICS) //fits inside the front parts next to the weapons
 	point_cost = 400
+
+/obj/structure/dropship_equipment/weapon/bomb_bay
+    name = "\improper Bomb Bay"
+    desc = "A bomb bay designed to hold and fire a single unguided heavy missile. Fits inside the dropship's crew weapon emplacement. Moving this will require some sort of lifter."
+    icon_state = "launch_bay"
+    icon = 'icons/obj/structures/props/dropship/dropship_equipment.dmi'
+    firing_sound = 'sound/weapons/gun_flare_explode.ogg'
+    firing_delay = 1800 // 3 minutes
+    bound_height = 32
+    equip_categories = list(DROPSHIP_CREW_WEAPON) // fits inside the central spot of the dropship
+    point_cost = 200
+    fire_mission_only = FALSE
+    shorthand = "BMB"
+    cavebreaker = TRUE // Can fire at caves
+    uses_ammo = TRUE
+    is_weapon = TRUE
 //================= OTHER EQUIPMENT =================//
 
 
