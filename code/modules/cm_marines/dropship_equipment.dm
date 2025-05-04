@@ -986,23 +986,26 @@
 
     // Use attack_hand to lock the ammo
 /obj/structure/dropship_equipment/weapon/bomb_bay/attack_hand(mob/user)
-	if(!ammo_equipped)
-		to_chat(user, SPAN_WARNING("[src] has no ammo loaded to lock in place."))
-		return
-	if(locked_ammo)
-		to_chat(user, SPAN_NOTICE("[src]'s ammo is already locked in place."))
-		return
-	if(user.action_busy)
-		to_chat(user, SPAN_WARNING("You are already performing an action."))
-		return
+    if(!ammo_equipped)
+        to_chat(user, SPAN_WARNING("[src] has no ammo loaded to lock in place."))
+        return
+    if(locked_ammo)
+        to_chat(user, SPAN_NOTICE("[src]'s ammo is already locked in place."))
+        return
+    if(user.action_busy)
+        to_chat(user, SPAN_WARNING("You are already performing an action."))
+        return
+    if(!skillcheck(user, SKILL_PILOT, SKILL_PILOT_TRAINED))
+        to_chat(user, SPAN_WARNING("You don't have the necessary skills to lock the ammo in place for [src]."))
+        return
 
-	to_chat(user, SPAN_NOTICE("You begin locking the ammo in place for [src]."))
-	if(!do_after(user, 20, INTERRUPT_NO_NEEDHAND | BEHAVIOR_IMMOBILE, BUSY_ICON_BUILD, target = src))
-		to_chat(user, SPAN_WARNING("You stop locking the ammo in place for [src]."))
-		return
+    to_chat(user, SPAN_NOTICE("You begin locking the ammo in place for [src]."))
+    if(!do_after(user, 20, INTERRUPT_NO_NEEDHAND | BEHAVIOR_IMMOBILE, BUSY_ICON_BUILD, target = src))
+        to_chat(user, SPAN_WARNING("You stop locking the ammo in place for [src]."))
+        return
 
-	locked_ammo = TRUE
-	to_chat(user, SPAN_NOTICE("You successfully lock the ammo in place for [src]."))
+    locked_ammo = TRUE
+    to_chat(user, SPAN_NOTICE("You successfully lock the ammo in place for [src]."))
 
 // Override the open_fire proc to check if ammo is locked
 /obj/structure/dropship_equipment/weapon/bomb_bay/open_fire(obj/selected_target, mob/user = usr)
