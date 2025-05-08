@@ -11,6 +11,7 @@
 	explo_proof = TRUE
 	var/shuttle_tag  // Used to know which shuttle we're linked to.
 	var/obj/structure/dropship_equipment/selected_equipment //the currently selected equipment installed on the shuttle this console controls.
+	var/obj/structure/dropship_equipment/installed_equipment //all the equipment installed on the shuttle
 	var/cavebreaker = FALSE //ignore caves and other restrictions?
 	var/datum/cas_fire_envelope/firemission_envelope
 	var/datum/cas_fire_mission/selected_firemission
@@ -148,7 +149,7 @@
 		var/level = SSmapping.levels_by_trait(tacmap.targeted_ztrait)
 		tacmap.map_holder = SSminimaps.fetch_tacmap_datum(level[1], tacmap.allowed_flags)
 
-	ui = SStgui.try_update_ui(user, src, ui)
+		ui = SStgui.try_update_ui(user, src, ui)
 	if(!ui)
 		user.client.register_map_obj(tacmap.map_holder.map)
 		SEND_SIGNAL(src, COMSIG_CAMERA_REGISTER_UI, user)
@@ -512,6 +513,62 @@
 			RegisterSignal(linked_shuttle, COMSIG_SHUTTLE_SETMODE, PROC_REF(clear_locked_turf_and_lock_aft))
 			return TRUE
 
+		if("select-weapon")
+			var/mount_point = params["mount_point"]
+			var/obj/structure/dropship_equipment/weapon/selected_weapon = null
+
+			// Find the weapon based on the mount point
+			for(var/obj/structure/dropship_equipment/weapon/weapon in shuttle.equipments)
+				if(weapon.ship_base.attach_id == mount_point)
+					selected_weapon = weapon
+					break
+
+			if(!selected_weapon)
+				to_chat(user, SPAN_WARNING("No weapon found at the specified mount point."))
+				return
+
+			// Pass the selected weapon's mount point back to the UI
+			to_chat(user, SPAN_NOTICE("You selected [selected_weapon.name] for reloading."))
+			SStgui.try_update_ui(user, src, list("selected_weapon_mount_point" = mount_point))
+			return TRUE
+
+		if("select-ammo")
+			var/ammo_name = params["ammo_name"]
+			var/mount_point = params["selected_weapon_mount_point"]
+			var/obj/structure/ship_ammo/selected_ammo = null
+
+			// Find the ammo based on its name
+			for(var/obj/structure/ship_ammo/ammo in shuttle.equipments)
+				if(ammo.name == ammo_name)
+					selected_ammo = ammo
+					break
+
+			if(!selected_ammo)
+				to_chat(user, SPAN_WARNING("No ammo found with the specified name."))
+				return
+
+			// Find the weapon using the mount point
+			var/obj/structure/dropship_equipment/weapon/selected_weapon = null
+			for(var/obj/structure/dropship_equipment/weapon/weapon in shuttle.equipments)
+				if(weapon.ship_base.attach_id == mount_point)
+					selected_weapon = weapon
+					break
+
+			if(!selected_weapon)
+				to_chat(user, SPAN_WARNING("The previously selected weapon is no longer available."))
+				return
+
+			// Check if the ammo is compatible with the weapon
+			var/list/compatible_types = istype(selected_ammo.equipment_type, /list) ? selected_ammo.equipment_type : list(selected_ammo.equipment_type)
+			if(!istype(selected_weapon, compatible_types))
+				to_chat(user, SPAN_WARNING("[selected_ammo.name] is not compatible with [selected_weapon.name]."))
+				return
+
+			// Reload the weapon
+			selected_weapon.ammo_equipped = selected_ammo
+			to_chat(user, SPAN_NOTICE("You load [selected_ammo.name] into [selected_weapon.name]."))
+			return TRUE
+
 /obj/structure/machinery/computer/dropship_weapons/proc/open_aft_for_paradrop()
 	var/obj/docking_port/mobile/marine_dropship/shuttle = SSshuttle.getShuttle(shuttle_tag)
 	if(!shuttle || !shuttle.paradrop_signal || shuttle.mode != SHUTTLE_CALL)
@@ -632,6 +689,16 @@
 			"burst" = equipment.ammo_equipped?.ammo_used_per_firing,
 			"data" = equipment.ui_data(user)
 		)
+
+		// If this is an autoreloader, add stored ammo info
+		if(istype(equipment, /obj/structure/dropship_equipment/autoreloader))
+			var/obj/structure/dropship_equipment/autoreloader/auto = equipment
+			data["stored_ammo_1_name"] = auto.stored_ammo_1?.name
+			data["stored_ammo_1_count"] = auto.stored_ammo_1?.ammo_count
+			data["stored_ammo_1_max"] = auto.stored_ammo_1?.max_ammo_count
+			data["stored_ammo_2_name"] = auto.stored_ammo_2?.name
+			data["stored_ammo_2_count"] = auto.stored_ammo_2?.ammo_count
+			data["stored_ammo_2_max"] = auto.stored_ammo_2?.max_ammo_count
 
 		. += list(data)
 

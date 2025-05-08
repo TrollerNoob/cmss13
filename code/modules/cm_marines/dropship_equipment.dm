@@ -52,13 +52,43 @@
 	if(istype(I, /obj/item/powerloader_clamp))
 		var/obj/item/powerloader_clamp/PC = I
 		if(PC.loaded)
-			if(ammo_equipped)
-				to_chat(user, SPAN_WARNING("You need to unload \the [ammo_equipped] from \the [src] first!"))
+			if(istype(src, /obj/structure/dropship_equipment/autoreloader))
+				// Handle autoreloader-specific logic
+				var/obj/structure/dropship_equipment/autoreloader/autoreloader = src
+				if(!PC.loaded || !istype(PC.loaded, /obj/structure/ship_ammo))
+					to_chat(user, SPAN_WARNING("You need to use a powerloader holding dropship ammo to load [src]."))
+					return TRUE
+				var/obj/structure/ship_ammo/ammo = PC.loaded
+				// Check for duplicate ammo
+				if(ammo == autoreloader.stored_ammo_1 || ammo == autoreloader.stored_ammo_2)
+					to_chat(user, SPAN_WARNING("[ammo] is already stored in [src]."))
+					return TRUE
+				// Check for available slot
+				if(autoreloader.stored_ammo_1 && autoreloader.stored_ammo_2)
+					to_chat(user, SPAN_WARNING("[src] cannot store more ammo. Maximum capacity reached."))
+					return TRUE
+				to_chat(user, SPAN_NOTICE("You begin loading [ammo] into [src]."))
+				if(!do_after(user, 20, INTERRUPT_NO_NEEDHAND | BEHAVIOR_IMMOBILE, BUSY_ICON_BUILD, target = src)) // 3 seconds
+					to_chat(user, SPAN_WARNING("You stop loading [ammo] into [src]."))
+					return TRUE
+				// Place ammo in the first available slot
+				if(!autoreloader.stored_ammo_1)
+					autoreloader.stored_ammo_1 = ammo
+				else
+					autoreloader.stored_ammo_2 = ammo
+				ammo.forceMove(src) // Move the ammo to the autoreloader
+				PC.loaded = null // Clear the powerloader clamp
+				PC.update_icon() // Update the clamp's icon
+				to_chat(user, SPAN_NOTICE("You successfully load [ammo] into [src]."))
 				return TRUE
-			if(uses_ammo)
-				load_ammo(PC, user) //it handles on it's own whether the ammo fits
-				return
-
+			else
+				// Default behavior for other equipment
+				if(ammo_equipped)
+					to_chat(user, SPAN_WARNING("You need to unload \the [ammo_equipped] from \the [src] first!"))
+					return TRUE
+				if(uses_ammo)
+					load_ammo(PC, user) // It handles whether the ammo fits
+					return TRUE
 		else
 			if(uses_ammo && ammo_equipped)
 				unload_ammo(PC, user)
@@ -67,39 +97,41 @@
 		return TRUE
 
 /obj/structure/dropship_equipment/proc/load_ammo(obj/item/powerloader_clamp/PC, mob/living/user)
-    if(!ship_base || !uses_ammo || ammo_equipped || !istype(PC.loaded, /obj/structure/ship_ammo))
-        return
-    var/obj/structure/ship_ammo/SA = PC.loaded
+	if(!ship_base || !uses_ammo || ammo_equipped || !istype(PC.loaded, /obj/structure/ship_ammo))
+		return
+	var/obj/structure/ship_ammo/SA = PC.loaded
 
-    // Check if equipment_type is a list
-    if(istype(SA.equipment_type, /list))
-        var/eq_types = SA.equipment_type
-        var/found = FALSE
-        for(var/eq_type in eq_types)
-            if(istype(src, eq_type))  // Check if THIS object is of the allowed type
-                found = TRUE
-                break
-        if(!found)
-            to_chat(user, SPAN_WARNING("[SA] doesn't fit in [src]."))
-            return
-    else if(!istype(src, SA.equipment_type))
-        to_chat(user, SPAN_WARNING("[SA] doesn't fit in [src]."))
-        return
+	// Check if equipment_type is a list
+	if(istype(SA.equipment_type, /list))
+		var/eq_types = SA.equipment_type
+		var/found = FALSE
+		for(var/eq_type in eq_types)
+			if(istype(src, eq_type))  // Check if THIS object is of the allowed type
+				found = TRUE
+				break
+		if(!found)
+			to_chat(user, SPAN_WARNING("[SA] doesn't fit in [src]."))
+			return
+	else if(!istype(src, SA.equipment_type))
+		to_chat(user, SPAN_WARNING("[SA] doesn't fit in [src]."))
+		return
 
-    playsound(src, 'sound/machines/hydraulics_1.ogg', 40, 1)
-    var/point_loc = ship_base.loc
-    if(!do_after(user, 30 * user.get_skill_duration_multiplier(SKILL_ENGINEER), INTERRUPT_NO_NEEDHAND|BEHAVIOR_IMMOBILE, BUSY_ICON_BUILD))
-        return
-    if(!ship_base || ship_base.loc != point_loc)
-        return
-    if(!ammo_equipped && PC.loaded == SA && PC.linked_powerloader && PC.linked_powerloader.buckled_mob == user)
-        SA.forceMove(src)
-        PC.loaded = null
-        playsound(src, 'sound/machines/hydraulics_2.ogg', 40, 1)
-        PC.update_icon()
-        to_chat(user, SPAN_NOTICE("You load [SA] into [src]."))
-        ammo_equipped = SA
-        update_equipment()
+	playsound(src, 'sound/machines/hydraulics_1.ogg', 40, 1)
+	var/point_loc = ship_base.loc
+	if(!do_after(user, 1 * user.get_skill_duration_multiplier(SKILL_ENGINEER), INTERRUPT_NO_NEEDHAND | BEHAVIOR_IMMOBILE, BUSY_ICON_BUILD))
+		return
+	if(!ship_base || ship_base.loc != point_loc)
+		return
+
+	// Default behavior for weapons and other equipment
+	if(!ammo_equipped && PC.loaded == SA && PC.linked_powerloader && PC.linked_powerloader.buckled_mob == user)
+		SA.forceMove(src)
+		PC.loaded = null
+		playsound(src, 'sound/machines/hydraulics_2.ogg', 40, 1)
+		PC.update_icon()
+		to_chat(user, SPAN_NOTICE("You load [SA] into [src]."))
+		ammo_equipped = SA
+		update_equipment()
 
 /obj/structure/dropship_equipment/proc/unload_ammo(obj/item/powerloader_clamp/PC, mob/living/user)
 	playsound(src, 'sound/machines/hydraulics_2.ogg', 40, 1)
@@ -124,16 +156,16 @@
 
 /obj/structure/dropship_equipment/proc/grab_equipment(obj/item/powerloader_clamp/PC, mob/living/user)
 	playsound(loc, 'sound/machines/hydraulics_2.ogg', 40, 1)
-	var/duration_time = 10
+	var/duration_time = 0
 	var/point_loc
 	if(ship_base)
-		duration_time = 70 //uninstalling equipment takes more time
+		duration_time = 70 // Uninstalling equipment takes more time
 		point_loc = ship_base.loc
 	if(user.action_busy)
 		return
-	if(!do_after(user, duration_time * user.get_skill_duration_multiplier(SKILL_ENGINEER), INTERRUPT_NO_NEEDHAND|BEHAVIOR_IMMOBILE, BUSY_ICON_BUILD, target_flags = INTERRUPT_DIFF_LOC, target = src))
+	if(!do_after(user, duration_time * user.get_skill_duration_multiplier(SKILL_ENGINEER), INTERRUPT_NO_NEEDHAND | BEHAVIOR_IMMOBILE, BUSY_ICON_BUILD, target_flags = INTERRUPT_DIFF_LOC, target = src))
 		return
-	if(point_loc && ship_base && ship_base.loc != point_loc) //dropship flew away
+	if(point_loc && ship_base && ship_base.loc != point_loc) // Dropship flew away
 		return
 	if(!PC.linked_powerloader || PC.loaded || PC.linked_powerloader.buckled_mob != user)
 		return
@@ -404,8 +436,8 @@
 				to_chat(user, SPAN_NOTICE("You stow [deployed_mg]."))
 				undeploy_mg()
 		else
-			to_chat(user, SPAN_WARNING("[src] is empty."))
-		return
+		 to_chat(user, SPAN_WARNING("[src] is empty."))
+	 return
 
 	..()
 
@@ -693,60 +725,60 @@
 	update_icon()
 
 /obj/structure/dropship_equipment/weapon/proc/open_fire(obj/selected_target, mob/user = usr)
-    set waitfor = 0
-    var/turf/target_turf = get_turf(selected_target)
-    if(firing_sound)
-        playsound(loc, firing_sound, 70, 1)
-    var/obj/structure/ship_ammo/SA = ammo_equipped //necessary because we nullify ammo_equipped when firing big rockets
-    var/ammo_max_inaccuracy = SA.max_inaccuracy
-    var/ammo_accuracy_range = SA.accuracy_range
-    var/ammo_travelling_time = SA.travelling_time //how long the rockets/bullets take to reach the ground target.
-    var/ammo_warn_sound = SA.warning_sound
-    var/ammo_warn_sound_volume = SA.warning_sound_volume
-    deplete_ammo()
-    last_fired = world.time
-    if(linked_shuttle)
-        for(var/obj/structure/dropship_equipment/electronics/targeting_system/TS in linked_shuttle.equipments)
-            // Skip applying targeting system effects if the weapon is a bomb bay
-            if(istype(src, /obj/structure/dropship_equipment/weapon/bomb_bay))
-                continue
-            ammo_accuracy_range = max(ammo_accuracy_range-2, 0) //targeting system increase accuracy and reduce travelling tie.
-            ammo_max_inaccuracy = max(ammo_max_inaccuracy -3,1)
-            ammo_travelling_time = max(ammo_travelling_time - 20, 10)
-            break
+	set waitfor = 0
+	var/turf/target_turf = get_turf(selected_target)
+	if(firing_sound)
+		playsound(loc, firing_sound, 70, 1)
+	var/obj/structure/ship_ammo/SA = ammo_equipped //necessary because we nullify ammo_equipped when firing big rockets
+	var/ammo_max_inaccuracy = SA.max_inaccuracy
+	var/ammo_accuracy_range = SA.accuracy_range
+	var/ammo_travelling_time = SA.travelling_time //how long the rockets/bullets take to reach the ground target.
+	var/ammo_warn_sound = SA.warning_sound
+	var/ammo_warn_sound_volume = SA.warning_sound_volume
+	deplete_ammo()
+	last_fired = world.time
+	if(linked_shuttle)
+		for(var/obj/structure/dropship_equipment/electronics/targeting_system/TS in linked_shuttle.equipments)
+			// Skip applying targeting system effects if the weapon is a bomb bay
+			if(istype(src, /obj/structure/dropship_equipment/weapon/bomb_bay))
+				continue
+			ammo_accuracy_range = max(ammo_accuracy_range-2, 0) //targeting system increase accuracy and reduce travelling tie.
+			ammo_max_inaccuracy = max(ammo_max_inaccuracy -3,1)
+			ammo_travelling_time = max(ammo_travelling_time - 20, 10)
+			break
 
-    msg_admin_niche("[key_name(user)] is direct-firing [SA] onto [selected_target] at ([target_turf.x],[target_turf.y],[target_turf.z]) [ADMIN_JMP(target_turf)]")
-    if(ammo_travelling_time && !istype(SA, /obj/structure/ship_ammo/rocket/thermobaric))
-        var/total_seconds = max(floor(ammo_travelling_time / 10), 1)
-        for(var/i in 0 to total_seconds)
-            sleep(10)
-            if(!selected_target || !selected_target.loc) //if laser disappeared before we reached the target,
-                ammo_accuracy_range++ //accuracy decreases
+	msg_admin_niche("[key_name(user)] is direct-firing [SA] onto [selected_target] at ([target_turf.x],[target_turf.y],[target_turf.z]) [ADMIN_JMP(target_turf)]")
+	if(ammo_travelling_time && !istype(SA, /obj/structure/ship_ammo/rocket/thermobaric))
+		var/total_seconds = max(floor(ammo_travelling_time / 10), 1)
+		for(var/i in 0 to total_seconds)
+			sleep(10)
+			if(!selected_target || !selected_target.loc) //if laser disappeared before we reached the target,
+				ammo_accuracy_range++ //accuracy decreases
 
-    // clamp back to maximum inaccuracy
-    ammo_accuracy_range = min(ammo_accuracy_range, ammo_max_inaccuracy)
+	// clamp back to maximum inaccuracy
+	ammo_accuracy_range = min(ammo_accuracy_range, ammo_max_inaccuracy)
 
-    var/list/possible_turfs = RANGE_TURFS(ammo_accuracy_range, target_turf)
-    var/turf/impact = pick(possible_turfs)
+	var/list/possible_turfs = RANGE_TURFS(ammo_accuracy_range, target_turf)
+	var/turf/impact = pick(possible_turfs)
 
-    // Add mortar travel noise for bomb_bay
-    if(istype(src, /obj/structure/dropship_equipment/weapon/bomb_bay))
-        playsound(target_turf, 'sound/weapons/gun_mortar_travel.ogg', 50, 1) // Play mortar travel noise
-        sleep(25) // Wait 2.5 seconds before proceeding to the warning sound block
+	// Add mortar travel noise for bomb_bay
+	if(istype(src, /obj/structure/dropship_equipment/weapon/bomb_bay))
+		playsound(target_turf, 'sound/weapons/gun_mortar_travel.ogg', 50, 1) // Play mortar travel noise
+		sleep(25) // Wait 2.5 seconds before proceeding to the warning sound block
 
-    if(ammo_travelling_time && istype(SA, /obj/structure/ship_ammo/rocket/thermobaric))
-        playsound(impact, ammo_warn_sound, ammo_warn_sound_volume, 1, 15)
-        var/total_seconds = max(floor(ammo_travelling_time / 10), 1)
-        for(var/i in 0 to total_seconds)
-            sleep(1 SECONDS)
-            new /obj/effect/overlay/temp/blinking_laser(impact) //no decreased accuracy if laser disappears, it will land where it is telegraphed to land
+	if(ammo_travelling_time && istype(SA, /obj/structure/ship_ammo/rocket/thermobaric))
+		playsound(impact, ammo_warn_sound, ammo_warn_sound_volume, 1, 15)
+		var/total_seconds = max(floor(ammo_travelling_time / 10), 1)
+		for(var/i in 0 to total_seconds)
+			sleep(1 SECONDS)
+			new /obj/effect/overlay/temp/blinking_laser(impact) //no decreased accuracy if laser disappears, it will land where it is telegraphed to land
 
-    if(ammo_warn_sound)
-        playsound(impact, ammo_warn_sound, ammo_warn_sound_volume, 1, 15)
-    new /obj/effect/overlay/temp/blinking_laser(impact)
-    sleep(10)
-    SA.source_mob = user
-    SA.detonate_on(impact, src)
+	if(ammo_warn_sound)
+		playsound(impact, ammo_warn_sound, ammo_warn_sound_volume, 1, 15)
+	new /obj/effect/overlay/temp/blinking_laser(impact)
+	sleep(10)
+	SA.source_mob = user
+	SA.detonate_on(impact, src)
 
 /obj/structure/dropship_equipment/weapon/proc/open_fire_firemission(obj/selected_target, mob/user = usr)
 	set waitfor = 0
@@ -860,7 +892,7 @@
 		if(ship_base)
 			icon_state = "laser_beam_installed"
 		else
-			icon_state = "laser_beam"
+		 icon_state = "laser_beam"
 
 /obj/structure/dropship_equipment/weapon/launch_bay
 	name = "\improper LAG-14 Internal Sentry Launcher"
@@ -893,7 +925,7 @@
 	is_weapon = FALSE
 	shorthand = "GAU-B"
 
-    // Declare role_reserved_slots variable
+	// Declare role_reserved_slots variable
 	var/list/role_reserved_slots = list()
 
 	var/datum/interior/interior_map
@@ -907,49 +939,49 @@
 	var/list/entrances = list()
 
 /obj/structure/dropship_equipment/weapon/heavygun/bay/New()
-    . = ..()
-    entrances = list()
-    // Create the interior space when the equipment is created
-    interior_map = new /datum/interior(src)
-    interior_map.create_interior(/datum/map_template/interior/belly_gun)
+	. = ..()
+	entrances = list()
+	// Create the interior space when the equipment is created
+	interior_map = new /datum/interior(src)
+	interior_map.create_interior(/datum/map_template/interior/belly_gun)
 
-    // Initialize role_reserved_slots
-    load_role_reserved_slots()
+	// Initialize role_reserved_slots
+	load_role_reserved_slots()
 
 /obj/structure/dropship_equipment/weapon/heavygun/bay/proc/load_role_reserved_slots()
-    // Initialize role-reserved slots for the gunner station
-    var/datum/role_reserved_slots/RRS = new
-    RRS.category_name = "Gunner Station Crew"
-    RRS.roles = list(JOB_CAS_PILOT, JOB_DROPSHIP_PILOT, JOB_DROPSHIP_CREW_CHIEF)
-    RRS.total = 2
-    role_reserved_slots += RRS
+	// Initialize role-reserved slots for the gunner station
+	var/datum/role_reserved_slots/RRS = new
+	RRS.category_name = "Gunner Station Crew"
+	RRS.roles = list(JOB_CAS_PILOT, JOB_DROPSHIP_PILOT, JOB_DROPSHIP_CREW_CHIEF)
+	RRS.total = 2
+	role_reserved_slots += RRS
 
 /obj/structure/dropship_equipment/weapon/heavygun/bay/Destroy()
-    // Clean up the interior space when the equipment is destroyed
-    if(interior_map)
-        qdel(interior_map)
-    . = ..()
+	// Clean up the interior space when the equipment is destroyed
+	if(interior_map)
+		qdel(interior_map)
+	. = ..()
 
 /obj/structure/dropship_equipment/weapon/heavygun/bay/attack_hand(mob/user)
-    if(!ishuman(user))
-        return
-    if(!ship_base) //not installed
-        return
-    if(!skillcheck(user, SKILL_PILOT, SKILL_PILOT_TRAINED))
-        to_chat(user, SPAN_WARNING("You don't know how to use [src]."))
-        return
+	if(!ishuman(user))
+		return
+	if(!ship_base) //not installed
+		return
+	if(!skillcheck(user, SKILL_PILOT, SKILL_PILOT_TRAINED))
+		to_chat(user, SPAN_WARNING("You don't know how to use [src]."))
+		return
 
-    if(!linked_shuttle)
-        return
+	if(!linked_shuttle)
+		return
 
-    if(linked_shuttle.mode != SHUTTLE_CALL)
-        to_chat(user, SPAN_WARNING("[src] can only be used while in flight."))
-        return
+	if(linked_shuttle.mode != SHUTTLE_CALL)
+		to_chat(user, SPAN_WARNING("[src] can only be used while in flight."))
+		return
 
-    // Allow the user to enter the interior
-    if(interior_map)
-        if(!interior_map.enter(user, null))
-            to_chat(user, SPAN_WARNING("You can't enter the gunner station right now."))
+	// Allow the user to enter the interior
+	if(interior_map)
+		if(!interior_map.enter(user, null))
+			to_chat(user, SPAN_WARNING("You can't enter the gunner station right now."))
 
 /obj/structure/dropship_equipment/weapon/flare_launcher
 	name = "\improper AN/ALE-557 Flare Launcher"
@@ -968,44 +1000,44 @@
 	point_cost = 400
 
 /obj/structure/dropship_equipment/weapon/bomb_bay
-    name = "\improper LAB-107 Bomb Bay"
-    desc = "A bomb bay capable of dropping unguided munitions using ejector racks. Ordinance released from these bomb cradles are capable of penetrating fortified bunkers, leading to it being commonly employed against CLF hideouts. Munitions must be manually locked into place after loading. Fits inside the dropship's crew weapon emplacement. Moving this will require some sort of lifter."
-    icon_state = "launch_bay"
-    icon = 'icons/obj/structures/props/dropship/dropship_equipment.dmi'
-    firing_sound = 'sound/weapons/gun_flare_explode.ogg'
-    firing_delay = 1800 // 3 minutes
-    bound_height = 32
-    equip_categories = list(DROPSHIP_CREW_WEAPON) // fits inside the central spot of the dropship
-    point_cost = 500
-    fire_mission_only = FALSE
-    shorthand = "BMB"
-    cavebreaker = TRUE // Can fire at caves
-    uses_ammo = TRUE
-    is_weapon = TRUE
-    var/locked_ammo = FALSE // Tracks whether the ammo is locked in place
+	name = "\improper LAB-107 Bomb Bay"
+	desc = "A bomb bay capable of dropping unguided munitions using ejector racks. Ordinance released from these bomb cradles are capable of penetrating fortified bunkers, leading to it being commonly employed against CLF hideouts. Munitions must be manually locked into place after loading. Fits inside the dropship's crew weapon emplacement. Moving this will require some sort of lifter."
+	icon_state = "launch_bay"
+	icon = 'icons/obj/structures/props/dropship/dropship_equipment.dmi'
+	firing_sound = 'sound/weapons/gun_flare_explode.ogg'
+	firing_delay = 1800 // 3 minutes
+	bound_height = 32
+	equip_categories = list(DROPSHIP_CREW_WEAPON) // fits inside the central spot of the dropship
+	point_cost = 500
+	fire_mission_only = FALSE
+	shorthand = "BMB"
+	cavebreaker = TRUE // Can fire at caves
+	uses_ammo = TRUE
+	is_weapon = TRUE
+	var/locked_ammo = FALSE // Tracks whether the ammo is locked in place
 
-    // Use attack_hand to lock the ammo
+	// Use attack_hand to lock the ammo
 /obj/structure/dropship_equipment/weapon/bomb_bay/attack_hand(mob/user)
-    if(!ammo_equipped)
-        to_chat(user, SPAN_WARNING("[src] has no ammo loaded to lock in place."))
-        return
-    if(locked_ammo)
-        to_chat(user, SPAN_NOTICE("[src]'s ammo is already locked in place."))
-        return
-    if(user.action_busy)
-        to_chat(user, SPAN_WARNING("You are already performing an action."))
-        return
-    if(!skillcheck(user, SKILL_PILOT, SKILL_PILOT_TRAINED))
-        to_chat(user, SPAN_WARNING("You don't have the necessary skills to lock the ammo in place for [src]."))
-        return
+	if(!ammo_equipped)
+		to_chat(user, SPAN_WARNING("[src] has no ammo loaded to lock in place."))
+		return
+	if(locked_ammo)
+		to_chat(user, SPAN_NOTICE("[src]'s ammo is already locked in place."))
+		return
+	if(user.action_busy)
+		to_chat(user, SPAN_WARNING("You are already performing an action."))
+		return
+	if(!skillcheck(user, SKILL_PILOT, SKILL_PILOT_TRAINED))
+		to_chat(user, SPAN_WARNING("You don't have the necessary skills to lock the ammo in place for [src]."))
+		return
 
-    to_chat(user, SPAN_NOTICE("You begin locking the ammo in place for [src]."))
-    if(!do_after(user, 20, INTERRUPT_NO_NEEDHAND | BEHAVIOR_IMMOBILE, BUSY_ICON_BUILD, target = src))
-        to_chat(user, SPAN_WARNING("You stop locking the ammo in place for [src]."))
-        return
+	to_chat(user, SPAN_NOTICE("You begin locking the ammo in place for [src]."))
+	if(!do_after(user, 20, INTERRUPT_NO_NEEDHAND | BEHAVIOR_IMMOBILE, BUSY_ICON_BUILD, target = src))
+		to_chat(user, SPAN_WARNING("You stop locking the ammo in place for [src]."))
+		return
 
-    locked_ammo = TRUE
-    to_chat(user, SPAN_NOTICE("You successfully lock the ammo in place for [src]."))
+	locked_ammo = TRUE
+	to_chat(user, SPAN_NOTICE("You successfully lock the ammo in place for [src]."))
 
 // Override the open_fire proc to check if ammo is locked
 /obj/structure/dropship_equipment/weapon/bomb_bay/open_fire(obj/selected_target, mob/user = usr)
@@ -1564,142 +1596,81 @@
 	uses_ammo = FALSE
 
 	// Variables for ammo storage
-	var/list/stored_ammo = list() // List to store up to two ammo objects
-	var/max_ammo_slots = 2
-	var/reload_cooldown = 0 // Cooldown timer for reloading
+	var/obj/structure/ship_ammo/stored_ammo_1 = null // First ammo slot
+	var/obj/structure/ship_ammo/stored_ammo_2 = null // Second ammo slot
+	var/max_ammo_slots = 2 // Maximum number of ammo slots
+	var/reload_cooldown = 10
 
-	// Store ammo into the autoreloader
-/obj/structure/dropship_equipment/autoreloader/proc/store_ammo(obj/item/powerloader_clamp/PC, mob/user)
-	if(!PC || !PC.loaded || !istype(PC.loaded, /obj/structure/ship_ammo))
-		to_chat(user, SPAN_WARNING("You need to use a powerloader holding dropship ammo to load [src]."))
-		return FALSE
-
-	var/obj/structure/ship_ammo/ammo = PC.loaded
-
-	if(length(stored_ammo) >= max_ammo_slots)
-		to_chat(user, SPAN_WARNING("[src] cannot store more ammo. Maximum capacity reached."))
-		return FALSE
-
-	if(ammo in stored_ammo)
-		to_chat(user, SPAN_WARNING("[ammo] is already stored in [src]."))
-		return FALSE
-
-	to_chat(user, SPAN_NOTICE("You begin loading [ammo] into [src]."))
-	if(!do_after(user, 20, INTERRUPT_NO_NEEDHAND | BEHAVIOR_IMMOBILE, BUSY_ICON_BUILD, target = src)) // 3 seconds
-		to_chat(user, SPAN_WARNING("You stop loading [ammo] into [src]."))
-		return FALSE
-
-	stored_ammo += ammo
-	ammo.forceMove(src) // Move the ammo to the autoreloader
-	PC.loaded = null // Clear the powerloader clamp
-	PC.update_icon() // Update the clamp's icon
-	to_chat(user, SPAN_NOTICE("You successfully load [ammo] into [src]."))
-	return TRUE
-
-// Reload a weapon using the console
-/obj/structure/dropship_equipment/autoreloader/proc/reload_weapon_console(mob/user, mount_point)
-    if(!linked_shuttle)
-        to_chat(user, SPAN_WARNING("[src] is not linked to a dropship."))
-        return FALSE
-
-    if(!length(stored_ammo))
-        to_chat(user, SPAN_WARNING("[src] has no ammo stored to reload weapons."))
-        return FALSE
-
-    var/obj/structure/dropship_equipment/weapon/target_weapon = null
-    for(var/obj/structure/dropship_equipment/weapon/W in linked_shuttle.equipments)
-        if(W.ship_base && W.ship_base.attach_id == mount_point) // Match the mount_point
-            target_weapon = W
-            break
-
-    if(!target_weapon)
-        to_chat(user, SPAN_WARNING("Invalid weapon selected."))
-        return FALSE
-
-    if(world.time < reload_cooldown)
-        to_chat(user, SPAN_WARNING("[src] is still reloading. Please wait."))
-        return FALSE
-
-    if(!target_weapon.uses_ammo)
-        to_chat(user, SPAN_WARNING("[target_weapon] cannot be reloaded."))
-        return FALSE
-
-    if(target_weapon.ammo_equipped)
-        to_chat(user, SPAN_WARNING("[target_weapon] is already loaded with [target_weapon.ammo_equipped]."))
-        return FALSE
-
-    for(var/obj/structure/ship_ammo/ammo in stored_ammo)
-        if(ammo.equipment_type == target_weapon.type)
-            target_weapon.ammo_equipped = ammo
-            stored_ammo -= ammo
-            to_chat(user, SPAN_NOTICE("You reload [target_weapon] with [ammo]."))
-            reload_cooldown = world.time + 10 SECONDS // Set cooldown
-            return TRUE
-
-    to_chat(user, SPAN_WARNING("[src] does not have compatible ammo for [target_weapon]."))
-    return FALSE
-
-    // Interact with the autoreloader to reload a weapon
-/obj/structure/dropship_equipment/autoreloader/equipment_interact(mob/user)
-    if(world.time < reload_cooldown)
-        to_chat(user, SPAN_WARNING("[src] is still reloading. Please wait."))
-        return
-
-    if(!linked_shuttle)
-        to_chat(user, SPAN_WARNING("[src] is not linked to a dropship."))
-        return
-
-    if(!length(stored_ammo))
-        to_chat(user, SPAN_WARNING("[src] has no ammo stored to reload weapons."))
-        return
-
-    var/list/available_weapons = list()
-    for(var/obj/structure/dropship_equipment/weapon/W in linked_shuttle.equipments)
-        if(W.uses_ammo && !W.ammo_equipped)
-            available_weapons += W
-
-    if(!length(available_weapons))
-        to_chat(user, SPAN_WARNING("No weapons available for reloading."))
-        return
-
-    var/weapon_choice = tgui_input_list(user, "Select a weapon to reload", "Available Weapons", available_weapons)
-    if(!weapon_choice)
-        return
-
-    var/obj/structure/dropship_equipment/weapon/selected_weapon = available_weapons[weapon_choice]
-    reload_weapon_console(user, selected_weapon.ship_base.attach_id)
-
-    // Handle interaction with powerloader clamps
-/obj/structure/dropship_equipment/autoreloader/attackby(obj/item/I, mob/user)
-	if(istype(I, /obj/item/powerloader_clamp))
-		var/obj/item/powerloader_clamp/PC = I
-		if(PC.loaded)
-			if(istype(PC.loaded, /obj/structure/ship_ammo))
-				return store_ammo(PC, user)
-			to_chat(user, SPAN_WARNING("The powerloader clamp is not holding any compatible ammo."))
-			return TRUE
-	return ..()
-
-    // UI data for the autoreloader
+	// UI data for the autoreloader
 /obj/structure/dropship_equipment/autoreloader/ui_data(mob/user)
-    . = list()
-    .["stored_ammo"] = list()
-    .["max_ammo_slots"] = max_ammo_slots
-    .["available_slots"] = max_ammo_slots - length(stored_ammo)
-    for(var/obj/structure/ship_ammo/ammo in stored_ammo)
-        .["stored_ammo"] += list(
-            "name" = ammo.name,
-            "count" = ammo.ammo_count,
-            "max_count" = ammo.max_ammo_count
-        )
-    .["cooldown"] = max(0, reload_cooldown - world.time)
-    .["equipment_data"] = list()
-    if(linked_shuttle)
-        for(var/obj/structure/dropship_equipment/weapon/W in linked_shuttle.equipments)
-            .["equipment_data"] += list(
-                "name" = W.name,
-                "shorthand" = W.shorthand,
-                "mount_point" = W.ship_base.attach_id, // Use mount_point logic
-                "uses_ammo" = W.uses_ammo,
-                "ammo_equipped" = W.ammo_equipped != null
-            )
+	. = list()
+	.["name"] = name
+	.["max_ammo_slots"] = 2
+	.["available_slots"] = (stored_ammo_1 ? 0 : 1) + (stored_ammo_2 ? 0 : 1)
+
+/obj/structure/dropship_equipment/autoreloader/proc/select_weapon(mob/user)
+    // Ensure the autoreloader is linked to a shuttle
+    if(!linked_shuttle)
+        to_chat(user, SPAN_WARNING("[src] is not linked to a dropship."))
+        return null
+
+    // Get the list of installed weapons on the dropship
+    var/list/installed_weapons = list()
+    for(var/obj/structure/dropship_equipment/weapon/weapon in linked_shuttle.equipments)
+        if(!weapon.ammo_equipped) // Only show weapons that are not already loaded
+            installed_weapons += list(weapon)
+
+    // If no weapons are available, notify the user
+    if(!installed_weapons.len)
+        to_chat(user, SPAN_WARNING("No compatible weapons on the dropship are available for reloading."))
+        return null
+
+    // Prompt the user to select a weapon
+    var/obj/structure/dropship_equipment/weapon/selected_weapon = tgui_input_list(user, "Select a weapon to reload", "Available Weapons", installed_weapons)
+    return selected_weapon
+
+/obj/structure/dropship_equipment/autoreloader/proc/reload_weapon(mob/user, obj/structure/dropship_equipment/weapon/selected_weapon)
+    // Ensure a weapon is selected
+    if(!selected_weapon)
+        to_chat(user, SPAN_WARNING("No weapon selected for reloading."))
+        return
+
+    // Get the list of stored ammo
+    if(!stored_ammo_1 && !stored_ammo_2)
+        to_chat(user, SPAN_WARNING("[src] has no stored ammo available for reloading."))
+        return
+
+    // Prompt the user to select ammo
+    var/obj/structure/ship_ammo/selected_ammo = tgui_input_list(user, "Select ammo to load into [selected_weapon.name]", "Available Ammo", list(stored_ammo_1, stored_ammo_2))
+    if(!selected_ammo)
+        return
+
+    // Check if the ammo is compatible with the weapon
+    var/list/compatible_types = istype(selected_ammo.equipment_type, /list) ? selected_ammo.equipment_type : list(selected_ammo.equipment_type)
+    if(!istype(selected_weapon, compatible_types))
+        to_chat(user, SPAN_WARNING("[selected_ammo.name] is not compatible with [selected_weapon.name]."))
+        return
+
+    // Reload the weapon
+    selected_weapon.ammo_equipped = selected_ammo
+    if(selected_ammo == stored_ammo_1)
+        stored_ammo_1 = null
+    else
+        stored_ammo_2 = null
+    to_chat(user, SPAN_NOTICE("You load [selected_ammo.name] into [selected_weapon.name]."))
+    update_icon()
+
+/obj/structure/dropship_equipment/autoreloader/attack_hand(mob/user)
+    if(!ishuman(user))
+        return
+
+    // Select a weapon
+    var/obj/structure/dropship_equipment/weapon/selected_weapon = select_weapon(user)
+    if(!selected_weapon)
+        return
+
+    // Reload the selected weapon
+    reload_weapon(user, selected_weapon)
+
+
+

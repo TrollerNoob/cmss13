@@ -107,17 +107,10 @@ export type MapProps = {
 };
 
 export type AutoreloaderSpec = {
-  name: string;
-  shorthand: string;
-  mount_point: number;
-  uses_ammo: boolean;
-  ammo_equipped: boolean;
-  cooldown: number;
-  stored_ammo: Array<{
-    name: string;
-    count: number;
-    max_count: number;
-  }>;
+  name: string; // The name of the autoreloader
+  max_ammo_slots: number; // Maximum number of ammo slots
+  available_slots: number; // Number of free slots availableted to reflect the two separate ammo slots
+  cooldown: number; // Remaining cooldown time for reloading
 };
 
 export const dirMap = (dir) => {

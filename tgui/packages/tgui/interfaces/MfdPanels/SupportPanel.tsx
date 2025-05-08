@@ -1,7 +1,7 @@
 import { useBackend } from 'tgui/backend';
 import { Box, Stack } from 'tgui/components';
 
-import { AutoReloaderPanel } from './AutoReloaderPanel';
+import { AutoReloaderMfdPanel } from './AutoReloaderPanel';
 import { FultonMfdPanel } from './FultonPanel';
 import { MedevacMfdPanel } from './MedevacPanel';
 import { MgMfdPanel } from './MGPanel';
@@ -40,7 +40,7 @@ export const SupportMfdPanel = (props: MfdProps) => {
     return <SpotlightMfdPanel panelStateId={props.panelStateId} />;
   }
   if (result?.shorthand === 'RMT') {
-    return <AutoReloaderPanel panelStateId={props.panelStateId} />;
+    return <AutoReloaderMfdPanel panelStateId={props.panelStateId} />;
   }
   return (
     <MfdPanel
