@@ -513,60 +513,62 @@
 			RegisterSignal(linked_shuttle, COMSIG_SHUTTLE_SETMODE, PROC_REF(clear_locked_turf_and_lock_aft))
 			return TRUE
 
-		if("select-weapon")
-			var/mount_point = params["mount_point"]
-			var/obj/structure/dropship_equipment/weapon/selected_weapon = null
-
-			// Find the weapon based on the mount point
-			for(var/obj/structure/dropship_equipment/weapon/weapon in shuttle.equipments)
-				if(weapon.ship_base.attach_id == mount_point)
-					selected_weapon = weapon
-					break
-
-			if(!selected_weapon)
-				to_chat(user, SPAN_WARNING("No weapon found at the specified mount point."))
-				return
-
-			// Pass the selected weapon's mount point back to the UI
-			to_chat(user, SPAN_NOTICE("You selected [selected_weapon.name] for reloading."))
-			SStgui.try_update_ui(user, src, list("selected_weapon_mount_point" = mount_point))
-			return TRUE
-
 		if("select-ammo")
-			var/ammo_name = params["ammo_name"]
-			var/mount_point = params["selected_weapon_mount_point"]
-			var/obj/structure/ship_ammo/selected_ammo = null
-
-			// Find the ammo based on its name
-			for(var/obj/structure/ship_ammo/ammo in shuttle.equipments)
-				if(ammo.name == ammo_name)
-					selected_ammo = ammo
-					break
-
-			if(!selected_ammo)
-				to_chat(user, SPAN_WARNING("No ammo found with the specified name."))
-				return
-
-			// Find the weapon using the mount point
-			var/obj/structure/dropship_equipment/weapon/selected_weapon = null
-			for(var/obj/structure/dropship_equipment/weapon/weapon in shuttle.equipments)
-				if(weapon.ship_base.attach_id == mount_point)
-					selected_weapon = weapon
-					break
-
+			var/weapon_tag = params["eqp_tag"]
+			var/obj/structure/dropship_equipment/weapon/selected_weapon = get_weapon(weapon_tag)
 			if(!selected_weapon)
-				to_chat(user, SPAN_WARNING("The previously selected weapon is no longer available."))
-				return
+				to_chat(user, SPAN_WARNING("No weapon selected for reloading."))
+				return TRUE
 
-			// Check if the ammo is compatible with the weapon
-			var/list/compatible_types = istype(selected_ammo.equipment_type, /list) ? selected_ammo.equipment_type : list(selected_ammo.equipment_type)
-			if(!istype(selected_weapon, compatible_types))
+			// Find the autoreloader installed on the shuttle
+			var/obj/structure/dropship_equipment/autoreloader/auto = null
+			for(var/obj/structure/dropship_equipment/equipment as anything in shuttle.equipments)
+				if(istype(equipment, /obj/structure/dropship_equipment/autoreloader))
+					auto = equipment
+					break
+			if(!auto)
+				to_chat(user, SPAN_WARNING("No autoreloader system installed on this dropship."))
+				return TRUE
+
+			// Gather available ammo
+			var/list/available_ammo = list()
+			if(auto.stored_ammo_1)
+				available_ammo += list(auto.stored_ammo_1)
+			if(auto.stored_ammo_2)
+				available_ammo += list(auto.stored_ammo_2)
+			if(!length(available_ammo))
+				to_chat(user, SPAN_WARNING("No stored ammo available in the autoreloader."))
+				return TRUE
+
+			// Prompt user to select ammo
+			var/obj/structure/ship_ammo/selected_ammo = tgui_input_list(user, "Select ammo to load into [selected_weapon.name]", "Available Ammo", available_ammo)
+			if(!selected_ammo)
+				return TRUE
+
+			// Check compatibility
+			if(istype(selected_ammo.equipment_type, /list))
+				var/eq_types = selected_ammo.equipment_type
+				var/found = FALSE
+				for(var/eq_type in eq_types)
+					if(istype(selected_weapon, eq_type))
+						found = TRUE
+						break
+				if(!found)
+					to_chat(user, SPAN_WARNING("[selected_ammo.name] is not compatible with [selected_weapon.name]."))
+					return TRUE
+			else if(!istype(selected_weapon, selected_ammo.equipment_type))
 				to_chat(user, SPAN_WARNING("[selected_ammo.name] is not compatible with [selected_weapon.name]."))
-				return
+				return TRUE
 
 			// Reload the weapon
 			selected_weapon.ammo_equipped = selected_ammo
+			if(selected_ammo == auto.stored_ammo_1)
+				auto.stored_ammo_1 = null
+			else if(selected_ammo == auto.stored_ammo_2)
+				auto.stored_ammo_2 = null
 			to_chat(user, SPAN_NOTICE("You load [selected_ammo.name] into [selected_weapon.name]."))
+			auto.update_icon()
+			selected_weapon.update_icon()
 			return TRUE
 
 /obj/structure/machinery/computer/dropship_weapons/proc/open_aft_for_paradrop()

@@ -1601,12 +1601,15 @@
 	var/max_ammo_slots = 2 // Maximum number of ammo slots
 	var/reload_cooldown = 10
 
+	var/obj/structure/dropship_equipment/weapon/selected_weapon = null
+
 	// UI data for the autoreloader
 /obj/structure/dropship_equipment/autoreloader/ui_data(mob/user)
 	. = list()
 	.["name"] = name
 	.["max_ammo_slots"] = 2
 	.["available_slots"] = (stored_ammo_1 ? 0 : 1) + (stored_ammo_2 ? 0 : 1)
+	.["selected_weapon"] = selected_weapon ? selected_weapon.ship_base.attach_id : null
 
 /obj/structure/dropship_equipment/autoreloader/proc/select_weapon(mob/user)
     // Ensure the autoreloader is linked to a shuttle
@@ -1646,8 +1649,17 @@
         return
 
     // Check if the ammo is compatible with the weapon
-    var/list/compatible_types = istype(selected_ammo.equipment_type, /list) ? selected_ammo.equipment_type : list(selected_ammo.equipment_type)
-    if(!istype(selected_weapon, compatible_types))
+    if(istype(selected_ammo.equipment_type, /list))
+        var/eq_types = selected_ammo.equipment_type
+        var/found = FALSE
+        for(var/eq_type in eq_types)
+            if(istype(selected_weapon, eq_type))
+                found = TRUE
+                break
+        if(!found)
+            to_chat(user, SPAN_WARNING("[selected_ammo.name] is not compatible with [selected_weapon.name]."))
+            return
+    else if(!istype(selected_weapon, selected_ammo.equipment_type))
         to_chat(user, SPAN_WARNING("[selected_ammo.name] is not compatible with [selected_weapon.name]."))
         return
 

@@ -111,6 +111,7 @@ export type AutoreloaderSpec = {
   max_ammo_slots: number; // Maximum number of ammo slots
   available_slots: number; // Number of free slots availableted to reflect the two separate ammo slots
   cooldown: number; // Remaining cooldown time for reloading
+  selected_weapon: string;
 };
 
 export const dirMap = (dir) => {
