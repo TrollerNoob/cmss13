@@ -560,15 +560,10 @@
 				to_chat(user, SPAN_WARNING("[selected_ammo.name] is not compatible with [selected_weapon.name]."))
 				return TRUE
 
-			// Reload the weapon
-			selected_weapon.ammo_equipped = selected_ammo
-			if(selected_ammo == auto.stored_ammo_1)
-				auto.stored_ammo_1 = null
-			else if(selected_ammo == auto.stored_ammo_2)
-				auto.stored_ammo_2 = null
-			to_chat(user, SPAN_NOTICE("You load [selected_ammo.name] into [selected_weapon.name]."))
-			auto.update_icon()
-			selected_weapon.update_icon()
+			// Save selected weapon and ammo to the autoreloader for later use
+			auto.selected_weapon = selected_weapon
+			auto.selected_ammo = selected_ammo
+			to_chat(user, SPAN_NOTICE("[selected_ammo.name] selected for [selected_weapon.name]. Ready to reload."))
 			return TRUE
 
 /obj/structure/machinery/computer/dropship_weapons/proc/open_aft_for_paradrop()

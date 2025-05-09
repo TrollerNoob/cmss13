@@ -29,7 +29,7 @@ export const AutoReloaderMfdPanel = (props: MfdProps) => {
         children: weap.name,
         onClick: () => act('select-ammo', { eqp_tag: weap.eqp_tag }),
       }))}
-      rightButtons={[
+      topButtons={[
         {
           children: 'EQUIP',
           onClick: () => setPanelState('equipment'),

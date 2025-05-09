@@ -1600,7 +1600,7 @@
 	var/obj/structure/ship_ammo/stored_ammo_2 = null // Second ammo slot
 	var/max_ammo_slots = 2 // Maximum number of ammo slots
 	var/reload_cooldown = 10
-
+	var/obj/structure/ship_ammo/selected_ammo = null
 	var/obj/structure/dropship_equipment/weapon/selected_weapon = null
 
 	// UI data for the autoreloader
@@ -1611,78 +1611,42 @@
 	.["available_slots"] = (stored_ammo_1 ? 0 : 1) + (stored_ammo_2 ? 0 : 1)
 	.["selected_weapon"] = selected_weapon ? selected_weapon.ship_base.attach_id : null
 
-/obj/structure/dropship_equipment/autoreloader/proc/select_weapon(mob/user)
-    // Ensure the autoreloader is linked to a shuttle
-    if(!linked_shuttle)
-        to_chat(user, SPAN_WARNING("[src] is not linked to a dropship."))
-        return null
+/obj/structure/dropship_equipment/autoreloader/proc/reload_weapon(mob/user)
+	if(!selected_weapon)
+		to_chat(user, SPAN_WARNING("No weapon selected for reloading."))
+		return
+	if(!selected_ammo)
+		to_chat(user, SPAN_WARNING("No ammo selected for reloading."))
+		return
 
-    // Get the list of installed weapons on the dropship
-    var/list/installed_weapons = list()
-    for(var/obj/structure/dropship_equipment/weapon/weapon in linked_shuttle.equipments)
-        if(!weapon.ammo_equipped) // Only show weapons that are not already loaded
-            installed_weapons += list(weapon)
+	// Check if the ammo is compatible with the weapon
+	if(istype(selected_ammo.equipment_type, /list))
+		var/eq_types = selected_ammo.equipment_type
+		var/found = FALSE
+		for(var/eq_type in eq_types)
+			if(istype(selected_weapon, eq_type))
+				found = TRUE
+				break
+		if(!found)
+			to_chat(user, SPAN_WARNING("[selected_ammo.name] is not compatible with [selected_weapon.name]."))
+			return
+	else if(!istype(selected_weapon, selected_ammo.equipment_type))
+		to_chat(user, SPAN_WARNING("[selected_ammo.name] is not compatible with [selected_weapon.name]."))
+		return
 
-    // If no weapons are available, notify the user
-    if(!installed_weapons.len)
-        to_chat(user, SPAN_WARNING("No compatible weapons on the dropship are available for reloading."))
-        return null
-
-    // Prompt the user to select a weapon
-    var/obj/structure/dropship_equipment/weapon/selected_weapon = tgui_input_list(user, "Select a weapon to reload", "Available Weapons", installed_weapons)
-    return selected_weapon
-
-/obj/structure/dropship_equipment/autoreloader/proc/reload_weapon(mob/user, obj/structure/dropship_equipment/weapon/selected_weapon)
-    // Ensure a weapon is selected
-    if(!selected_weapon)
-        to_chat(user, SPAN_WARNING("No weapon selected for reloading."))
-        return
-
-    // Get the list of stored ammo
-    if(!stored_ammo_1 && !stored_ammo_2)
-        to_chat(user, SPAN_WARNING("[src] has no stored ammo available for reloading."))
-        return
-
-    // Prompt the user to select ammo
-    var/obj/structure/ship_ammo/selected_ammo = tgui_input_list(user, "Select ammo to load into [selected_weapon.name]", "Available Ammo", list(stored_ammo_1, stored_ammo_2))
-    if(!selected_ammo)
-        return
-
-    // Check if the ammo is compatible with the weapon
-    if(istype(selected_ammo.equipment_type, /list))
-        var/eq_types = selected_ammo.equipment_type
-        var/found = FALSE
-        for(var/eq_type in eq_types)
-            if(istype(selected_weapon, eq_type))
-                found = TRUE
-                break
-        if(!found)
-            to_chat(user, SPAN_WARNING("[selected_ammo.name] is not compatible with [selected_weapon.name]."))
-            return
-    else if(!istype(selected_weapon, selected_ammo.equipment_type))
-        to_chat(user, SPAN_WARNING("[selected_ammo.name] is not compatible with [selected_weapon.name]."))
-        return
-
-    // Reload the weapon
-    selected_weapon.ammo_equipped = selected_ammo
-    if(selected_ammo == stored_ammo_1)
-        stored_ammo_1 = null
-    else
-        stored_ammo_2 = null
-    to_chat(user, SPAN_NOTICE("You load [selected_ammo.name] into [selected_weapon.name]."))
-    update_icon()
+	selected_weapon.ammo_equipped = selected_ammo
+	if(selected_ammo == stored_ammo_1)
+		stored_ammo_1 = null
+	else if(selected_ammo == stored_ammo_2)
+		stored_ammo_2 = null
+	to_chat(user, SPAN_NOTICE("You load [selected_ammo.name] into [selected_weapon.name]."))
+	update_icon()
+	selected_weapon.update_icon()
 
 /obj/structure/dropship_equipment/autoreloader/attack_hand(mob/user)
-    if(!ishuman(user))
-        return
-
-    // Select a weapon
-    var/obj/structure/dropship_equipment/weapon/selected_weapon = select_weapon(user)
-    if(!selected_weapon)
-        return
-
-    // Reload the selected weapon
-    reload_weapon(user, selected_weapon)
+	if(!ishuman(user))
+		return
+	reload_weapon(user)
 
 
 
