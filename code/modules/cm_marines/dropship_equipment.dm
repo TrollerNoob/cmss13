@@ -824,6 +824,59 @@
 			icon_state = "30mm_cannon"
 
 
+/obj/structure/dropship_equipment/weapon/heavygun/bay
+	buckle_lying = 0
+	anchored = TRUE
+	var/obj/structure/machinery/computer/dropship_weapons/personal_console = null
+	var/linked_equipment = null
+	name = "\improper GAU-24/B Belly Gunner Station System"
+	icon = 'icons/obj/structures/props/dropship/dropship_equipment.dmi'
+	icon_state = "launch_bay"
+	desc = "A compartment that enables a gunner station underneath the dropship operated by crew, allowing manual fire of a GAU-24/B support rotary cannon. This version fits solely on crew compartment attach points of dropships. Utilizes the same 30mm ammunition as the standard GAU-21. You need a powerloader to lift it."
+	bound_height = 32
+	shorthand = "GAU-B"
+	is_weapon = FALSE
+	fire_mission_only = FALSE
+	point_cost = 500
+	equip_categories = list(DROPSHIP_CREW_WEAPON)
+	density = FALSE
+	can_buckle = TRUE
+
+	// Buckling support
+	var/buckling_y = 0 //pixel y shift to give to the buckled mob.
+	var/buckling_x = 0 //pixel x shift to give to the buckled mob.
+	buckle_lying = 0
+	buckling_x = 0
+	buckling_y = 0
+
+/obj/structure/dropship_equipment/weapon/heavygun/bay/update_equipment()
+	if(ship_base)
+		icon_state = "launch_bay_deployed"
+	else
+		icon_state = "launch_bay"
+
+	// Override afterbuckle to open UI for buckled mob
+/obj/structure/dropship_equipment/weapon/heavygun/bay/afterbuckle(mob/M)
+	. = ..()
+	if(buckled_mob == M && ishuman(M))
+		if(!personal_console || QDELETED(personal_console))
+			var/obj/docking_port/mobile/marine_dropship/dropship = src.linked_shuttle
+			personal_console = new /obj/structure/machinery/computer/dropship_weapons(get_turf(src))
+			personal_console.shuttle_tag = dropship?.id
+			personal_console.name = "Belly Gunner Weapons Console"
+			personal_console.firemission_envelope = null // No firemission for belly gun
+			personal_console.selected_equipment = src
+			personal_console.faction = src.faction_exclusive
+		personal_console.tgui_interact(M)
+
+	// Clean up console on unbuckle
+/obj/structure/dropship_equipment/weapon/heavygun/bay/unbuckle()
+	if(personal_console)
+		QDEL_NULL(personal_console)
+		personal_console = null
+	..()
+
+
 /obj/structure/dropship_equipment/weapon/rocket_pod
 	name = "\improper LAU-444 Guided Missile Launcher"
 	icon_state = "rocket_pod" //I want to force whoever used rocket and missile interchangeably to come back and look at this god damn mess.
@@ -912,76 +965,6 @@
 		icon_state = "launch_bay_deployed"
 	else
 		icon_state = "launch_bay"
-
-/obj/structure/dropship_equipment/weapon/heavygun/bay
-	name = "\improper GAU-24/B Belly Gunner Station System"
-	icon_state = "launch_bay"
-	desc = "A compartment that enables a gunner station underneath the dropship operated by crew, allowing manual fire of a GAU-24/B support rotary cannon. This version fits solely on crew compartment attach points of dropships. Utilizes the same 30mm ammunition as the standard GAU-21. You need a powerloader to lift it."
-	icon = 'icons/obj/structures/props/dropship/dropship_equipment.dmi'
-	bound_height = 32
-	equip_categories = list(DROPSHIP_CREW_WEAPON) //fits inside the central spot of the dropship
-	point_cost = 500
-	fire_mission_only = FALSE
-	is_weapon = FALSE
-	shorthand = "GAU-B"
-
-	// Declare role_reserved_slots variable
-	var/list/role_reserved_slots = list()
-
-	var/datum/interior/interior_map
-	var/required_skill = SKILL_PILOT
-	var/passengers_slots = 2
-	var/exit_time = 2
-	var/entrance_speed = 2
-	var/xenos_slots = 2
-	var/revivable_dead_slots = 2
-
-	var/list/entrances = list()
-
-/obj/structure/dropship_equipment/weapon/heavygun/bay/New()
-	. = ..()
-	entrances = list()
-	// Create the interior space when the equipment is created
-	interior_map = new /datum/interior(src)
-	interior_map.create_interior(/datum/map_template/interior/belly_gun)
-
-	// Initialize role_reserved_slots
-	load_role_reserved_slots()
-
-/obj/structure/dropship_equipment/weapon/heavygun/bay/proc/load_role_reserved_slots()
-	// Initialize role-reserved slots for the gunner station
-	var/datum/role_reserved_slots/RRS = new
-	RRS.category_name = "Gunner Station Crew"
-	RRS.roles = list(JOB_CAS_PILOT, JOB_DROPSHIP_PILOT, JOB_DROPSHIP_CREW_CHIEF)
-	RRS.total = 2
-	role_reserved_slots += RRS
-
-/obj/structure/dropship_equipment/weapon/heavygun/bay/Destroy()
-	// Clean up the interior space when the equipment is destroyed
-	if(interior_map)
-		qdel(interior_map)
-	. = ..()
-
-/obj/structure/dropship_equipment/weapon/heavygun/bay/attack_hand(mob/user)
-	if(!ishuman(user))
-		return
-	if(!ship_base) //not installed
-		return
-	if(!skillcheck(user, SKILL_PILOT, SKILL_PILOT_TRAINED))
-		to_chat(user, SPAN_WARNING("You don't know how to use [src]."))
-		return
-
-	if(!linked_shuttle)
-		return
-
-	if(linked_shuttle.mode != SHUTTLE_CALL)
-		to_chat(user, SPAN_WARNING("[src] can only be used while in flight."))
-		return
-
-	// Allow the user to enter the interior
-	if(interior_map)
-		if(!interior_map.enter(user, null))
-			to_chat(user, SPAN_WARNING("You can't enter the gunner station right now."))
 
 /obj/structure/dropship_equipment/weapon/flare_launcher
 	name = "\improper AN/ALE-557 Flare Launcher"

@@ -671,6 +671,9 @@
 	. = list()
 	var/element_nbr = 1
 	for(var/obj/structure/dropship_equipment/equipment in dropship.equipments)
+		// Exclude heavygun/bay from Alamo and Normandy consoles
+		if(istype(equipment, /obj/structure/dropship_equipment/weapon/heavygun/bay))
+			continue
 		var/list/data = list(
 			"name"= equipment.name,
 			"shorthand" = equipment.shorthand,
