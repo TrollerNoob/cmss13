@@ -606,6 +606,7 @@
 	icon_state = "targeting_system"
 	desc = "A targeting system for dropships. It improves firing accuracy on laser targets. Fits on electronics attach points. You need a powerloader to lift this."
 	point_cost = 800
+	is_interactable = FALSE
 
 /obj/structure/dropship_equipment/electronics/targeting_system/update_equipment()
 	if(ship_base)
@@ -835,7 +836,9 @@
 	desc = "A compartment that enables a gunner station underneath the dropship operated by crew, allowing manual fire of a GAU-24/B support rotary cannon. This version fits solely on crew compartment attach points of dropships. Utilizes the same 30mm ammunition as the standard GAU-21. You need a powerloader to lift it."
 	bound_height = 32
 	shorthand = "GAU-B"
-	is_weapon = FALSE
+	firing_delay = 10
+	is_weapon = TRUE
+	uses_ammo = TRUE
 	fire_mission_only = FALSE
 	point_cost = 500
 	equip_categories = list(DROPSHIP_CREW_WEAPON)
@@ -858,20 +861,23 @@
 	// Override afterbuckle to open UI for buckled mob
 /obj/structure/dropship_equipment/weapon/heavygun/bay/afterbuckle(mob/M)
 	. = ..()
-	if(buckled_mob == M && ishuman(M))
-		if(!personal_console || QDELETED(personal_console))
-			var/obj/docking_port/mobile/marine_dropship/dropship = src.linked_shuttle
-			personal_console = new /obj/structure/machinery/computer/dropship_weapons(get_turf(src))
-			personal_console.shuttle_tag = dropship?.id
-			personal_console.name = "Belly Gunner Weapons Console"
-			personal_console.firemission_envelope = null // No firemission for belly gun
-			personal_console.selected_equipment = src
-			personal_console.faction = src.faction_exclusive
+	if((!personal_console || QDELETED(personal_console)) && buckled_mob == M && ishuman(M))
+		var/obj/docking_port/mobile/marine_dropship/dropship = src.linked_shuttle
+		personal_console = new /obj/structure/machinery/computer/dropship_weapons/belly_gun(get_turf(src))
+		personal_console.shuttle_tag = dropship?.id
+		personal_console.name = "Belly Gunner Weapons Console"
+		personal_console.selected_equipment = src
+		personal_console.faction = FACTION_MARINE
+		personal_console.minimap_type = MINIMAP_FLAG_USCM
+		if(personal_console.tacmap && personal_console.tacmap.map_holder)
+			personal_console.camera_mapname_update(personal_console, personal_console.tacmap.map_holder.map_ref)
 		personal_console.tgui_interact(M)
-
 	// Clean up console on unbuckle
 /obj/structure/dropship_equipment/weapon/heavygun/bay/unbuckle()
 	if(personal_console)
+		// Only close the UI for the mob that was buckled in
+		if(ismob(buckled_mob))
+			personal_console.ui_close(buckled_mob)
 		QDEL_NULL(personal_console)
 		personal_console = null
 	..()
@@ -1591,7 +1597,7 @@
 	. = list()
 	.["name"] = name
 	.["max_ammo_slots"] = 2
-	.["available_slots"] = (stored_ammo_1 ? 0 : 1) + (stored_ammo_2 ? 0 : 1)
+	.["available_slots"] = (stored_ammo_1 ?  0 : 1) + (stored_ammo_2 ? 0 : 1)
 	.["selected_weapon"] = selected_weapon ? selected_weapon.ship_base.attach_id : null
 
 /obj/structure/dropship_equipment/autoreloader/proc/reload_weapon(mob/user)

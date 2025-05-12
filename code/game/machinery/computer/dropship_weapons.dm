@@ -671,9 +671,13 @@
 	. = list()
 	var/element_nbr = 1
 	for(var/obj/structure/dropship_equipment/equipment in dropship.equipments)
-		// Exclude heavygun/bay from Alamo and Normandy consoles
-		if(istype(equipment, /obj/structure/dropship_equipment/weapon/heavygun/bay))
-			continue
+		// Hide all weapons except heavygun/bay from belly_gun console
+		if(istype(src, /obj/structure/machinery/computer/dropship_weapons/belly_gun))
+			if(istype(equipment, /obj/structure/dropship_equipment/weapon) && !istype(equipment, /obj/structure/dropship_equipment/weapon/heavygun/bay))
+				continue
+		// Existing filter for heavygun/bay on non-belly_gun consoles
+		if(istype(equipment, /obj/structure/dropship_equipment/weapon/heavygun/bay) && !istype(src, /obj/structure/machinery/computer/dropship_weapons/belly_gun))
+			continue // Hide GAU-24/B from non-personal consoles
 		var/list/data = list(
 			"name"= equipment.name,
 			"shorthand" = equipment.shorthand,
@@ -689,7 +693,6 @@
 			"burst" = equipment.ammo_equipped?.ammo_used_per_firing,
 			"data" = equipment.ui_data(user)
 		)
-
 		// If this is an autoreloader, add stored ammo info
 		if(istype(equipment, /obj/structure/dropship_equipment/autoreloader))
 			var/obj/structure/dropship_equipment/autoreloader/auto = equipment
@@ -992,9 +995,9 @@
 /obj/structure/machinery/computer/dropship_weapons/belly_gun
 	name = "\improper 'Belly Gun' weapons controls"
 	desc = "A computer to manage the belly gun's equipment and weapons."
-	req_one_access = list(ACCESS_MARINE_LEADER, ACCESS_MARINE_DROPSHIP, ACCESS_WY_FLIGHT)
 	firemission_envelope = new /datum/cas_fire_envelope/uscm_dropship()
-	shuttle_tag = DROPSHIP_BELLYGUN
+	req_one_access = list(ACCESS_MARINE_LEADER, ACCESS_MARINE_DROPSHIP, ACCESS_WY_FLIGHT)
+
 
 /obj/structure/machinery/computer/dropship_weapons/proc/simulate_firemission(mob/living/user)
 	if(!configuration)
@@ -1011,3 +1014,12 @@
 
 	//acutal firemission
 	configuration.simulate_execute_firemission(src, get_turf(simulation.sim_camera), user)
+/obj/structure/machinery/computer/dropship_weapons/belly_gun/tgui_interact(mob/user, datum/tgui/ui)
+    if(!tacmap.map_holder)
+        var/level = SSmapping.levels_by_trait(tacmap.targeted_ztrait)
+        tacmap.map_holder = SSminimaps.fetch_tacmap_datum(level[1], tacmap.allowed_flags)
+    ui = SStgui.try_update_ui(user, src, ui)
+    if(!ui)
+        SEND_SIGNAL(src, COMSIG_CAMERA_REGISTER_UI, user)
+        ui = new(user, src, "DropshipGunnerConsole", "Gunner Console")
+        ui.open()
