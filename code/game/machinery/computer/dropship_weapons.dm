@@ -43,6 +43,9 @@
 	var/direct_x_offset_value = 0
 	var/direct_y_offset_value = 0
 
+	// Warning laser targeting pod is being used
+	var/obj/effect/overlay/temp/guidance_laser/direct_fire_laser_dot = null
+
 /obj/structure/machinery/computer/dropship_weapons/New()
 	..()
 	if(firemission_envelope)
@@ -254,7 +257,7 @@
 	.["nextdetonationtime"] = simulation.detonation_cooldown
 	.["detonation_cooldown"] = simulation.detonation_cooldown_time
 
-	.["can_modify_direct_offset"] = (dropship && locate(/obj/structure/dropship_equipment/electronics/direct_fire_offsetter) in dropship.equipments)
+	.["can_modify_direct_offset"] = (dropship && locate(/obj/structure/dropship_equipment/electronics/targeting_designator) in dropship.equipments)
 
 /obj/structure/machinery/computer/dropship_weapons/ui_act(action, list/params, datum/tgui/ui, datum/ui_state/state)
 	. = ..()
@@ -425,7 +428,7 @@
 			camera_target_id = target_id
 
 			// Only allow changing direct fire offsets if offsetter is installed
-			var/can_modify_direct_offset = (shuttle && locate(/obj/structure/dropship_equipment/electronics/direct_fire_offsetter) in shuttle.equipments)
+			var/can_modify_direct_offset = (shuttle && locate(/obj/structure/dropship_equipment/electronics/targeting_designator) in shuttle.equipments)
 			if(can_modify_direct_offset)
 				src.direct_x_offset_value = clamp(text2num(direct_x_offset_value), -3, 3)
 				src.direct_y_offset_value = clamp(text2num(direct_y_offset_value), -3, 3)
@@ -448,6 +451,22 @@
 				current.x + dx,
 				current.y + dy,
 				current.z)
+
+			if(src.direct_fire_laser_dot)
+				qdel(src.direct_fire_laser_dot)
+				src.direct_fire_laser_dot = null
+
+			if(src.direct_x_offset_value || src.direct_y_offset_value)
+				if(shuttle && camera_target_id)
+					if(cas_sig && cas_sig.signal_loc)
+						var/turf/base_turf = cas_sig.signal_loc
+						var/turf/offset_turf = locate(
+							base_turf.x + src.direct_x_offset_value,
+							base_turf.y + src.direct_y_offset_value,
+							base_turf.z
+						)
+						if(offset_turf)
+							src.direct_fire_laser_dot = new /obj/effect/overlay/temp/guidance_laser(offset_turf)
 
 			camera_area_equipment = null
 			firemission_envelope.change_current_loc(new_target, cas_sig)

@@ -659,7 +659,7 @@
     point_cost = 900
     is_interactable = FALSE
 
-/obj/structure/dropship_equipment/electronics/direct_fire_offsetter/update_equipment()
+/obj/structure/dropship_equipment/electronics/targeting_designator/update_equipment()
     if(ship_base)
         icon_state = "[initial(icon_state)]_installed"
     else

@@ -226,6 +226,20 @@
 	icon = 'icons/obj/items/weapons/projectiles.dmi'
 	icon_state = "laser_target3"
 
+/obj/effect/overlay/temp/guidance_laser
+	name = "guidance laser"
+	anchored = TRUE
+	light_range = 2
+	effect_duration = 10
+	mouse_opacity = MOUSE_OPACITY_ICON
+	icon = 'icons/obj/items/weapons/projectiles.dmi'
+	icon_state = "yellow_laser"
+
+/obj/effect/overlay/temp/guidance_laser/get_examine_text(mob/user)
+	. = ..()
+	if(ishuman(user))
+		. += SPAN_DANGER("It's a guidance laser from a target designation pod, steer clear of it!")
+
 /obj/effect/overlay/temp/emp_sparks
 	icon = 'icons/effects/effects.dmi'
 	icon_state = "empdisable"
