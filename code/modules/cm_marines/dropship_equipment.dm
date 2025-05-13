@@ -651,6 +651,20 @@
 	disconnect_cameras()
 	return ..()
 
+/obj/structure/dropship_equipment/electronics/targeting_designator
+    name = "\improper AN/ASQ-183 Target Designation Pod"
+    shorthand = "ASQ-183"
+    icon_state = "laser_detector"
+    desc = "A cutting edge target designation pod capable of utilizing its own laser spot tracker to further fine tune target profiling for the dropship's weapon operator. It effectively enables offsetting up to three paces off of a predefined target during suborbit bombardments. Fits on electronics attach points. You need a powerloader to lift this."
+    point_cost = 900
+    is_interactable = FALSE
+
+/obj/structure/dropship_equipment/electronics/direct_fire_offsetter/update_equipment()
+    if(ship_base)
+        icon_state = "[initial(icon_state)]_installed"
+    else
+        icon_state = initial(icon_state)
+
 /////////////////////////////////// COMPUTERS //////////////////////////////////////
 
 //unfinished and unused
@@ -727,7 +741,18 @@
 
 /obj/structure/dropship_equipment/weapon/proc/open_fire(obj/selected_target, mob/user = usr)
 	set waitfor = 0
+
+	var/offset_x = 0
+	var/offset_y = 0
+
+	// Add offsets from the linked console
+	if(linked_console)
+		offset_x += linked_console.direct_x_offset_value
+		offset_y += linked_console.direct_y_offset_value
+
 	var/turf/target_turf = get_turf(selected_target)
+	target_turf = locate(target_turf.x + offset_x, target_turf.y + offset_y, target_turf.z)
+
 	if(firing_sound)
 		playsound(loc, firing_sound, 70, 1)
 	var/obj/structure/ship_ammo/SA = ammo_equipped //necessary because we nullify ammo_equipped when firing big rockets

@@ -39,6 +39,10 @@
 
 	var/registered = FALSE
 
+	// Direct Fire offset
+	var/direct_x_offset_value = 0
+	var/direct_y_offset_value = 0
+
 /obj/structure/machinery/computer/dropship_weapons/New()
 	..()
 	if(firemission_envelope)
@@ -250,6 +254,8 @@
 	.["nextdetonationtime"] = simulation.detonation_cooldown
 	.["detonation_cooldown"] = simulation.detonation_cooldown_time
 
+	.["can_modify_direct_offset"] = (dropship && locate(/obj/structure/dropship_equipment/electronics/direct_fire_offsetter) in dropship.equipments)
+
 /obj/structure/machinery/computer/dropship_weapons/ui_act(action, list/params, datum/tgui/ui, datum/ui_state/state)
 	. = ..()
 	if(.)
@@ -413,8 +419,18 @@
 
 			var/x_offset_value = params["x_offset_value"]
 			var/y_offset_value = params["y_offset_value"]
+			var/direct_x_offset_value = params["direct_x_offset_value"]
+			var/direct_y_offset_value = params["direct_y_offset_value"]
 
 			camera_target_id = target_id
+
+			// Only allow changing direct fire offsets if offsetter is installed
+			var/can_modify_direct_offset = (shuttle && locate(/obj/structure/dropship_equipment/electronics/direct_fire_offsetter) in shuttle.equipments)
+			if(can_modify_direct_offset)
+				src.direct_x_offset_value = clamp(text2num(direct_x_offset_value), -3, 3)
+				src.direct_y_offset_value = clamp(text2num(direct_y_offset_value), -3, 3)
+
+			// Always allow firemission offset changes
 			var/datum/cas_signal/cas_sig = get_cas_signal(camera_target_id, valid_only = TRUE)
 			// we don't want rapid offset changes to trigger admin warnings
 			// and block the user from accessing TGUI
