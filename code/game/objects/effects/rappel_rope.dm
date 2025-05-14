@@ -11,7 +11,7 @@
 
 
 /obj/effect/rappel_rope/Initialize(mapload, ...)
-    . = ..()
+	. = ..()
 
 /obj/effect/rappel_rope/proc/handle_animation()
 	if(is_hatch_rope)
@@ -30,6 +30,12 @@
 		return
 	if(!linked_rappel)
 		return
+
+	// Only allow humans
+	if(!istype(user, /mob/living/carbon/human))
+		to_chat(user, SPAN_WARNING("You can't figure out how to use the rope."))
+		return
+
 	if(!linked_rappel.can_use_rappel(user))
 		return
 	var/turf/user_turf = get_turf(user)
@@ -43,10 +49,10 @@
 		linked_rappel.ground_rope.icon_state = "rope_inuse"
 	to_chat(user, SPAN_NOTICE("You begin climbing the rope..."))
 
-    // Interruptible delay
-	var/success = do_after(user, 40, INTERRUPT_ALL | BEHAVIOR_IMMOBILE, BUSY_ICON_GENERIC, target = src)
+	var/do_after_time = 40
+
+	var/success = do_after(user, do_after_time, INTERRUPT_ALL | BEHAVIOR_IMMOBILE, BUSY_ICON_GENERIC, target = src)
 	if(success)
-		// Move user to the other rope's location (on top of the rope)
 		if(is_hatch_rope)
 			if(linked_rappel.ground_rope && linked_rappel.ground_rope.loc)
 				user.forceMove(linked_rappel.ground_rope.loc)
@@ -86,3 +92,47 @@
 		flick("rope_deploy", src)
 		spawn(20)
 			icon_state = "rope"
+
+/obj/effect/rappel_rope/attack_alien(mob/living/carbon/xenomorph/user)
+	if(in_use)
+		to_chat(user, SPAN_WARNING("The rope is currently in use!"))
+		return XENO_NO_DELAY_ACTION
+	if(!linked_rappel)
+		return XENO_NO_DELAY_ACTION
+
+	if(!user.can_ventcrawl())
+		to_chat(user, SPAN_WARNING("You're too large to pull yourself up the rope!"))
+		return XENO_NO_DELAY_ACTION
+
+	var/turf/user_turf = get_turf(user)
+	if(!user_turf || get_dist(user_turf, src.loc) > 1)
+		to_chat(user, SPAN_WARNING("You must be next to the rope to use it."))
+		return XENO_NO_DELAY_ACTION
+
+	in_use = TRUE
+	icon_state = is_hatch_rope ? "hatch_rope" : "rope_inuse"
+	if(is_hatch_rope && linked_rappel.ground_rope)
+		linked_rappel.ground_rope.icon_state = "rope_inuse"
+	to_chat(user, SPAN_NOTICE("You begin climbing the rope..."))
+
+	var/do_after_time = 30 // 3 seconds for xenos
+
+	var/success = do_after(user, do_after_time, INTERRUPT_ALL | BEHAVIOR_IMMOBILE, BUSY_ICON_GENERIC, target = src)
+	if(success)
+		if(is_hatch_rope)
+			if(linked_rappel.ground_rope && linked_rappel.ground_rope.loc)
+				user.forceMove(linked_rappel.ground_rope.loc)
+				user.visible_message(SPAN_NOTICE("[user] swiftly scales down the rope!"))
+		else
+			if(linked_rappel.hatch_rope && linked_rappel.hatch_rope.loc)
+				user.forceMove(linked_rappel.hatch_rope.loc)
+				user.visible_message(SPAN_NOTICE("[user] quickly crawls up the rope!"))
+	else
+		to_chat(user, SPAN_WARNING("You were interrupted and let go of the rope!"))
+
+	in_use = FALSE
+	icon_state = is_hatch_rope ? "hatch_rope" : "rope"
+	if(is_hatch_rope && linked_rappel.ground_rope)
+		linked_rappel.ground_rope.icon_state = "rope"
+
+	return XENO_NONCOMBAT_ACTION
