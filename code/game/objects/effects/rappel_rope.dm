@@ -39,10 +39,13 @@
 
 	in_use = TRUE
 	icon_state = is_hatch_rope ? "hatch_rope" : "rope_inuse"
+	if(is_hatch_rope && linked_rappel.ground_rope)
+		linked_rappel.ground_rope.icon_state = "rope_inuse"
 	to_chat(user, SPAN_NOTICE("You begin climbing the rope..."))
 
     // Interruptible delay
-	if(do_after(user, 40, INTERRUPT_ALL | BEHAVIOR_IMMOBILE, BUSY_ICON_GENERIC, target = src))
+	var/success = do_after(user, 40, INTERRUPT_ALL | BEHAVIOR_IMMOBILE, BUSY_ICON_GENERIC, target = src)
+	if(success)
 		// Move user to the other rope's location (on top of the rope)
 		if(is_hatch_rope)
 			if(linked_rappel.ground_rope && linked_rappel.ground_rope.loc)
@@ -57,6 +60,8 @@
 
 	in_use = FALSE
 	icon_state = is_hatch_rope ? "hatch_rope" : "rope"
+	if(is_hatch_rope && linked_rappel.ground_rope)
+		linked_rappel.ground_rope.icon_state = "rope"
 
 /obj/effect/rappel_rope/proc/set_icon_state(state)
 	icon_state = state
