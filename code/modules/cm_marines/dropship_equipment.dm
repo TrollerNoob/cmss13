@@ -1145,7 +1145,7 @@
 		return FALSE
 
 	if(busy_winch)
-		to_chat(user, SPAN_WARNING(" The winch is already in motion."))
+		to_chat(user, SPAN_WARNING("The winch is already in motion."))
 		return FALSE
 
 	if(world.time < medevac_cooldown)
@@ -1550,6 +1550,146 @@
 	fulton_cooldown = world.time + 50
 
 // Rappel deployment system
+/obj/structure/dropship_equipment/rappel_system
+	name = "\improper HRU-3 Rappel Deployment System"
+	shorthand = "RDS"
+	equip_categories = list(DROPSHIP_CREW_WEAPON)
+	icon_state = "rappel_module_packaged"
+	point_cost = 50
+	combat_equipment = FALSE
+	var/harness = /obj/item/rappel_harness
+	var/obj/effect/rappel_rope/hatch_rope = null
+	var/obj/effect/rappel_rope/ground_rope = null
+	var/rope_in_use = FALSE
+	var/locked_target = null
+	var/view = null
+	var/system_cooldown
+	var/datum/cas_signal/last_deployed_target = null
+
+/obj/structure/dropship_equipment/rappel_system/update_equipment()
+	if(ship_base)
+		icon_state = "rappel_hatch_closed"
+		density = FALSE
+	else
+		icon_state = "rappel_module_packaged"
+
+/obj/structure/dropship_equipment/rappel_system/proc/create_ropes(hatch_turf, ground_turf)
+	if(hatch_rope)
+		qdel(hatch_rope)
+	if(ground_rope)
+		qdel(ground_rope)
+
+	hatch_rope = new /obj/effect/rappel_rope(hatch_turf, TRUE)
+	hatch_rope.linked_rappel = src
+
+	ground_rope = new /obj/effect/rappel_rope(ground_turf, FALSE)
+	ground_rope.linked_rappel = src
+
+/obj/structure/dropship_equipment/rappel_system/proc/set_icon_state(state)
+    icon_state = state
+
+/obj/structure/dropship_equipment/rappel_system/proc/retract_ropes()
+	if(hatch_rope)
+		qdel(hatch_rope)
+		hatch_rope = null
+	if(ground_rope)
+		qdel(ground_rope)
+		ground_rope = null
+	rope_in_use = FALSE
+
+/obj/structure/dropship_equipment/rappel_system/proc/descend_rope(mob/living/carbon/human/user, obj/effect/rappel_rope/rope)
+	if(rope_in_use)
+		to_chat(user, SPAN_WARNING("The rope is currently in use!"))
+		return
+	if(!ground_rope || !ground_rope.loc)
+		to_chat(user, SPAN_WARNING("The rope is not properly deployed!"))
+		return
+	rope_in_use = TRUE
+	rope.icon_state = "rope_inuse"
+	to_chat(user, SPAN_NOTICE("You begin rappelling down the rope..."))
+	sleep(40)
+	user.forceMove(ground_rope.loc)
+	rope.release_rope()
+	rope_in_use = FALSE
+
+/obj/structure/dropship_equipment/rappel_system/proc/ascend_rope(mob/living/carbon/human/user, obj/effect/rappel_rope/rope)
+	if(rope_in_use)
+		to_chat(user, SPAN_WARNING("The rope is currently in use!"))
+		return
+	if(!hatch_rope || !hatch_rope.loc)
+		to_chat(user, SPAN_WARNING("The rope is not properly deployed!"))
+		return
+	rope_in_use = TRUE
+	rope.icon_state = "rope_inuse"
+	to_chat(user, SPAN_NOTICE("You begin climbing up the rope..."))
+	sleep(40)
+	user.forceMove(hatch_rope.loc)
+	rope.release_rope()
+	rope_in_use = FALSE
+
+/obj/structure/dropship_equipment/rappel_system/attack_hand(mob/living/carbon/human/user)
+	if(rope_in_use)
+		to_chat(user, SPAN_WARNING("The rope is currently in use!"))
+		return
+	if(!hatch_rope || !ground_rope)
+		to_chat(user, SPAN_WARNING("The rope is not deployed!"))
+		return
+	hatch_rope.attack_hand(user)
+
+/obj/effect/warning/rappel
+	color = "#cdae3e"
+
+/obj/structure/dropship_equipment/rappel_system/proc/can_lock_rappel(mob/user)
+	if(linked_shuttle.mode != SHUTTLE_CALL)
+		to_chat(user, SPAN_WARNING("\The [src] can only be used while in flight."))
+		return FALSE
+
+	if(!linked_shuttle.in_flyby)
+		to_chat(user, SPAN_WARNING("\The [src] requires a flyby flight to be used."))
+		return FALSE
+	return TURF_LAYER
+
+/obj/structure/dropship_equipment/rappel_system/proc/can_use_rappel(mob/living/carbon/human/user)
+	if(user.buckled)
+		to_chat(user, SPAN_WARNING("You cannot rappel while buckled!"))
+		return FALSE
+
+	if(user.is_mob_incapacitated())
+		to_chat(user, SPAN_WARNING("You are in no state to do that!"))
+		return FALSE
+
+	if(!istype(user.belt, harness))
+		to_chat(user, SPAN_WARNING("You must have a rappel harness equipped in order to use \the [src]!"))
+		return FALSE
+
+	if(user.action_busy)
+		return FALSE
+
+	return TRUE
+
+/obj/structure/dropship_equipment/rappel_system/proc/cleanup_ropes(animated = TRUE)
+	if(hatch_rope)
+		if(animated)
+			flick("rappel_hatch_closing", src)
+		qdel(hatch_rope)
+		hatch_rope = null
+	if(ground_rope)
+		if(animated)
+			flick("rope_up", ground_rope)
+			spawn(10)
+				qdel(ground_rope)
+				ground_rope = null
+		else
+			qdel(ground_rope)
+			ground_rope = null
+	if(animated)
+		icon_state = "rappel_hatch_closed"
+
+/obj/structure/dropship_equipment/rappel_system/on_arrival()
+	..()
+	cleanup_ropes()
+
+// Paradrop deployment system
 /obj/structure/dropship_equipment/paradrop_system
 	name = "\improper HPU-1 Paradrop Deployment System"
 	shorthand = "PDS"

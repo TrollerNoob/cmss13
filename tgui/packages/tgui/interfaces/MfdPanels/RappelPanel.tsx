@@ -1,14 +1,15 @@
+import React from 'react';
 import { useBackend } from 'tgui/backend';
-import { Box, Stack } from 'tgui/components';
+import { Box, Icon, Stack } from 'tgui/components';
 
 import type { DropshipEquipment } from '../DropshipWeaponsConsole';
 import { MfdPanel, type MfdProps } from './MultifunctionDisplay';
 import { mfdState, useEquipmentState } from './stateManagers';
-import type { EquipmentContext } from './types';
+import type { EquipmentContext, LazeTarget } from './types';
 
 const RappelPanel = (props: {
   readonly equipment: DropshipEquipment;
-  readonly target: any;
+  readonly target: LazeTarget | null;
 }) => {
   const { equipment, target } = props;
   return (
@@ -24,15 +25,8 @@ const RappelPanel = (props: {
           <Stack.Item>
             <h3>
               {target
-                ? `Locked to ${target.name || target.signal || 'Unknown Target'}.`
+                ? `Locked to ${target.target_name || 'Unknown Target'}.`
                 : 'No locked target found.'}
-            </h3>
-          </Stack.Item>
-          <Stack.Item>
-            <h3>
-              {equipment.data?.locked
-                ? 'Rappelling available.'
-                : 'Rappelling not available.'}
             </h3>
           </Stack.Item>
         </Stack>
@@ -51,32 +45,77 @@ export const RappelMfdPanel = (props: MfdProps) => {
   const rappel = data.equipment_data.find(
     (x) => x.mount_point === equipmentState,
   );
-  // Use the first target as the locked target, or null if none
-  const target = data.targets_data?.[0] || null;
+
+  // Target offset state for scrolling
+  const [targetOffset, setTargetOffset] = React.useState(0);
+
+  // Show up to 5 targets at a time
+  const targets = data.targets_data || [];
+  const visibleTargets = targets.slice(targetOffset, targetOffset + 5);
+
+  // Currently selected target (first in visible list, or null)
+  const selectedTarget = visibleTargets[0] || null;
+
   const deployLabel = rappel?.data?.locked ? 'CLEAR' : 'LOCK';
+
+  // Right buttons for each visible target
+  const rightButtons = visibleTargets.map((target) => ({
+    children: target.target_name || 'Unknown Target',
+    onClick: () =>
+      act('rappel-lock', {
+        equipment_id: rappel?.mount_point,
+        target_id: target.target_tag,
+      }),
+  }));
 
   return (
     <MfdPanel
       panelStateId={props.panelStateId}
       topButtons={[
         { children: 'EQUIP', onClick: () => setPanelState('equipment') },
+        {},
+        {},
+        {},
+        {
+          children: targetOffset > 0 ? <Icon name="arrow-up" /> : undefined,
+          onClick: () => {
+            if (targetOffset > 0) setTargetOffset(targetOffset - 1);
+          },
+        },
       ]}
       leftButtons={[
         {
           children: deployLabel,
           onClick: () =>
-            act('rappel-lock', { equipment_id: rappel?.mount_point }),
+            act('rappel-deploy', {
+              equipment_id: rappel?.mount_point,
+            }),
         },
       ]}
+      rightButtons={rightButtons}
       bottomButtons={[
         {
           children: 'EXIT',
           onClick: () => setPanelState(''),
         },
+        {},
+        {},
+        {},
+        {
+          children:
+            targetOffset + 5 < targets.length ? (
+              <Icon name="arrow-down" />
+            ) : undefined,
+          onClick: () => {
+            if (targetOffset + 5 < targets.length) {
+              setTargetOffset(targetOffset + 1);
+            }
+          },
+        },
       ]}
     >
       <Box className="NavigationMenu">
-        {rappel && <RappelPanel equipment={rappel} target={target} />}
+        {rappel && <RappelPanel equipment={rappel} target={selectedTarget} />}
       </Box>
     </MfdPanel>
   );

@@ -7,6 +7,7 @@ import { MedevacMfdPanel } from './MedevacPanel';
 import { MgMfdPanel } from './MGPanel';
 import { MfdPanel, type MfdProps } from './MultifunctionDisplay';
 import { ParadropMfdPanel } from './ParadropPanel';
+import { RappelMfdPanel } from './RappelPanel';
 import { SentryMfdPanel } from './SentryPanel';
 import { SpotlightMfdPanel } from './SpotlightPanel';
 import { mfdState, useEquipmentState } from './stateManagers';
@@ -41,6 +42,9 @@ export const SupportMfdPanel = (props: MfdProps) => {
   }
   if (result?.shorthand === 'RMT') {
     return <AutoReloaderMfdPanel panelStateId={props.panelStateId} />;
+  }
+  if (result?.shorthand === 'RDS') {
+    return <RappelMfdPanel panelStateId={props.panelStateId} />;
   }
   return (
     <MfdPanel

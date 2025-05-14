@@ -42,6 +42,7 @@ export type CameraProps = {
 
 export type EquipmentContext = {
   equipment_data: Array<DropshipEquipment>;
+  targets_data?: Array<LazeTarget>;
 };
 
 export type MedevacContext = {

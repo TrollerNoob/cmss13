@@ -548,6 +548,113 @@
 			RegisterSignal(linked_shuttle, COMSIG_SHUTTLE_SETMODE, PROC_REF(clear_locked_turf_and_lock_aft))
 			return TRUE
 
+		if("rappel-lock")
+			var/obj/docking_port/mobile/marine_dropship/linked_shuttle = SSshuttle.getShuttle(shuttle_tag)
+			if(!linked_shuttle)
+				return FALSE
+
+			var/obj/structure/dropship_equipment/rappel_system/rappel = null
+			for(var/obj/structure/dropship_equipment/equipment as anything in linked_shuttle.equipments)
+				if(istype(equipment, /obj/structure/dropship_equipment/rappel_system))
+					rappel = equipment
+					break
+			if(!rappel)
+				to_chat(user, SPAN_WARNING("No rappel system installed on this dropship."))
+				return FALSE
+
+			//cooldown
+			if(rappel.system_cooldown > world.time)
+				to_chat(user, SPAN_WARNING("You toggled the system too recently."))
+				return FALSE
+			rappel.system_cooldown = world.time + 5 SECONDS
+
+			var/target_id = params["target_id"]
+			var/datum/cas_signal/sig = get_cas_signal(target_id)
+			if(!sig)
+				to_chat(user, SPAN_WARNING("No signal chosen."))
+				return FALSE
+
+			if(rappel.locked_target && rappel.locked_target != sig)
+				rappel.cleanup_ropes(TRUE)
+				rappel.system_cooldown = world.time + 5 SECONDS
+
+			// Store the target in the rappel system for later use
+			rappel.locked_target = sig
+			set_camera_target(target_id) // Focus camera on the selected signal
+			to_chat(user, SPAN_NOTICE("Rappel target locked: [sig.name]"))
+
+			UnregisterSignal(linked_shuttle, COMSIG_SHUTTLE_SETMODE, PROC_REF(clear_rope_landed))
+			RegisterSignal(linked_shuttle, COMSIG_SHUTTLE_SETMODE, PROC_REF(clear_rope_landed))
+			return TRUE
+
+		if("rappel-deploy")
+			var/obj/docking_port/mobile/marine_dropship/linked_shuttle = SSshuttle.getShuttle(shuttle_tag)
+			if(!linked_shuttle)
+				return FALSE
+
+			var/obj/structure/dropship_equipment/rappel_system/rappel = null
+			for(var/obj/structure/dropship_equipment/equipment as anything in linked_shuttle.equipments)
+				if(istype(equipment, /obj/structure/dropship_equipment/rappel_system))
+					rappel = equipment
+					break
+			if(!rappel)
+				to_chat(user, SPAN_WARNING("No rappel system installed on this dropship."))
+				return FALSE
+
+			if(!rappel.can_lock_rappel())
+				to_chat(user, SPAN_WARNING("Rappel system is not ready to deploy."))
+				return FALSE
+
+			var/datum/cas_signal/sig = rappel.locked_target
+			if(!sig)
+				to_chat(user, SPAN_WARNING("No rappel target locked."))
+				return FALSE
+
+			if(rappel.last_deployed_target == sig)
+				to_chat(user, SPAN_WARNING("Rappel is already deployed to this target."))
+				return FALSE
+
+			var/turf/location = get_turf(sig.signal_loc)
+			var/area/location_area = get_area(location)
+			if(CEILING_IS_PROTECTED(location_area.ceiling, CEILING_PROTECTION_TIER_1))
+				to_chat(user, SPAN_WARNING("You cannot jump to the target. It is probably underground."))
+				return
+
+			var/list/valid_turfs = list()
+			for(var/turf/T as anything in RANGE_TURFS(2, location))
+				var/area/t_area = get_area(T)
+				if(!t_area || CEILING_IS_PROTECTED(t_area.ceiling, CEILING_PROTECTION_TIER_1))
+					continue
+				if(T.density)
+					continue
+				var/found_dense = FALSE
+				for(var/atom/A in T)
+					if(A.density && A.can_block_movement)
+						found_dense = TRUE
+						break
+				if(found_dense)
+					continue
+				if(protected_by_pylon(TURF_PROTECTION_MORTAR, T))
+					continue
+				valid_turfs += T
+
+			if(!length(valid_turfs))
+				to_chat(user, SPAN_WARNING("There's nowhere safe for you to land, the landing zone is too congested."))
+				return
+
+			var/turf/deploy_turf = pick(valid_turfs)
+
+			if(rappel)
+				rappel.cleanup_ropes(FALSE)
+			flick("rappel_hatch_opening", rappel)
+			rappel.visible_message(SPAN_NOTICE("[rappel] flashes green as it locks to a signal."))
+			rappel.icon_state = "rappel_hatch_open"
+			// Delay rope creation until after hatch animation (17 frames)
+			spawn(17)
+				rappel.create_ropes(rappel.loc, deploy_turf)
+				rappel.last_deployed_target = sig
+			return TRUE
+
 		if("select-ammo")
 			var/weapon_tag = params["eqp_tag"]
 			var/obj/structure/dropship_equipment/weapon/selected_weapon = get_weapon(weapon_tag)
@@ -619,6 +726,15 @@
 	UnregisterSignal(shuttle.paradrop_signal, COMSIG_PARENT_QDELETING)
 	UnregisterSignal(shuttle, COMSIG_SHUTTLE_SETMODE)
 	shuttle.paradrop_signal = null
+
+/obj/structure/machinery/computer/dropship_weapons/proc/clear_rope_landed()
+	SIGNAL_HANDLER
+	var/obj/docking_port/mobile/marine_dropship/shuttle = SSshuttle.getShuttle(shuttle_tag)
+	if(!shuttle)
+		return
+	for(var/obj/structure/dropship_equipment/rappel_system/rappel in shuttle.equipments)
+		rappel.cleanup_ropes(TRUE)
+	UnregisterSignal(shuttle, COMSIG_SHUTTLE_SETMODE, PROC_REF(clear_rope_landed))
 
 /obj/structure/machinery/computer/dropship_weapons/proc/get_weapon(eqp_tag)
 	var/obj/docking_port/mobile/marine_dropship/dropship = SSshuttle.getShuttle(shuttle_tag)
