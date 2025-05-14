@@ -16,7 +16,7 @@ const RappelPanel = (props: {
 
   let winchText: React.ReactNode = null;
   if (iconState === 'rappel_hatch_open') {
-    winchText = <h3 style={{ color: '#cdae3e' }}>Rappel winch lowered</h3>;
+    winchText = <h3>Rappel winch lowered</h3>;
   } else if (iconState === 'rappel_hatch_closed') {
     winchText = <h3 style={{ color: '#cdae3e' }}>Rappel winch raised</h3>;
   } else {
