@@ -66,6 +66,7 @@ export type DropshipEquipment = {
   stored_ammo_2_name: string;
   stored_ammo_2_count?: number;
   stored_ammo_2_max?: number;
+  icon_state?: string;
 };
 
 const xOffset = 40;

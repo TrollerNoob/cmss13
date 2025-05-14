@@ -264,6 +264,13 @@
 	if(.)
 		return
 	var/obj/docking_port/mobile/marine_dropship/shuttle = SSshuttle.getShuttle(shuttle_tag)
+	// If a firemission is underway, close the rappel hatch and delete ropes
+	if(firemission_envelope && firemission_envelope.stat != FIRE_MISSION_STATE_IDLE)
+		for(var/obj/structure/dropship_equipment/rappel_system/rappel in shuttle.equipments)
+			rappel.cleanup_ropes(TRUE)
+			rappel.icon_state = "rappel_hatch_closed"
+			rappel.last_deployed_target = null
+			rappel.manual_deploy_cooldown = world.time + 5 SECONDS
 	if(shuttle.is_hijacked)
 		return
 
@@ -310,6 +317,13 @@
 
 		if("set-camera")
 			var/target_camera = params["equipment_id"]
+
+			for(var/obj/structure/dropship_equipment/rappel_system/rappel in shuttle.equipments)
+				rappel.cleanup_ropes(TRUE)
+				rappel.icon_state = "rappel_hatch_closed"
+				rappel.last_deployed_target = null
+				rappel.manual_deploy_cooldown = world.time + 5 SECONDS
+
 			set_camera_target(target_camera)
 			return TRUE
 
@@ -419,6 +433,12 @@
 
 		if("firemission-dual-offset-camera")
 			var/target_id = params["target_id"]
+
+			for(var/obj/structure/dropship_equipment/rappel_system/rappel in shuttle.equipments)
+				rappel.cleanup_ropes(TRUE)
+				rappel.icon_state = "rappel_hatch_closed"
+				rappel.last_deployed_target = null
+				rappel.manual_deploy_cooldown = world.time + 5 SECONDS
 
 			var/x_offset_value = params["x_offset_value"]
 			var/y_offset_value = params["y_offset_value"]
@@ -601,6 +621,10 @@
 				to_chat(user, SPAN_WARNING("No rappel system installed on this dropship."))
 				return FALSE
 
+			if(world.time < rappel.manual_deploy_cooldown)
+				to_chat(user, SPAN_WARNING("You must wait before deploying the rappel again!"))
+				return FALSE
+
 			if(!rappel.can_lock_rappel())
 				to_chat(user, SPAN_WARNING("Rappel system is not ready to deploy."))
 				return FALSE
@@ -644,6 +668,8 @@
 
 			var/turf/deploy_turf = pick(valid_turfs)
 
+			spawn_rappel_warning(deploy_turf)
+
 			if(rappel)
 				rappel.cleanup_ropes(FALSE)
 			flick("rappel_hatch_opening", rappel)
@@ -653,6 +679,29 @@
 			spawn(17)
 				rappel.create_ropes(rappel.loc, deploy_turf)
 				rappel.last_deployed_target = sig
+			rappel.manual_cancel_cooldown = world.time + 6 SECONDS
+			return TRUE
+
+		if("rappel-cancel")
+			var/obj/docking_port/mobile/marine_dropship/linked_shuttle = SSshuttle.getShuttle(shuttle_tag)
+			if(!linked_shuttle)
+				return FALSE
+			var/obj/structure/dropship_equipment/rappel_system/rappel = null
+			for(var/obj/structure/dropship_equipment/equipment as anything in linked_shuttle.equipments)
+				if(istype(equipment, /obj/structure/dropship_equipment/rappel_system))
+					rappel = equipment
+					break
+			if(!rappel)
+				return FALSE
+
+			if(world.time < rappel.manual_cancel_cooldown)
+				to_chat(user, SPAN_WARNING("You must wait before canceling the rappel again!"))
+				return FALSE
+
+			rappel.cleanup_ropes(TRUE)
+			rappel.icon_state = "rappel_hatch_closed"
+			rappel.last_deployed_target = null
+			rappel.manual_deploy_cooldown = world.time + 5 SECONDS
 			return TRUE
 
 		if("select-ammo")
@@ -842,6 +891,7 @@
 			"max_ammo" = equipment.ammo_equipped?.max_ammo_count,
 			"firemission_delay" = equipment.ammo_equipped?.fire_mission_delay,
 			"burst" = equipment.ammo_equipped?.ammo_used_per_firing,
+			"icon_state" = equipment.icon_state,
 			"data" = equipment.ui_data(user)
 		)
 		// If this is an autoreloader, add stored ammo info
@@ -1125,6 +1175,12 @@
 		firemission_envelope.change_current_loc(shootloc)
 	return TRUE
 
+/obj/structure/machinery/computer/dropship_weapons/proc/spawn_rappel_warning(turf/target)
+	if(!target) return
+	var/obj/effect/warning/rappel/warn = new /obj/effect/warning/rappel(target)
+	spawn(20)
+		if(warn) qdel(warn)
+
 /obj/structure/machinery/computer/dropship_weapons/dropship1
 	name = "\improper 'Alamo' weapons controls"
 	req_one_access = list(ACCESS_MARINE_LEADER, ACCESS_MARINE_DROPSHIP, ACCESS_WY_FLIGHT)
@@ -1165,6 +1221,7 @@
 
 	//acutal firemission
 	configuration.simulate_execute_firemission(src, get_turf(simulation.sim_camera), user)
+
 /obj/structure/machinery/computer/dropship_weapons/belly_gun/tgui_interact(mob/user, datum/tgui/ui)
     if(!tacmap.map_holder)
         var/level = SSmapping.levels_by_trait(tacmap.targeted_ztrait)

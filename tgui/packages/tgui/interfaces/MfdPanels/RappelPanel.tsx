@@ -12,6 +12,19 @@ const RappelPanel = (props: {
   readonly target: LazeTarget | null;
 }) => {
   const { equipment, target } = props;
+  const iconState = equipment.icon_state;
+
+  let winchText: React.ReactNode = null;
+  if (iconState === 'rappel_hatch_open') {
+    winchText = <h3 style={{ color: '#cdae3e' }}>Rappel winch lowered</h3>;
+  } else if (iconState === 'rappel_hatch_closed') {
+    winchText = <h3 style={{ color: '#cdae3e' }}>Rappel winch raised</h3>;
+  } else {
+    winchText = (
+      <h3 style={{ color: 'red' }}>Unknown state: {String(iconState)}</h3>
+    );
+  }
+
   return (
     <Stack>
       <Stack.Item width="100px">
@@ -29,6 +42,7 @@ const RappelPanel = (props: {
                 : 'No locked target found.'}
             </h3>
           </Stack.Item>
+          <Stack.Item>{winchText}</Stack.Item>
         </Stack>
       </Stack.Item>
       <Stack.Item width="100px">
@@ -88,6 +102,13 @@ export const RappelMfdPanel = (props: MfdProps) => {
           children: deployLabel,
           onClick: () =>
             act('rappel-deploy', {
+              equipment_id: rappel?.mount_point,
+            }),
+        },
+        {
+          children: 'CANCEL',
+          onClick: () =>
+            act('rappel-cancel', {
               equipment_id: rappel?.mount_point,
             }),
         },

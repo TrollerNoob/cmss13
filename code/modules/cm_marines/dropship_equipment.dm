@@ -1564,6 +1564,8 @@
 	var/locked_target = null
 	var/view = null
 	var/system_cooldown
+	var/manual_cancel_cooldown = 0
+	var/manual_deploy_cooldown = 0
 	var/datum/cas_signal/last_deployed_target = null
 
 /obj/structure/dropship_equipment/rappel_system/update_equipment()
@@ -1637,7 +1639,7 @@
 	hatch_rope.attack_hand(user)
 
 /obj/effect/warning/rappel
-	color = "#cdae3e"
+	color = "#cf7a1e"
 
 /obj/structure/dropship_equipment/rappel_system/proc/can_lock_rappel(mob/user)
 	if(linked_shuttle.mode != SHUTTLE_CALL)
@@ -1676,7 +1678,7 @@
 	if(ground_rope)
 		if(animated)
 			flick("rope_up", ground_rope)
-			spawn(10)
+			spawn(5)
 				qdel(ground_rope)
 				ground_rope = null
 		else
