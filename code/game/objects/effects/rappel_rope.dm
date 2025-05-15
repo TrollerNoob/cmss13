@@ -25,17 +25,12 @@
 	icon_state = "rope"
 
 /obj/effect/rappel_rope/attack_hand(mob/living/carbon/human/user)
-	if(in_use)
-		to_chat(user, SPAN_WARNING("The rope is currently in use!"))
-		return
+	// Shared eligibility checks
 	if(!linked_rappel)
 		return
-
-	// Only allow humans
 	if(!istype(user, /mob/living/carbon/human))
 		to_chat(user, SPAN_WARNING("You can't figure out how to use the rope."))
 		return
-
 	if(!linked_rappel.can_use_rappel(user))
 		return
 	var/turf/user_turf = get_turf(user)
@@ -43,39 +38,61 @@
 		to_chat(user, SPAN_WARNING("You must be next to the rope to use it."))
 		return
 
-	in_use = TRUE
-	icon_state = is_hatch_rope ? "hatch_rope" : "rope_inuse"
-	if(is_hatch_rope && linked_rappel.ground_ropes && length(linked_rappel.ground_ropes))
-		for(var/obj/effect/rappel_rope/ground_rope in linked_rappel.ground_ropes)
-			ground_rope.icon_state = "rope_inuse"
-	to_chat(user, SPAN_NOTICE("You begin climbing the rope..."))
-
-	var/do_after_time = 40
-
-	var/success = do_after(user, do_after_time, INTERRUPT_ALL | BEHAVIOR_IMMOBILE, BUSY_ICON_GENERIC, target = src)
-	if(success)
-		if(is_hatch_rope)
+	if(is_hatch_rope)
+		in_use = TRUE
+		icon_state = "hatch_rope"
+		if(linked_rappel.ground_ropes && length(linked_rappel.ground_ropes))
+			for(var/obj/effect/rappel_rope/ground_rope in linked_rappel.ground_ropes)
+				ground_rope.icon_state = "rope_inuse"
+		to_chat(user, SPAN_NOTICE("You begin climbing the rope..."))
+		var/do_after_time = 100
+		var/success = do_after(user, do_after_time, INTERRUPT_ALL | BEHAVIOR_IMMOBILE, BUSY_ICON_GENERIC, target = src)
+		if(success)
 			if(linked_rappel.ground_ropes && length(linked_rappel.ground_ropes))
-				var/obj/effect/rappel_rope/target_rope = pick(linked_rappel.ground_ropes)
-				if(target_rope && target_rope.loc)
+				// Move user to a random available ground rope turf, but allow up to 4 users simultaneously
+				var/list/available_ropes = list()
+				for(var/obj/effect/rappel_rope/target_rope in linked_rappel.ground_ropes)
+					var/occupied = FALSE
+					for(var/mob/M in target_rope.loc)
+						if(istype(M, /mob/living) && M != user)
+							occupied = TRUE
+							break
+					if(!occupied)
+						available_ropes += target_rope
+				if(length(available_ropes))
+					var/obj/effect/rappel_rope/target_rope = pick(available_ropes)
 					user.forceMove(target_rope.loc)
 					user.visible_message(SPAN_NOTICE("[user] rappels down the rope!"))
+				else
+					to_chat(user, SPAN_WARNING("All ropes are currently in use! Wait for someone to clear a rope."))
 			else
 				if(linked_rappel.hatch_rope && linked_rappel.hatch_rope.loc)
 					user.forceMove(linked_rappel.hatch_rope.loc)
 					user.visible_message(SPAN_NOTICE("[user] tried to climb down, but there was no rope!"))
 		else
+			to_chat(user, SPAN_WARNING("You were interrupted and let go of the rope!"))
+		in_use = FALSE
+		icon_state = "hatch_rope"
+		if(linked_rappel.ground_ropes && length(linked_rappel.ground_ropes))
+			for(var/obj/effect/rappel_rope/ground_rope in linked_rappel.ground_ropes)
+				ground_rope.icon_state = "rope"
+	else
+		if(in_use)
+			to_chat(user, SPAN_WARNING("The rope is currently in use!"))
+			return
+		in_use = TRUE
+		icon_state = "rope_inuse"
+		to_chat(user, SPAN_NOTICE("You begin climbing the rope..."))
+		var/do_after_time = 100
+		var/success = do_after(user, do_after_time, INTERRUPT_ALL | BEHAVIOR_IMMOBILE, BUSY_ICON_GENERIC, target = src)
+		if(success)
 			if(linked_rappel.hatch_rope && linked_rappel.hatch_rope.loc)
 				user.forceMove(linked_rappel.hatch_rope.loc)
 				user.visible_message(SPAN_NOTICE("[user] climbs up the rope!"))
-	else
-		to_chat(user, SPAN_WARNING("You were interrupted and let go of the rope!"))
-
-	in_use = FALSE
-	icon_state = is_hatch_rope ? "hatch_rope" : "rope"
-	if(is_hatch_rope && linked_rappel.ground_ropes && length(linked_rappel.ground_ropes))
-		for(var/obj/effect/rappel_rope/ground_rope in linked_rappel.ground_ropes)
-			ground_rope.icon_state = "rope"
+		else
+			to_chat(user, SPAN_WARNING("You were interrupted and let go of the rope!"))
+		in_use = FALSE
+		icon_state = "rope"
 
 /obj/effect/rappel_rope/proc/set_icon_state(state)
 	icon_state = state
@@ -102,9 +119,7 @@
 			icon_state = "rope"
 
 /obj/effect/rappel_rope/attack_alien(mob/living/carbon/xenomorph/user)
-	if(in_use)
-		to_chat(user, SPAN_WARNING("The rope is currently in use!"))
-		return XENO_NO_DELAY_ACTION
+
 	if(!linked_rappel)
 		return XENO_NO_DELAY_ACTION
 
@@ -122,7 +137,7 @@
 	if(is_hatch_rope && linked_rappel.ground_ropes && length(linked_rappel.ground_ropes))
 		for(var/obj/effect/rappel_rope/ground_rope in linked_rappel.ground_ropes)
 			ground_rope.icon_state = "rope_inuse"
-	to_chat(user, SPAN_NOTICE("You begin climbing the rope..."))
+	to_chat(user, SPAN_NOTICE("You begin crawling up the rope..."))
 
 	var/do_after_time = 30 // 3 seconds for xenos
 
@@ -141,7 +156,7 @@
 		else
 			if(linked_rappel.hatch_rope && linked_rappel.hatch_rope.loc)
 				user.forceMove(linked_rappel.hatch_rope.loc)
-				user.visible_message(SPAN_NOTICE("[user] climbs up the rope!"))
+				user.visible_message(SPAN_NOTICE("[user] quickly crawls up the rope!"))
 	else
 		to_chat(user, SPAN_WARNING("You were interrupted and let go of the rope!"))
 
