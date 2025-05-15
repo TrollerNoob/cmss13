@@ -672,6 +672,7 @@
 
 			if(rappel)
 				rappel.cleanup_ropes(FALSE)
+			playsound(src, 'sound/machines/elevator_openclose.ogg', 50, 1)
 			flick("rappel_hatch_opening", rappel)
 			rappel.visible_message(SPAN_NOTICE("[rappel] flashes green as it locks to a signal."))
 			rappel.icon_state = "rappel_hatch_open"
@@ -785,6 +786,7 @@
 		return
 	for(var/obj/structure/dropship_equipment/rappel_system/rappel in shuttle.equipments)
 		rappel.cleanup_ropes(TRUE)
+		rappel.last_deployed_target = null // Clear target so redeploy to same lase is possible after landing
 	UnregisterSignal(shuttle, COMSIG_SHUTTLE_SETMODE, PROC_REF(clear_rope_landed))
 
 /obj/structure/machinery/computer/dropship_weapons/proc/get_weapon(eqp_tag)

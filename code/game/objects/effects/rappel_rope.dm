@@ -87,7 +87,10 @@
 		in_use = TRUE
 		icon_state = "rope_inuse"
 		to_chat(user, SPAN_NOTICE("You begin climbing the rope..."))
-		var/do_after_time = 100
+		// Play authorized sound and message immediately when a human starts climbing
+		playsound(linked_rappel, 'sound/machines/twobeep.ogg', 50, 1)
+		linked_rappel.visible_message(SPAN_NOTICE("The [linked_rappel] beeps as it detects an authorized personnel!"))
+		var/do_after_time = 80
 		var/success = do_after(user, do_after_time, INTERRUPT_ALL | BEHAVIOR_IMMOBILE, BUSY_ICON_GENERIC, target = src)
 		if(success)
 			if(linked_rappel.hatch_rope && linked_rappel.hatch_rope.loc)
@@ -138,7 +141,7 @@
 	if(is_hatch_rope)
 		in_use = TRUE
 		icon_state = "hatch_rope"
-		var/do_after_time = 30
+		var/do_after_time = 40
 		var/obj/effect/rappel_rope/target_rope = null
 		if(linked_rappel.ground_ropes && length(linked_rappel.ground_ropes))
 			var/list/available_ropes = list()
@@ -183,13 +186,16 @@
 			return
 		in_use = TRUE
 		icon_state = "rope_inuse"
+		// Play warning sound and message immediately when a xeno starts climbing
+		playsound(linked_rappel, 'sound/machines/beepalert.ogg', 50, 1)
+		linked_rappel.visible_message(SPAN_WARNING("The [linked_rappel] beeps as it detects unknown signature!"))
 		to_chat(user, SPAN_NOTICE("You begin crawling up the rope..."))
 		var/do_after_time = 30
 		var/success = do_after(user, do_after_time, INTERRUPT_ALL | BEHAVIOR_IMMOBILE, BUSY_ICON_GENERIC, target = src)
 		if(success)
 			if(linked_rappel.hatch_rope && linked_rappel.hatch_rope.loc)
 				user.forceMove(linked_rappel.hatch_rope.loc)
-				user.visible_message(SPAN_NOTICE("[user] climbs up the rope!"))
+				user.visible_message(SPAN_NOTICE("[user] quickly crawls up the rope!"))
 		else
 			to_chat(user, SPAN_WARNING("You were interrupted and let go of the rope!"))
 		in_use = FALSE

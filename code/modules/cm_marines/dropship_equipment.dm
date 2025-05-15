@@ -1714,6 +1714,7 @@
 /obj/structure/dropship_equipment/rappel_system/proc/cleanup_ropes(animated = TRUE)
 	if(hatch_rope)
 		if(animated)
+			playsound(src, 'sound/machines/door_close.ogg', 50, 1)
 			flick("rappel_hatch_closing", src)
 		qdel(hatch_rope)
 		hatch_rope = null
