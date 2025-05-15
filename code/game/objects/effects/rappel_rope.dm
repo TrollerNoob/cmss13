@@ -45,8 +45,9 @@
 
 	in_use = TRUE
 	icon_state = is_hatch_rope ? "hatch_rope" : "rope_inuse"
-	if(is_hatch_rope && linked_rappel.ground_rope)
-		linked_rappel.ground_rope.icon_state = "rope_inuse"
+	if(is_hatch_rope && linked_rappel.ground_ropes && length(linked_rappel.ground_ropes))
+		for(var/obj/effect/rappel_rope/ground_rope in linked_rappel.ground_ropes)
+			ground_rope.icon_state = "rope_inuse"
 	to_chat(user, SPAN_NOTICE("You begin climbing the rope..."))
 
 	var/do_after_time = 40
@@ -54,9 +55,15 @@
 	var/success = do_after(user, do_after_time, INTERRUPT_ALL | BEHAVIOR_IMMOBILE, BUSY_ICON_GENERIC, target = src)
 	if(success)
 		if(is_hatch_rope)
-			if(linked_rappel.ground_rope && linked_rappel.ground_rope.loc)
-				user.forceMove(linked_rappel.ground_rope.loc)
-				user.visible_message(SPAN_NOTICE("[user] rappels down the rope!"))
+			if(linked_rappel.ground_ropes && length(linked_rappel.ground_ropes))
+				var/obj/effect/rappel_rope/target_rope = pick(linked_rappel.ground_ropes)
+				if(target_rope && target_rope.loc)
+					user.forceMove(target_rope.loc)
+					user.visible_message(SPAN_NOTICE("[user] rappels down the rope!"))
+			else
+				if(linked_rappel.hatch_rope && linked_rappel.hatch_rope.loc)
+					user.forceMove(linked_rappel.hatch_rope.loc)
+					user.visible_message(SPAN_NOTICE("[user] tried to climb down, but there was no rope!"))
 		else
 			if(linked_rappel.hatch_rope && linked_rappel.hatch_rope.loc)
 				user.forceMove(linked_rappel.hatch_rope.loc)
@@ -66,8 +73,9 @@
 
 	in_use = FALSE
 	icon_state = is_hatch_rope ? "hatch_rope" : "rope"
-	if(is_hatch_rope && linked_rappel.ground_rope)
-		linked_rappel.ground_rope.icon_state = "rope"
+	if(is_hatch_rope && linked_rappel.ground_ropes && length(linked_rappel.ground_ropes))
+		for(var/obj/effect/rappel_rope/ground_rope in linked_rappel.ground_ropes)
+			ground_rope.icon_state = "rope"
 
 /obj/effect/rappel_rope/proc/set_icon_state(state)
 	icon_state = state
@@ -111,8 +119,9 @@
 
 	in_use = TRUE
 	icon_state = is_hatch_rope ? "hatch_rope" : "rope_inuse"
-	if(is_hatch_rope && linked_rappel.ground_rope)
-		linked_rappel.ground_rope.icon_state = "rope_inuse"
+	if(is_hatch_rope && linked_rappel.ground_ropes && length(linked_rappel.ground_ropes))
+		for(var/obj/effect/rappel_rope/ground_rope in linked_rappel.ground_ropes)
+			ground_rope.icon_state = "rope_inuse"
 	to_chat(user, SPAN_NOTICE("You begin climbing the rope..."))
 
 	var/do_after_time = 30 // 3 seconds for xenos
@@ -120,19 +129,26 @@
 	var/success = do_after(user, do_after_time, INTERRUPT_ALL | BEHAVIOR_IMMOBILE, BUSY_ICON_GENERIC, target = src)
 	if(success)
 		if(is_hatch_rope)
-			if(linked_rappel.ground_rope && linked_rappel.ground_rope.loc)
-				user.forceMove(linked_rappel.ground_rope.loc)
-				user.visible_message(SPAN_NOTICE("[user] swiftly scales down the rope!"))
+			if(linked_rappel.ground_ropes && length(linked_rappel.ground_ropes))
+				var/obj/effect/rappel_rope/target_rope = pick(linked_rappel.ground_ropes)
+				if(target_rope && target_rope.loc)
+					user.forceMove(target_rope.loc)
+					user.visible_message(SPAN_NOTICE("[user] swiftly scales down the rope!"))
+			else
+				if(linked_rappel.hatch_rope && linked_rappel.hatch_rope.loc)
+					user.forceMove(linked_rappel.hatch_rope.loc)
+					user.visible_message(SPAN_NOTICE("[user] tried to crawl down, but there was no rope!"))
 		else
 			if(linked_rappel.hatch_rope && linked_rappel.hatch_rope.loc)
 				user.forceMove(linked_rappel.hatch_rope.loc)
-				user.visible_message(SPAN_NOTICE("[user] quickly crawls up the rope!"))
+				user.visible_message(SPAN_NOTICE("[user] climbs up the rope!"))
 	else
 		to_chat(user, SPAN_WARNING("You were interrupted and let go of the rope!"))
 
 	in_use = FALSE
 	icon_state = is_hatch_rope ? "hatch_rope" : "rope"
-	if(is_hatch_rope && linked_rappel.ground_rope)
-		linked_rappel.ground_rope.icon_state = "rope"
+	if(is_hatch_rope && linked_rappel.ground_ropes && length(linked_rappel.ground_ropes))
+		for(var/obj/effect/rappel_rope/ground_rope in linked_rappel.ground_ropes)
+			ground_rope.icon_state = "rope"
 
 	return XENO_NONCOMBAT_ACTION

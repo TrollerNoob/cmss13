@@ -751,6 +751,8 @@
 		offset_y += linked_console.direct_y_offset_value
 
 	var/turf/target_turf = get_turf(selected_target)
+	if(!target_turf)
+		return // Prevents RANGE_TURFS from being called with null
 	target_turf = locate(target_turf.x + offset_x, target_turf.y + offset_y, target_turf.z)
 
 	if(firing_sound)
@@ -1559,7 +1561,7 @@
 	combat_equipment = FALSE
 	var/harness = /obj/item/rappel_harness
 	var/obj/effect/rappel_rope/hatch_rope = null
-	var/obj/effect/rappel_rope/ground_rope = null
+	var/list/ground_ropes = list()
 	var/rope_in_use = FALSE
 	var/locked_target = null
 	var/view = null
@@ -1575,17 +1577,56 @@
 	else
 		icon_state = "rappel_module_packaged"
 
-/obj/structure/dropship_equipment/rappel_system/proc/create_ropes(hatch_turf, ground_turf)
+/obj/structure/dropship_equipment/rappel_system/proc/create_ropes(hatch_turf, deploy_turf)
 	if(hatch_rope)
 		qdel(hatch_rope)
-	if(ground_rope)
-		qdel(ground_rope)
 
 	hatch_rope = new /obj/effect/rappel_rope(hatch_turf, TRUE)
 	hatch_rope.linked_rappel = src
 
-	ground_rope = new /obj/effect/rappel_rope(ground_turf, FALSE)
-	ground_rope.linked_rappel = src
+	// Find up to 4 unique valid turfs around deploy_turf
+	var/turf/center_turf = get_turf(deploy_turf)
+	if(!center_turf)
+		return
+	var/list/valid_turfs = list()
+	var/list/possible_turfs = block(center_turf.x-2, center_turf.y-2, center_turf.z, center_turf.x+2, center_turf.y+2, center_turf.z)
+	for(var/atom/possible_turf in possible_turfs)
+		if(!istype(possible_turf, /turf))
+			continue
+		var/turf/current_turf = possible_turf
+		var/area/current_area = get_area(current_turf)
+		if(!current_area || CEILING_IS_PROTECTED(current_area.ceiling, CEILING_PROTECTION_TIER_1))
+			continue
+		if(current_turf.density)
+			continue
+		var/has_dense_object = FALSE
+		for(var/atom/content in current_turf.contents)
+			if(istype(content, /obj))
+				var/obj/object_in_turf = content
+				if(object_in_turf.density && object_in_turf.can_block_movement)
+					has_dense_object = TRUE
+					break
+			else if(istype(content, /mob))
+				var/mob/mob_in_turf = content
+				if(mob_in_turf.density && mob_in_turf.can_block_movement)
+					has_dense_object = TRUE
+					break
+		if(has_dense_object)
+			continue
+		if(protected_by_pylon(TURF_PROTECTION_MORTAR, current_turf))
+			continue
+		valid_turfs += current_turf
+
+	// Pick up to 4 unique turfs for ropes
+	if(ground_ropes)
+		ground_ropes.Cut()
+	ground_ropes = list()
+	for(var/rope_index = 1 to min(4, length(valid_turfs)))
+		var/turf/rope_turf = pick(valid_turfs)
+		valid_turfs -= rope_turf
+		var/obj/effect/rappel_rope/new_rope = new /obj/effect/rappel_rope(rope_turf, FALSE)
+		new_rope.linked_rappel = src
+		ground_ropes += new_rope
 
 /obj/structure/dropship_equipment/rappel_system/proc/set_icon_state(state)
     icon_state = state
@@ -1594,23 +1635,24 @@
 	if(hatch_rope)
 		qdel(hatch_rope)
 		hatch_rope = null
-	if(ground_rope)
-		qdel(ground_rope)
-		ground_rope = null
+	if(ground_ropes && length(ground_ropes))
+		for(var/obj/effect/rappel_rope/R in ground_ropes)
+			qdel(R)
+		ground_ropes.Cut()
 	rope_in_use = FALSE
 
 /obj/structure/dropship_equipment/rappel_system/proc/descend_rope(mob/living/carbon/human/user, obj/effect/rappel_rope/rope)
 	if(rope_in_use)
 		to_chat(user, SPAN_WARNING("The rope is currently in use!"))
 		return
-	if(!ground_rope || !ground_rope.loc)
+	if(!ground_ropes || !length(ground_ropes))
 		to_chat(user, SPAN_WARNING("The rope is not properly deployed!"))
 		return
 	rope_in_use = TRUE
 	rope.icon_state = "rope_inuse"
 	to_chat(user, SPAN_NOTICE("You begin rappelling down the rope..."))
 	sleep(40)
-	user.forceMove(ground_rope.loc)
+	user.forceMove(rope.loc)
 	rope.release_rope()
 	rope_in_use = FALSE
 
@@ -1633,7 +1675,7 @@
 	if(rope_in_use)
 		to_chat(user, SPAN_WARNING("The rope is currently in use!"))
 		return
-	if(!hatch_rope || !ground_rope)
+	if(!hatch_rope || !ground_ropes || !length(ground_ropes))
 		to_chat(user, SPAN_WARNING("The rope is not deployed!"))
 		return
 	hatch_rope.attack_hand(user)
@@ -1675,15 +1717,10 @@
 			flick("rappel_hatch_closing", src)
 		qdel(hatch_rope)
 		hatch_rope = null
-	if(ground_rope)
-		if(animated)
-			flick("rope_up", ground_rope)
-			spawn(5)
-				qdel(ground_rope)
-				ground_rope = null
-		else
-			qdel(ground_rope)
-			ground_rope = null
+	if(length(ground_ropes))
+		for(var/obj/effect/rappel_rope/Ropes in ground_ropes)
+			qdel(Ropes)
+		ground_ropes.Cut()
 	if(animated)
 		icon_state = "rappel_hatch_closed"
 

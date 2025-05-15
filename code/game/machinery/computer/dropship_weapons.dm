@@ -677,8 +677,10 @@
 			rappel.icon_state = "rappel_hatch_open"
 			// Delay rope creation until after hatch animation (17 frames)
 			spawn(17)
-				rappel.create_ropes(rappel.loc, deploy_turf)
-				rappel.last_deployed_target = sig
+				var/turf/target_turf = get_turf(deploy_turf)
+				if(target_turf)
+					rappel.create_ropes(rappel.loc, target_turf)
+					rappel.last_deployed_target = sig
 			rappel.manual_cancel_cooldown = world.time + 6 SECONDS
 			return TRUE
 
