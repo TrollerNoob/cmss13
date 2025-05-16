@@ -399,8 +399,8 @@
 			if(!sig)
 				return FALSE
 
-			selected_equipment = DEW
-			if(ui_open_fire(user, shuttle, camera_target_id))
+			// Do NOT set selected_equipment here; just use DEW for this fire action
+			if(ui_open_fire(user, shuttle, camera_target_id, DEW))
 				if(firemission_envelope)
 					firemission_envelope.untrack_object()
 			return TRUE
@@ -791,10 +791,9 @@
 
 /obj/structure/machinery/computer/dropship_weapons/proc/get_weapon(eqp_tag)
 	var/obj/docking_port/mobile/marine_dropship/dropship = SSshuttle.getShuttle(shuttle_tag)
-	var/obj/structure/dropship_equipment/equipment = dropship.equipments[eqp_tag]
-	if(istype(equipment, /obj/structure/dropship_equipment/weapon))
-		//is weapon
-		return equipment
+	for(var/obj/structure/dropship_equipment/weapon/WEAP as anything in dropship.equipments)
+		if(ref(WEAP) == eqp_tag)
+			return WEAP
 	return
 
 /obj/structure/machinery/computer/dropship_weapons/proc/get_cas_signal(target_ref, valid_only = FALSE)
@@ -873,7 +872,6 @@
 
 /obj/structure/machinery/computer/dropship_weapons/proc/get_sanitised_equipment(mob/user, obj/docking_port/mobile/marine_dropship/dropship)
 	. = list()
-	var/element_nbr = 1
 	for(var/obj/structure/dropship_equipment/equipment in dropship.equipments)
 		// Hide all weapons except heavygun/bay from belly_gun console
 		if(istype(src, /obj/structure/machinery/computer/dropship_weapons/belly_gun))
@@ -885,7 +883,7 @@
 		var/list/data = list(
 			"name"= equipment.name,
 			"shorthand" = equipment.shorthand,
-			"eqp_tag" = element_nbr,
+			"eqp_tag" = ref(equipment),
 			"is_weapon" = equipment.is_weapon,
 			"is_interactable" = equipment.is_interactable,
 			"mount_point" = equipment.ship_base.attach_id,
@@ -910,7 +908,6 @@
 
 		. += list(data)
 
-		element_nbr++
 		equipment.linked_console = src
 
 
@@ -935,7 +932,11 @@
 	E.linked_console = src
 	E.equipment_interact(user)
 
-/obj/structure/machinery/computer/dropship_weapons/proc/ui_open_fire(mob/weapon_operator, obj/docking_port/mobile/marine_dropship/dropship, targ_id)
+/obj/structure/machinery/computer/dropship_weapons/proc/ui_open_fire(mob/weapon_operator, obj/docking_port/mobile/marine_dropship/dropship, targ_id, obj/structure/dropship_equipment/weapon/override_weapon = null)
+	var/obj/structure/dropship_equipment/weapon/DEW = override_weapon ? override_weapon : selected_equipment
+	if(!DEW || !DEW.is_weapon)
+		to_chat(weapon_operator, SPAN_WARNING("No weapon selected."))
+		return FALSE
 	if(ishuman(weapon_operator))
 		var/mob/living/carbon/human/human_operator = weapon_operator
 		if(!human_operator.allow_gun_usage)
@@ -944,10 +945,6 @@
 		if(MODE_HAS_MODIFIER(/datum/gamemode_modifier/ceasefire))
 			to_chat(human_operator, SPAN_WARNING("You will not break the ceasefire by doing that!"))
 			return FALSE
-	var/obj/structure/dropship_equipment/weapon/DEW = selected_equipment
-	if(!selected_equipment || !selected_equipment.is_weapon)
-		to_chat(weapon_operator, SPAN_WARNING("No weapon selected."))
-		return FALSE
 	if(!skillcheck(weapon_operator, SKILL_PILOT, DEW.skill_required)) //only pilots can fire dropship weapons.
 		to_chat(weapon_operator, SPAN_WARNING("You don't have the training to fire this weapon!"))
 		return FALSE
@@ -956,9 +953,6 @@
 		return FALSE
 	if(!faction)
 		return FALSE //no faction, no weapons
-	if(!selected_equipment || !selected_equipment.is_weapon)
-		to_chat(weapon_operator, SPAN_WARNING("No weapon selected."))
-		return FALSE
 	if(dropship.door_override)
 		return FALSE
 	if(!skillcheck(weapon_operator, SKILL_PILOT, DEW.skill_required)) //only pilots can fire dropship weapons.
