@@ -165,6 +165,16 @@
 	if(initial_turf == null || check(linked_console) != FIRE_MISSION_ALL_GOOD)
 		return FIRE_MISSION_NOT_EXECUTABLE
 
+	// Check for vertical exhaust nozzle for live firemission speed boost
+	var/obj/docking_port/mobile/marine_dropship/dropship = SSshuttle.getShuttle(linked_console.shuttle_tag)
+	var/has_nozzle = FALSE
+	if(istype(dropship))
+		for(var/obj/structure/dropship_equipment/electronics/vertical_exhaust_nozzle/nozzle in dropship.equipments)
+			has_nozzle = TRUE
+			break
+	if(has_nozzle)
+		step_delay = step_delay - 1 // 33% faster
+
 	var/turf/current_turf = initial_turf
 	var/tally_step = steps / mission_length //how much shots we need before moving to next turf
 	var/next_step = tally_step //when we move to next turf
