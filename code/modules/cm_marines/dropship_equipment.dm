@@ -770,7 +770,7 @@
 	if(istype(src, /obj/structure/dropship_equipment/weapon/heavygun/bay))
 		ammo_accuracy_range = max(ammo_accuracy_range-2, 0)
 		ammo_max_inaccuracy = max(ammo_max_inaccuracy -3,1)
-		ammo_travelling_time = max(ammo_travelling_time - 20, 10)
+		ammo_travelling_time = max(ammo_travelling_time - 40, 10)
 	else if(linked_shuttle)
 		for(var/obj/structure/dropship_equipment/electronics/targeting_system/TS in linked_shuttle.equipments)
 			// Skip applying targeting system effects if the weapon is a bomb bay
