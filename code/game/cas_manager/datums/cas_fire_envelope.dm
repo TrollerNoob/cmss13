@@ -1,7 +1,7 @@
 /datum/cas_fire_envelope
 	var/obj/structure/machinery/computer/dropship_weapons/linked_console
 	var/list/datum/cas_fire_mission/missions
-	var/fire_length
+	var/fire_length = 12 //12 is the standard for dropships
 	var/grace_period //how much time you have after initiating fire mission and before you can't change firemissions
 	var/first_warning
 	var/second_warning
@@ -44,11 +44,18 @@
 		mission.update_weapons(weapons, fire_length)
 
 /datum/cas_fire_envelope/proc/generate_mission(firemission_name, length)
-	if(!missions || !linked_console || !fire_length)
+	if(!missions || !linked_console)
 		return null
 	var/list/obj/structure/dropship_equipment/weapons = list()
 	var/shuttle_tag = linked_console.shuttle_tag
 	var/obj/docking_port/mobile/marine_dropship/dropship = SSshuttle.getShuttle(shuttle_tag)
+
+	// Set fire_length to 16 if ram_rocket is present, else 12
+	if(istype(dropship))
+		for(var/obj/structure/dropship_equipment/fuel/ram_rocket/rocket in dropship.equipments)
+			fire_length = 16
+			break
+
 	for(var/obj/structure/dropship_equipment/equipment as anything in dropship.equipments)
 		if(equipment.is_weapon)
 			weapons += equipment
@@ -58,7 +65,7 @@
 		fm.build_new_record(wp, fire_length)
 
 	fm.name = firemission_name
-	fm.mission_length = length
+	fm.mission_length = fire_length
 	missions += fm
 	return fm
 
@@ -312,12 +319,21 @@
 	firemission_effect.invisibility = INVISIBILITY_MAXIMUM
 	QDEL_IN(firemission_effect, 12 SECONDS)
 
+	// Ramrocket: decrease grace_period (initiation time) by 40%
+	var/adjusted_grace_period = grace_period
+	if(linked_console)
+		var/shuttle_tag = linked_console.shuttle_tag
+		var/obj/docking_port/mobile/marine_dropship/dropship = SSshuttle.getShuttle(shuttle_tag)
+		if(istype(dropship))
+			for(var/obj/structure/dropship_equipment/fuel/ram_rocket/rocket in dropship.equipments)
+				adjusted_grace_period = grace_period - 4
+				break
 
 	notify_ghosts(header = "CAS Fire Mission", message = "[usr ? usr : "Someone"] is launching Fire Mission '[mission.name]' at [get_area(target_turf)].", source = firemission_effect)
 	msg_admin_niche("[usr ? key_name(usr) : "Someone"] is launching Fire Mission '[mission.name]' at ([target_turf.x],[target_turf.y],[target_turf.z]) [ADMIN_JMP(target_turf)]")
 
 
-	addtimer(CALLBACK(src, PROC_REF(play_sound), target_turf), grace_period)
+	addtimer(CALLBACK(src, PROC_REF(play_sound), target_turf), adjusted_grace_period)
 	addtimer(CALLBACK(src, PROC_REF(chat_warning), target_turf, 15, 1), first_warning)
 	addtimer(CALLBACK(src, PROC_REF(chat_warning), target_turf, 15, 2), second_warning)
 	addtimer(CALLBACK(src, PROC_REF(chat_warning), target_turf, 10, 3), third_warning)
@@ -366,7 +382,7 @@
 	return 1
 
 /datum/cas_fire_envelope/uscm_dropship
-	fire_length = 12
+
 	grace_period = 5 SECONDS
 	first_warning = 6 SECONDS
 	second_warning = 8 SECONDS
@@ -408,3 +424,13 @@
 	if(result != FIRE_MISSION_ALL_GOOD)
 		return firemission_envelope.mission_error
 	return "OK"
+
+/datum/cas_fire_envelope/proc/update_fire_length_from_equipment()
+	fire_length = 12
+	if(linked_console)
+		var/shuttle_tag = linked_console.shuttle_tag
+		var/obj/docking_port/mobile/marine_dropship/dropship = SSshuttle.getShuttle(shuttle_tag)
+		if(istype(dropship))
+			for(var/obj/structure/dropship_equipment/fuel/ram_rocket/rocket in dropship.equipments)
+				fire_length = 16
+				break

@@ -62,8 +62,6 @@ const CreateFiremissionPanel = (props: {
         <Input
           value={fmLength}
           type="number"
-          min={1}
-          max={12}
           onInput={(e, value) => setFmLength(value)}
           onEnter={handleCreate}
         />
@@ -337,11 +335,22 @@ const FiremissionView = (props: MfdProps & { readonly fm: CasFiremission }) => {
           <Stack.Item>
             <Divider />
           </Stack.Item>
-          {range(1, 13).map((x) => (
-            <Stack.Item className="FireMissionTitle" key={x}>
-              {x}
-            </Stack.Item>
-          ))}
+          {/* Dynamically render step headers based on offsets length */}
+          {(() => {
+            // Find the first weapon with offsets to determine step count
+            const weaponData = props.fm.records
+              .map((x) =>
+                data.equipment_data.find((y) => y.mount_point === x.weapon),
+              )
+              .filter((x) => x !== undefined);
+            const firstOffsets = props.fm.records[0]?.offsets;
+            const stepCount = firstOffsets ? firstOffsets.length : 12;
+            return range(1, stepCount + 1).map((x) => (
+              <Stack.Item className="FireMissionTitle" key={x}>
+                {x}
+              </Stack.Item>
+            ));
+          })()}
         </Stack>
       </Stack.Item>
       <Stack.Item>
@@ -509,7 +518,7 @@ const FMOffsetStack = (
     return <FMOffsetError {...props} />;
   }
 
-  const availableMap = range(0, 13).map((_) => true);
+  const availableMap = offsets ? range(0, offsets.length).map((_) => true) : [];
   offsets?.forEach((x, index) => {
     if (x === undefined || x === '-') {
       return;
