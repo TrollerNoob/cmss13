@@ -257,7 +257,7 @@
 	.["nextdetonationtime"] = simulation.detonation_cooldown
 	.["detonation_cooldown"] = simulation.detonation_cooldown_time
 
-	.["can_modify_direct_offset"] = (dropship && locate(/obj/structure/dropship_equipment/electronics/targeting_designator) in dropship.equipments)
+	.["can_modify_direct_offset"] = (dropship && locate(/obj/structure/dropship_equipment/electronics/targeting_designator) in dropship.equipments) || (selected_equipment && istype(selected_equipment, /obj/structure/dropship_equipment/weapon/heavygun/bay))
 
 /obj/structure/machinery/computer/dropship_weapons/ui_act(action, list/params, datum/tgui/ui, datum/ui_state/state)
 	. = ..()
@@ -448,7 +448,7 @@
 			camera_target_id = target_id
 
 			// Only allow changing direct fire offsets if offsetter is installed
-			var/can_modify_direct_offset = (shuttle && locate(/obj/structure/dropship_equipment/electronics/targeting_designator) in shuttle.equipments)
+			var/can_modify_direct_offset = (shuttle && locate(/obj/structure/dropship_equipment/electronics/targeting_designator) in shuttle.equipments) || (selected_equipment && istype(selected_equipment, /obj/structure/dropship_equipment/weapon/heavygun/bay))
 			if(can_modify_direct_offset)
 				src.direct_x_offset_value = clamp(text2num(direct_x_offset_value), -3, 3)
 				src.direct_y_offset_value = clamp(text2num(direct_y_offset_value), -3, 3)
