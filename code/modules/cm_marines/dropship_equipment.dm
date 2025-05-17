@@ -762,6 +762,10 @@
 /obj/structure/dropship_equipment/weapon/proc/open_fire(obj/selected_target, mob/user = usr)
 	set waitfor = 0
 
+	if(src.fire_mission_only)
+		to_chat(user, SPAN_WARNING("[src] can only be used in a fire mission!"))
+		return
+
 	var/offset_x = 0
 	var/offset_y = 0
 
@@ -985,6 +989,30 @@
 	..()
 	if(ammo_equipped && !ammo_equipped.ammo_count) //fired last minirocket
 		ammo_equipped = null
+
+/obj/structure/dropship_equipment/weapon/missile_silo
+	name = "\improper MK. 14 Missile Silo"
+	icon_state = "rocket_pod"
+	desc = "A missile silo that unfurls during subsonic flight, specialized in use for low altitude ground bombardments. Can not be used during suborbital strikes. Moving this will require some sort of lifter. Accepts MK and ATM missile systems."
+	firing_sound = 'sound/effects/rocketpod_fire.ogg'
+	firing_delay = 5
+	point_cost = 600
+	shorthand = "SIL"
+	fire_mission_only = TRUE
+
+/obj/structure/dropship_equipment/weapon/missile_silo/deplete_ammo()
+	..()
+	if(ammo_equipped && !ammo_equipped.ammo_count) //fired last missile
+		ammo_equipped = null
+
+/obj/structure/dropship_equipment/weapon/missile_silo/update_icon()
+	if(ammo_equipped && ammo_equipped.ammo_count)
+		icon_state = "rocket_pod_loaded[ammo_equipped.ammo_id]"
+	else
+		if(ship_base)
+			icon_state = "rocket_pod_installed"
+		else
+			icon_state = "rocket_pod"
 
 /obj/structure/dropship_equipment/weapon/laser_beam_gun
 	name = "\improper LWU-6B Laser Cannon"

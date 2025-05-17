@@ -1,6 +1,3 @@
-
-
-
 /// Dropship weaponry ammunition
 /obj/structure/ship_ammo
 	icon = 'icons/obj/structures/props/dropship/dropship_ammo.dmi'
@@ -311,12 +308,8 @@
 	impact.ceiling_debris_check(3)
 	addtimer(CALLBACK(GLOBAL_PROC, GLOBAL_PROC_REF(cell_explosion), impact, 225, 40, EXPLOSION_FALLOFF_SHAPE_LINEAR, null, create_cause_data(initial(name), source_mob)), 0.5 SECONDS) //Small explosive power compensated by its fire + white phosphorous effect
 	addtimer(CALLBACK(GLOBAL_PROC, GLOBAL_PROC_REF(fire_spread), impact, create_cause_data(initial(name), source_mob), 4, 15, 50, "#00b8ff"), 1 SECONDS) //Very intense but the fire doesn't last very long
-	spawn(3)
-		var/datum/effect_system/smoke_spread/phosphorus/WPSmoke = new/datum/effect_system/smoke_spread/phosphorus()
-		WPSmoke.set_up(4, 0, impact, null, 8)
-		WPSmoke.start(40,50)
-	if(!ammo_count && loc)
-		qdel(src)
+	addtimer(CALLBACK(GLOBAL_PROC, GLOBAL_PROC_REF(smoke_spread), impact, 4, /obj/effect/particle_effect/smoke/phosphorus), null, 6)
+	QDEL_IN(src, 0.5 SECONDS)
 
 /obj/structure/ship_ammo/rocket/keeper
 	name = "\improper GBU-67 'Keeper II'"
@@ -427,6 +420,99 @@
 	..()
 	spawn(5)
 		fire_spread(impact, create_cause_data(initial(name), source_mob), 3, 25, 20, "#EE6515")
+
+//missiles
+
+/obj/structure/ship_ammo/missile
+	name = "abstract missile"
+	icon_state = "double"
+	icon = 'icons/obj/structures/props/dropship/dropship_ammo64.dmi'
+	equipment_type = /obj/structure/dropship_equipment/weapon/missile_silo
+	ammo_count = 4
+	max_ammo_count = 4
+	ammo_name = "missile"
+	travelling_time = 60 // can't be fired on direct so this won't come into play
+	transferable_ammo = TRUE
+	point_cost = 300
+	fire_mission_delay = 2 //low cooldown
+	ammo_id = ""
+	bound_width = 64
+	bound_height = 32
+	accuracy_range = 2 // missiles are tailored for accurate low altitude ground bombardment
+	max_inaccuracy = 5
+	point_cost = 0
+	ammo_used_per_firing = 1
+
+/obj/structure/ship_ammo/missile/detonate_on(turf/impact, obj/structure/dropship_equipment/weapon/fired_from)
+	qdel(src)
+
+/obj/structure/ship_ammo/missile/zeus
+	name = "\improper MK.12 'Zeus'"
+	desc = "The MK.12 'Zeus' is an unguided, spin stabilized rocket system which has become a mainstay option for low altitude air strikes against personnel. Its nickname 'Zeus' comes from its resembelance to a bolt of lightning when striking upon targets. It is capable of being fired from the Mk.14 Missile Silo."
+	icon_state = "double"
+	travelling_time = 40
+	point_cost = 300
+
+/obj/structure/ship_ammo/missile/zeus/detonate_on(turf/impact, obj/structure/dropship_equipment/weapon/fired_from)
+	impact.ceiling_debris_check(2)
+	addtimer(CALLBACK(GLOBAL_PROC, GLOBAL_PROC_REF(cell_explosion), impact, 250, 40, EXPLOSION_FALLOFF_SHAPE_LINEAR, null, create_cause_data(initial(name), source_mob)), 0.5 SECONDS)
+	addtimer(CALLBACK(GLOBAL_PROC, GLOBAL_PROC_REF(explosion_particles), impact, 3), 0.5 SECONDS)
+	addtimer(CALLBACK(GLOBAL_PROC, GLOBAL_PROC_REF(smoke_spread), impact, 2, /obj/effect/particle_effect/smoke, null, 2), 1 SECONDS)
+	addtimer(CALLBACK(GLOBAL_PROC, GLOBAL_PROC_REF(create_shrapnel), impact, 60, 0, 360, /datum/ammo/bullet/shrapnel/hornet_rounds, create_cause_data(initial(name), source_mob), FALSE, 100), 0.5 SECONDS)
+	QDEL_IN(src, 0.5 SECONDS)
+
+/obj/structure/ship_ammo/missile/sgw
+	name = "\improper MK.91 'SGW'"
+	desc = "The MK.91 'SGW' is short range 'fire and forget' missile designed for use against light armor and entrenched positions. Its popularity skyrocketed upon rumors of a single well placed payload decimating an entire CLF guerilla bunker. It is capable of being fired from the Mk.14 Missile Silo."
+	icon_state = "double"
+	travelling_time = 40
+	point_cost = 300
+	ammo_count = 3
+	max_ammo_count = 3
+	fire_mission_delay = 3 // moderate cooldown
+
+/obj/structure/ship_ammo/missile/sgw/detonate_on(turf/impact, obj/structure/dropship_equipment/weapon/fired_from)
+	impact.ceiling_debris_check(2)
+	addtimer(CALLBACK(GLOBAL_PROC, GLOBAL_PROC_REF(cell_explosion), impact, 290, 70, EXPLOSION_FALLOFF_SHAPE_LINEAR, null, create_cause_data(initial(name), source_mob)), 0.5 SECONDS)
+	addtimer(CALLBACK(GLOBAL_PROC, GLOBAL_PROC_REF(explosion_particles), impact, 3), 0.5 SECONDS)
+	addtimer(CALLBACK(GLOBAL_PROC, GLOBAL_PROC_REF(smoke_spread), impact, 2, /obj/effect/particle_effect/smoke, null, 2), 1 SECONDS)
+	addtimer(CALLBACK(GLOBAL_PROC, GLOBAL_PROC_REF(create_shrapnel), impact, 60, 0, 360, /datum/ammo/bullet/shrapnel/metal, create_cause_data(initial(name), source_mob), FALSE, 100), 0.5 SECONDS)
+	QDEL_IN(src, 0.5 SECONDS)
+
+/obj/structure/ship_ammo/missile/banshee
+	name = "\improper MK.25 'Banshee'"
+	desc = "The Mk.25 'Banshee' is modified version of the standard AGM-228, designed for use in missile silos. As opposed to releasing a flaming willypete compound, it instead employs incendiary flechette capable of puncturing and igniting heavy armor. It is capable of being fired from the Mk.14 Missile Silo."
+	icon_state = "double"
+	travelling_time = 40
+	point_cost = 300
+	ammo_count = 3
+	max_ammo_count = 3
+
+/obj/structure/ship_ammo/missile/banshee/detonate_on(turf/impact, obj/structure/dropship_equipment/weapon/fired_from)
+	impact.ceiling_debris_check(2)
+	addtimer(CALLBACK(GLOBAL_PROC, GLOBAL_PROC_REF(cell_explosion), impact, 225, 50, EXPLOSION_FALLOFF_SHAPE_LINEAR, null, create_cause_data(initial(name), source_mob)), 0.5 SECONDS)
+	addtimer(CALLBACK(GLOBAL_PROC, GLOBAL_PROC_REF(explosion_particles), impact, 3), 0.5 SECONDS)
+	addtimer(CALLBACK(GLOBAL_PROC, GLOBAL_PROC_REF(smoke_spread), impact, 2, /obj/effect/particle_effect/smoke, null, 2), 1 SECONDS)
+	addtimer(CALLBACK(GLOBAL_PROC, GLOBAL_PROC_REF(create_shrapnel), impact, 60, 0, 360, /datum/ammo/bullet/shrapnel/incendiary, create_cause_data(initial(name), source_mob), FALSE, 100), 0.5 SECONDS)
+	QDEL_IN(src, 0.5 SECONDS)
+
+/obj/structure/ship_ammo/missile/hellhound
+	name = "\improper ATM-230D 'HELLHOUND IV'"
+	desc = "The ATM-230D 'HELLHOUND IV' is the latest installment of multi-role tactical missiles employed by gunship pilots. Designed specifically for use against high priority targets such as vehicles, buildings and bunkers, it houses a complicated three stage motor. It is capable of being fired from the Mk.14 Missile Silo."
+	icon_state = "double"
+	travelling_time = 40
+	point_cost = 500
+	ammo_count = 2
+	max_ammo_count = 2
+	fire_mission_delay = 4 // high cooldown
+
+/obj/structure/ship_ammo/missile/hellhound/detonate_on(turf/impact, obj/structure/dropship_equipment/weapon/fired_from)
+	impact.ceiling_debris_check(2)
+	addtimer(CALLBACK(GLOBAL_PROC, GLOBAL_PROC_REF(cell_explosion), impact, 350, 75, EXPLOSION_FALLOFF_SHAPE_LINEAR, null, create_cause_data(initial(name), source_mob)), 0.5 SECONDS)
+	addtimer(CALLBACK(GLOBAL_PROC, GLOBAL_PROC_REF(explosion_particles), impact, 6), 0.5 SECONDS)
+	addtimer(CALLBACK(GLOBAL_PROC, GLOBAL_PROC_REF(smoke_spread), impact, 3, /obj/effect/particle_effect/smoke, null, 2), 1 SECONDS)
+	addtimer(CALLBACK(GLOBAL_PROC, GLOBAL_PROC_REF(create_shrapnel), impact, 75, 0, 360, /datum/ammo/bullet/shrapnel/breaching, create_cause_data(initial(name), source_mob), FALSE, 100), 0.5 SECONDS)
+	QDEL_IN(src, 0.5 SECONDS)
 
 //utility
 
