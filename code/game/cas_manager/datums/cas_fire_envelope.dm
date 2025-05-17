@@ -326,7 +326,7 @@
 		var/obj/docking_port/mobile/marine_dropship/dropship = SSshuttle.getShuttle(shuttle_tag)
 		if(istype(dropship))
 			for(var/obj/structure/dropship_equipment/fuel/ram_rocket/rocket in dropship.equipments)
-				adjusted_grace_period = grace_period - 4
+				adjusted_grace_period = grace_period / 2
 				break
 
 	notify_ghosts(header = "CAS Fire Mission", message = "[usr ? usr : "Someone"] is launching Fire Mission '[mission.name]' at [get_area(target_turf)].", source = firemission_effect)
