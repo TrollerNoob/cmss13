@@ -518,6 +518,7 @@
 #define TURF_PROTECTION_MORTAR 1
 #define TURF_PROTECTION_CAS 2
 #define TURF_PROTECTION_OB 3
+#define TURF_PROTECTION_ANTIAIR (1<<2)
 
 /// Convert a turf protection level to a ceiling protection level
 /proc/get_ceiling_protection_level(turf_protection_level)

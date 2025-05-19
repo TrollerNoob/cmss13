@@ -75,6 +75,7 @@
 		/datum/action/xeno_action/activable/spray_acid/boiler, //3rd macro
 		/datum/action/xeno_action/onclick/toggle_long_range/boiler, //4th macro
 		/datum/action/xeno_action/onclick/acid_shroud, //5th macro
+		/datum/action/xeno_action/activable/boiler_skyspit/boiler,
 		/datum/action/xeno_action/onclick/tacmap,
 	)
 	skull = /obj/item/skull/boiler
@@ -281,3 +282,43 @@
 		else
 			CRASH("Globber has unknown ammo [stabbing_xeno.ammo]! Oh no!")
 		return TRUE
+
+/datum/action/xeno_action/activable/boiler_skyspit/boiler/use_ability(atom/affected_atom)
+	var/mob/living/carbon/xenomorph/xeno = owner
+	if(!xeno)
+		return FALSE
+	var/turf/center = get_turf(xeno)
+	if(!center)
+		to_chat(xeno, SPAN_WARNING("No valid turf to mark!"))
+		return FALSE
+
+	var/list/affected_turfs = list()
+	for(var/turf/T in orange(4, center))
+		if(T.skyspit_active)
+			continue
+		T.skyspit_active = TRUE
+		T.turf_protection_flags |= TURF_PROTECTION_ANTIAIR
+		T.skyspit_expire_timer = addtimer(CALLBACK(T, /turf/proc/remove_skyspit_marker), 100, TIMER_UNIQUE) // 10s
+		if(!T.skyspit_overlay)
+			T.skyspit_overlay = new /obj/effect/xenomorph/xeno_telegraph/green(T)
+		affected_turfs += T
+
+	if(affected_turfs.len)
+		to_chat(xeno, SPAN_NOTICE("You mark the area with corrosive skyspit!"))
+		apply_cooldown()
+		return ..()
+	else
+		to_chat(xeno, SPAN_WARNING("All tiles in range are already marked!"))
+		return FALSE
+
+// Also add cleanup for the overlay in remove_skyspit_marker
+/turf/proc/remove_skyspit_marker()
+	if(skyspit_active)
+		skyspit_active = FALSE
+		turf_protection_flags &= ~TURF_PROTECTION_ANTIAIR
+		skyspit_expire_timer = null
+		if(skyspit_overlay)
+			qdel(skyspit_overlay)
+			skyspit_overlay = null
+		for(var/mob/M in src)
+			to_chat(M, SPAN_INFO("The skyspit on the ground evaporates."))

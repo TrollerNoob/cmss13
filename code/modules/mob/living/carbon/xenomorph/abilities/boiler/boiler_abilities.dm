@@ -132,3 +132,9 @@
 
 /datum/action/xeno_action/activable/tail_stab/boiler
 	name = "Toxic Tail Stab"
+
+/datum/action/xeno_action/activable/boiler_skyspit/boiler
+	name = "Skyspit"
+	action_icon_state = "acid_shotgun"
+	plasma_cost = 100
+	xeno_cooldown = 1 SECONDS

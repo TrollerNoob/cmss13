@@ -210,6 +210,11 @@
 				return -1
 			var/turf/shootloc = locate(current_turf.x + sx*offset, current_turf.y + sy*offset, current_turf.z)
 			var/area/area = get_area(shootloc)
+			if(shootloc && (shootloc.turf_protection_flags & TURF_PROTECTION_ANTIAIR))
+				// Apply corrosion to the weapon if anti-air protection is present
+				if(istype(item.weapon, /obj/structure/dropship_equipment/weapon) && !item.weapon.corrosion_destroyed)
+					item.weapon.apply_corrosion_stack("skyspit")
+					// Optionally: notify pilots, create shrapnel, etc.
 			if(shootloc && !CEILING_IS_PROTECTED(area?.ceiling, CEILING_PROTECTION_TIER_3) && !protected_by_pylon(TURF_PROTECTION_CAS, shootloc))
 				item.weapon.open_fire_firemission(shootloc)
 		sleep(step_delay)

@@ -1232,3 +1232,11 @@
         SEND_SIGNAL(src, COMSIG_CAMERA_REGISTER_UI, user)
         ui = new(user, src, "DropshipGunnerConsole", "Gunner Console")
         ui.open()
+
+/obj/structure/machinery/computer/dropship_weapons/proc/spew_incendiary_shrapnel()
+	// Use create_shrapnel to spew incendiary shrapnel in a 180-degree arc to the south
+	var/turf/center = get_turf(src)
+	if(!center) return
+	// 180-degree arc: SOUTH, SOUTHEAST, SOUTHWEST
+	// Use shrapnel_direction = SOUTH (5), shrapnel_spread = 90 for 180-degree arc
+	create_shrapnel(center, 12, SOUTH, 90, /datum/ammo/bullet/shrapnel/incendiary)

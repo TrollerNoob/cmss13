@@ -1,3 +1,17 @@
+#define PROCESS_CONTINUE 0
+
+/obj/structure/dropship_equipment/weapon
+	var/processing_corrosion = FALSE
+	/// Corrosion stacks: list of corrosion info (each is a list with [expiry_time, applier, stack_id])
+	var/list/corrosion_stacks = list()
+	/// If true, corrosion is being repaired (blocks further repair attempts)
+	var/corrosion_repairing = FALSE
+	/// If true, corrosion is currently blocking reload
+	var/corrosion_block_reload = FALSE
+	/// Time (in deciseconds) for a corrosion stack to expire (default 300s)
+	var/corrosion_stack_duration = 600
+	/// If true, weapon is destroyed by corrosion
+	var/corrosion_destroyed = FALSE
 /obj/structure/dropship_equipment/weapon/proc/apply_corrosion_stack(applier)
 	if(src.corrosion_destroyed)
 		return
@@ -5,15 +19,19 @@
 	var/expiry = now + src.corrosion_stack_duration
 	src.corrosion_stacks += list(list("expiry"=expiry, "applier"=applier, "stack_id"=rand(1,999999)))
 	src.corrosion_block_reload = TRUE
-	src.process_corrosion()
-	src.update_icon()
+	// Trigger shrapnel spew from the linked console if present
+	if(linked_console)
+		linked_console.spew_incendiary_shrapnel()
+	// Register for processing if not already
+	if(!src.processing_corrosion)
+		src.processing_corrosion = TRUE
+		START_PROCESSING(SSobj, src)
 
-/obj/structure/dropship_equipment/weapon/proc/is_corroded()
-	return length(src.corrosion_stacks) > 0 && !src.corrosion_destroyed
-
-/obj/structure/dropship_equipment/weapon/proc/process_corrosion()
+/obj/structure/dropship_equipment/weapon/process(delta_time)
 	if(src.corrosion_destroyed)
-		return
+		STOP_PROCESSING(SSobj, src)
+		src.processing_corrosion = FALSE
+		return PROCESS_KILL
 	var/now = world.time
 	var/expired = FALSE
 	for(var/i=length(src.corrosion_stacks); i>=1; i--)
@@ -28,16 +46,22 @@
 		if(src.ammo_equipped)
 			qdel(src.ammo_equipped)
 		qdel(src)
-		return
+		STOP_PROCESSING(SSobj, src)
+		src.processing_corrosion = FALSE
+		return PROCESS_KILL
 	if(!src.is_corroded())
 		src.corrosion_block_reload = FALSE
-	src.update_icon()
+		STOP_PROCESSING(SSobj, src)
+		src.processing_corrosion = FALSE
+		return PROCESS_KILL
+	return PROCESS_CONTINUE
 
 /obj/structure/dropship_equipment/weapon/proc/clear_corrosion()
 	src.corrosion_stacks.Cut()
 	src.corrosion_block_reload = FALSE
 	src.corrosion_repairing = FALSE
-	src.update_icon()
+	STOP_PROCESSING(SSobj, src)
+	src.processing_corrosion = FALSE
 
 /obj/structure/dropship_equipment/weapon/proc/can_reload()
 	if(src.corrosion_block_reload)

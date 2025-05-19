@@ -67,6 +67,12 @@
 	/// Is fishing allowed on this turf
 	var/fishing_allowed = FALSE
 
+	var/skyspit_active = FALSE
+	var/skyspit_expire_timer = null
+	var/skyspit_overlay = null
+
+	var/turf_protection_flags = TURF_PROTECTION_NONE
+
 /turf/Initialize(mapload)
 	SHOULD_CALL_PARENT(FALSE) // this doesn't parent call for optimisation reasons
 	if(flags_atom & INITIALIZED)

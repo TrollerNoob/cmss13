@@ -97,6 +97,11 @@
 		return TRUE
 
 /obj/structure/dropship_equipment/proc/load_ammo(obj/item/powerloader_clamp/PC, mob/living/user)
+	if(istype(src, /obj/structure/dropship_equipment/weapon))
+		var/obj/structure/dropship_equipment/weapon/W = src
+		if(W.is_corroded() && W.corrosion_block_reload)
+			to_chat(user, SPAN_WARNING("[W] is corroded and cannot be reloaded!"))
+			return
 	if(!ship_base || !uses_ammo || ammo_equipped || !istype(PC.loaded, /obj/structure/ship_ammo))
 		return
 	var/obj/structure/ship_ammo/SA = PC.loaded
@@ -1825,6 +1830,9 @@
 
 	var/list/possible_turfs = RANGE_TURFS(ammo_accuracy_range, target_turf)
 	var/turf/impact = pick(possible_turfs)
+	// Skyspit corrosion check
+	if(impact.skyspit_active)
+		apply_corrosion_stack("skyspit")
 	sleep(3)
 	SA.source_mob = user
 	SA.detonate_on(impact, src)
@@ -1895,6 +1903,11 @@
 	if(!ishuman(user))
 		return
 	reload_weapon(user)
+
+// corrosion
+
+/obj/structure/dropship_equipment/weapon/proc/is_corroded()
+	return length(src.corrosion_stacks) > 0 && !src.corrosion_destroyed
 
 
 
