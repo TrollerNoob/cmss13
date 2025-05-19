@@ -1,13 +1,20 @@
+// dropship maintenance //
+
 // Tools for Dropship Maintenance //
 
-/obj/item/tool/dropship_handheld
+/obj/item/devices/dropship_handheld
 	name = "small handheld"
 	desc = "A small piece of electronic doodads"
-	icon_state = "handheld1"
+	icon = 'icons/obj/items/tools.dmi'
+	icon_state = "wrench"
+	pickup_sound = 'sound/handling/wrench_pickup.ogg'
+	drop_sound = 'sound/handling/wrench_drop.ogg'
+	flags_atom = FPRINT|CONDUCT
+	flags_equip_slot = SLOT_WAIST
 	w_class = SIZE_SMALL
 	var/list/repair_actions = null
 
-/obj/item/tool/dropship_handheld/afterattack(atom/target, mob/user, proximity)
+/obj/item/devices/dropship_handheld/afterattack(atom/target, mob/user, proximity)
 	if(!proximity || !istype(target, /obj/structure/dropship_equipment/weapon))
 		return
 	var/obj/structure/dropship_equipment/weapon/W = target
@@ -27,25 +34,25 @@
 	repair_actions = actions.Copy()
 	to_chat(user, SPAN_NOTICE("Repair scan complete. Use the maintenance computer to continue repairs."))
 
-/obj/item/tool/dropship_comp_closed
+/obj/item/devices/dropship_comp_closed
 	name = "dropship maintenance computer"
 	desc = "A closed dropship maintenance computer that technicians and pilots use to find out what's wrong with a dropship. It has various outlets for different systems."
 	icon_state = "hangar_comp"
 	w_class = SIZE_LARGE
 
-/obj/item/tool/dropship_comp_closed/attack_self(mob/user)
+/obj/item/devices/dropship_comp_closed/attack_self(mob/user)
 	var/obj/item/tool/dropship_comp_open/opened = new /obj/item/tool/dropship_comp_open(get_turf(src))
 	user.put_in_hands(opened)
 	qdel(src)
 	to_chat(user, SPAN_NOTICE("You open the dropship maintenance computer."))
 
-/obj/item/tool/dropship_comp_open
+/obj/item/devices/dropship_comp_open
 	name = "dropship maintenance computer"
 	desc = "An opened dropship maintenance computer, it seems to be off however. It's used by technicians and pilots to find damaged or broken systems on a dropship. It has various outlets for different systems."
 	icon_state = "hangar_comp_open"
 	w_class = SIZE_LARGE
 
-/obj/item/tool/dropship_comp_open/afterattack(atom/target, mob/user, proximity)
+/obj/item/devices/dropship_comp_open/afterattack(atom/target, mob/user, proximity)
 	if(!proximity || !istype(target, /obj/item/tool/dropship_handheld))
 		return
 	var/obj/item/tool/dropship_handheld/handheld = target
@@ -67,4 +74,3 @@
 			var/temp = L[i]
 			L[i] = L[j]
 			L[j] = temp
-
