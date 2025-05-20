@@ -26,6 +26,17 @@
 	if(!src.processing_corrosion)
 		src.processing_corrosion = TRUE
 		START_PROCESSING(SSobj, src)
+	// Generate repair_actions for this stack
+	if(!islist(src.repair_actions))
+		src.repair_actions = list()
+	var/stack = src.corrosion_stacks[length(src.corrosion_stacks)]
+	var/stack_id = stack["stack_id"]
+	var/list/tools = list("welder", "screwdriver", "multitool", "wrench", "crowbar", "wirecutters")
+	var/list/actions = list()
+	for(var/i in 1 to 3)
+		actions += pick(tools)
+	randomize_list(actions)
+	src.repair_actions["[stack_id]"] = actions.Copy()
 
 /obj/structure/dropship_equipment/weapon/process(delta_time)
 	if(src.corrosion_destroyed)

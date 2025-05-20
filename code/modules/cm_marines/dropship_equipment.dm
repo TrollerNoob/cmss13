@@ -49,6 +49,51 @@
 	return XENO_ATTACK_ACTION
 
 /obj/structure/dropship_equipment/attackby(obj/item/I, mob/user)
+	// Exclude dropship_handheld from repair logic
+	if(istype(I, /obj/item/device/dropship_handheld))
+		return ..()
+	if(istype(src, /obj/structure/dropship_equipment/weapon))
+		var/obj/structure/dropship_equipment/weapon/W = src
+		if(W.is_corroded() && islist(W.repair_actions) && length(W.repair_actions))
+			for(var/stack in W.corrosion_stacks)
+				var/stack_id = stack["stack_id"]
+				var/list/actions = W.repair_actions["[stack_id]"]
+				if(!actions || !length(actions))
+					continue
+				var/next_step = actions[1]
+				var/expected_type = get_dropship_repair_tool_type(next_step)
+				if(!expected_type || !istype(I, expected_type))
+					to_chat(user, SPAN_WARNING("Incorrect tool!"))
+					return TRUE
+				if(next_step == "welder" && istype(I, /obj/item/tool/weldingtool))
+					var/obj/item/tool/weldingtool/WELD = I
+					if(!WELD.welding)
+						to_chat(user, SPAN_WARNING("The welder must be activated!"))
+						return TRUE
+				var/time = 5
+				if(istype(user, /mob/living/carbon/human) && user.job == "Dropship Crew Chief")
+					time = 1
+				if(!do_after(user, time * 10, INTERRUPT_NO_NEEDHAND | BEHAVIOR_IMMOBILE, BUSY_ICON_BUILD, target = W))
+					to_chat(user, SPAN_WARNING("Repair interrupted!"))
+					return TRUE
+				// Remove the completed step
+				actions.Cut(1,2)
+				if(length(actions))
+					to_chat(user, SPAN_NOTICE("Step complete. [length(actions)] steps remaining."))
+				else
+					to_chat(user, SPAN_NOTICE("All repair steps complete for malfunction #[stack_id]!"))
+					W.repair_actions["[stack_id]"] = null
+			// If all stacks are repaired, clear corrosion
+			var/all_repaired = TRUE
+			for(var/stack in W.corrosion_stacks)
+				var/stack_id = stack["stack_id"]
+				if(W.repair_actions["[stack_id]"])
+					all_repaired = FALSE
+					break
+			if(all_repaired)
+				W.clear_corrosion()
+				to_chat(user, SPAN_NOTICE("All corrosion repaired! [W] is operational."))
+			return TRUE
 	if(istype(I, /obj/item/powerloader_clamp))
 		var/obj/item/powerloader_clamp/PC = I
 		if(PC.loaded)
@@ -441,8 +486,8 @@
 				to_chat(user, SPAN_NOTICE("You stow [deployed_mg]."))
 				undeploy_mg()
 		else
-		 to_chat(user, SPAN_WARNING("[src] is empty."))
-	 return
+			to_chat(user, SPAN_WARNING("[src] is empty."))
+		return
 
 	..()
 
@@ -729,6 +774,7 @@
 	var/firing_delay = 20
 	/// True if this weapon can only be fired in Fire Missions (not Direct)
 	var/fire_mission_only = TRUE
+	var/list/repair_actions = null
 
 /obj/structure/dropship_equipment/weapon/update_equipment()
 	if(ship_base)
