@@ -24,7 +24,7 @@
 		linked_console.spew_incendiary_shrapnel()
 	// Message to Boiler if applier is a Boiler xeno
 	if(istype(applier, /mob/living/carbon/xenomorph/boiler))
-		to_chat(applier, SPAN_XENOHIGHDANGER("The metal bird veers off course! It's been hit!"))
+		to_chat(applier, SPAN_XENOHIGHDANGER("The metal bird veers off course! It has been injured!"))
 	// Register for processing if not already
 	if(!src.processing_corrosion)
 		src.processing_corrosion = TRUE

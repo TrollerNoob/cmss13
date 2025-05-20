@@ -49,9 +49,62 @@
 	return XENO_ATTACK_ACTION
 
 /obj/structure/dropship_equipment/attackby(obj/item/I, mob/user)
+	// Handle powerloader clamp logic
+	if(istype(I, /obj/item/powerloader_clamp))
+		var/obj/item/powerloader_clamp/PC = I
+		if(PC.loaded)
+			if(istype(src, /obj/structure/dropship_equipment/autoreloader))
+				// Handle autoreloader-specific logic
+				var/obj/structure/dropship_equipment/autoreloader/autoreloader = src
+				if(!PC.loaded || !istype(PC.loaded, /obj/structure/ship_ammo))
+					to_chat(user, SPAN_WARNING("You need to use a powerloader holding dropship ammo to load [src]."))
+					return TRUE
+				var/obj/structure/ship_ammo/ammo = PC.loaded
+				// Check for duplicate ammo
+				if(ammo == autoreloader.stored_ammo_1 || ammo == autoreloader.stored_ammo_2)
+					to_chat(user, SPAN_WARNING("[ammo] is already stored in [src]."))
+					return TRUE
+				// Check for available slot
+				if(autoreloader.stored_ammo_1 && autoreloader.stored_ammo_2)
+					to_chat(user, SPAN_WARNING("[src] cannot store more ammo. Maximum capacity reached."))
+					return TRUE
+				to_chat(user, SPAN_NOTICE("You begin loading [ammo] into [src]."))
+				if(!do_after(user, 20, INTERRUPT_NO_NEEDHAND | BEHAVIOR_IMMOBILE, BUSY_ICON_BUILD, target = src)) // 3 seconds
+					to_chat(user, SPAN_WARNING("You stop loading [ammo] into [src]."))
+					return TRUE
+				// Place ammo in the first available slot
+				if(!autoreloader.stored_ammo_1)
+					autoreloader.stored_ammo_1 = ammo
+				else
+					autoreloader.stored_ammo_2 = ammo
+				ammo.forceMove(src) // Move the ammo to the autoreloader
+				PC.loaded = null // Clear the powerloader clamp
+				PC.update_icon() // Update the clamp's icon
+				to_chat(user, SPAN_NOTICE("You successfully load [ammo] into [src]."))
+				return TRUE
+			else
+				// Default behavior for other equipment
+				if(ammo_equipped)
+					to_chat(user, SPAN_WARNING("You need to unload \the [ammo_equipped] from \the [src] first!"))
+					return TRUE
+				if(uses_ammo)
+					load_ammo(PC, user) // It handles whether the ammo fits
+					return TRUE
+		else
+			if(uses_ammo && ammo_equipped)
+				unload_ammo(PC, user)
+			else
+				grab_equipment(PC, user)
+		return TRUE
+		//Handle corrosion repair logic
 	// Exclude dropship_handheld from repair logic
 	if(istype(I, /obj/item/device/dropship_handheld))
 		return ..()
+	// Block all repair tools if installed
+	if(src.ship_base)
+		if(istype(I, /obj/item/tool/weldingtool) || istype(I, /obj/item/tool/screwdriver) || istype(I, /obj/item/tool/wrench) || istype(I, /obj/item/tool/crowbar) || istype(I, /obj/item/tool/wirecutters))
+			to_chat(user, SPAN_WARNING("You can't repair this while it's installed!"))
+			return TRUE
 	if(istype(src, /obj/structure/dropship_equipment/weapon))
 		var/obj/structure/dropship_equipment/weapon/W = src
 		// Block if already repairing
@@ -139,52 +192,6 @@
 			else
 				to_chat(user, SPAN_WARNING("No corrosion stack is available to repair."))
 				return TRUE
-	if(istype(I, /obj/item/powerloader_clamp))
-		var/obj/item/powerloader_clamp/PC = I
-		if(PC.loaded)
-			if(istype(src, /obj/structure/dropship_equipment/autoreloader))
-				// Handle autoreloader-specific logic
-				var/obj/structure/dropship_equipment/autoreloader/autoreloader = src
-				if(!PC.loaded || !istype(PC.loaded, /obj/structure/ship_ammo))
-					to_chat(user, SPAN_WARNING("You need to use a powerloader holding dropship ammo to load [src]."))
-					return TRUE
-				var/obj/structure/ship_ammo/ammo = PC.loaded
-				// Check for duplicate ammo
-				if(ammo == autoreloader.stored_ammo_1 || ammo == autoreloader.stored_ammo_2)
-					to_chat(user, SPAN_WARNING("[ammo] is already stored in [src]."))
-					return TRUE
-				// Check for available slot
-				if(autoreloader.stored_ammo_1 && autoreloader.stored_ammo_2)
-					to_chat(user, SPAN_WARNING("[src] cannot store more ammo. Maximum capacity reached."))
-					return TRUE
-				to_chat(user, SPAN_NOTICE("You begin loading [ammo] into [src]."))
-				if(!do_after(user, 20, INTERRUPT_NO_NEEDHAND | BEHAVIOR_IMMOBILE, BUSY_ICON_BUILD, target = src)) // 3 seconds
-					to_chat(user, SPAN_WARNING("You stop loading [ammo] into [src]."))
-					return TRUE
-				// Place ammo in the first available slot
-				if(!autoreloader.stored_ammo_1)
-					autoreloader.stored_ammo_1 = ammo
-				else
-					autoreloader.stored_ammo_2 = ammo
-				ammo.forceMove(src) // Move the ammo to the autoreloader
-				PC.loaded = null // Clear the powerloader clamp
-				PC.update_icon() // Update the clamp's icon
-				to_chat(user, SPAN_NOTICE("You successfully load [ammo] into [src]."))
-				return TRUE
-			else
-				// Default behavior for other equipment
-				if(ammo_equipped)
-					to_chat(user, SPAN_WARNING("You need to unload \the [ammo_equipped] from \the [src] first!"))
-					return TRUE
-				if(uses_ammo)
-					load_ammo(PC, user) // It handles whether the ammo fits
-					return TRUE
-		else
-			if(uses_ammo && ammo_equipped)
-				unload_ammo(PC, user)
-			else
-				grab_equipment(PC, user)
-		return TRUE
 
 /obj/structure/dropship_equipment/proc/load_ammo(obj/item/powerloader_clamp/PC, mob/living/user)
 	if(istype(src, /obj/structure/dropship_equipment/weapon))

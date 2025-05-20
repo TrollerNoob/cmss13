@@ -30,6 +30,7 @@
 	var/list/datum/cas_fire_mission_record/records = list()
 	var/obj/structure/dropship_equipment/weapon/error_weapon
 	var/name = "Unnamed Firemission"
+	var/corrosion_applied_this_firemission = FALSE // Track if corrosion was applied this firemission
 
 /datum/cas_fire_mission/ui_data(mob/user)
 	. = list()
@@ -195,6 +196,7 @@
 			sx = 0
 			sy = 1
 	var/step = 1
+	var/list/corroded_this_execution = list() // Track which weapons have been corroded this execution only
 	for(step = 1; step<=steps; step++)
 		if(step > next_step)
 			current_turf = get_step(current_turf, direction)
@@ -211,15 +213,28 @@
 			var/turf/shootloc = locate(current_turf.x + sx*offset, current_turf.y + sy*offset, current_turf.z)
 			var/area/area = get_area(shootloc)
 			if(shootloc && (shootloc.turf_protection_flags & TURF_PROTECTION_ANTIAIR))
-				// Apply corrosion to the weapon if anti-air protection is present
-				if(istype(item.weapon, /obj/structure/dropship_equipment/weapon) && !item.weapon.corrosion_destroyed)
-					var/applier = null
-					if(shootloc.skyspit_applier)
-						applier = shootloc.skyspit_applier
-					item.weapon.apply_corrosion_stack(applier)
-					// Optionally: notify pilots, create shrapnel, etc.
+				// Gather all eligible weapons (not destroyed, not already corroded this execution)
+				var/list/eligible_weapons = list()
+				for(var/datum/cas_fire_mission_record/rec in records)
+					if(rec && istype(rec.weapon, /obj/structure/dropship_equipment/weapon) && !rec.weapon.corrosion_destroyed)
+						if(!(rec.weapon in corroded_this_execution))
+							eligible_weapons += rec.weapon
+				// Randomly select 1 or 2 weapons to corrode
+				var/num_to_corrode = min(rand(1,2), eligible_weapons.len)
+				if(num_to_corrode > 0)
+					eligible_weapons = shuffle(eligible_weapons)
+					var/list/selected = list()
+					for(var/i = 1, i <= num_to_corrode, i++)
+						selected += eligible_weapons[i]
+					for(var/obj/structure/dropship_equipment/weapon/w in selected)
+						var/applier = null
+						if(shootloc.skyspit_applier)
+							applier = shootloc.skyspit_applier
+						w.apply_corrosion_stack(applier)
+						corroded_this_execution += w
 			if(shootloc && !CEILING_IS_PROTECTED(area?.ceiling, CEILING_PROTECTION_TIER_3) && !protected_by_pylon(TURF_PROTECTION_CAS, shootloc))
-				item.weapon.open_fire_firemission(shootloc)
+				if(item && item.weapon)
+					item.weapon.open_fire_firemission(shootloc)
 		sleep(step_delay)
 	if(envelope)
 		envelope.change_current_loc(null)
