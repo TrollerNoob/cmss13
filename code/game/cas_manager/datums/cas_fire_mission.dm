@@ -213,7 +213,10 @@
 			if(shootloc && (shootloc.turf_protection_flags & TURF_PROTECTION_ANTIAIR))
 				// Apply corrosion to the weapon if anti-air protection is present
 				if(istype(item.weapon, /obj/structure/dropship_equipment/weapon) && !item.weapon.corrosion_destroyed)
-					item.weapon.apply_corrosion_stack("skyspit")
+					var/applier = null
+					if(shootloc.skyspit_applier)
+						applier = shootloc.skyspit_applier
+					item.weapon.apply_corrosion_stack(applier)
 					// Optionally: notify pilots, create shrapnel, etc.
 			if(shootloc && !CEILING_IS_PROTECTED(area?.ceiling, CEILING_PROTECTION_TIER_3) && !protected_by_pylon(TURF_PROTECTION_CAS, shootloc))
 				item.weapon.open_fire_firemission(shootloc)

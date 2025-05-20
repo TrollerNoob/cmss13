@@ -45,7 +45,7 @@
 			var/stack_id = stack["stack_id"]
 			var/list/actions = src.last_scanned_weapon.repair_actions["[stack_id]"]
 			if(actions && length(actions))
-				to_chat(user, SPAN_NOTICE("Stack #[stack_id]: [actions.Join(", ")]."))
+				to_chat(user, SPAN_NOTICE("Malfunction #[stack_id]: [actions.Join(", ")]."))
 		return
 
 /obj/item/device/dropship_comp
@@ -95,7 +95,6 @@
 var/global/list/dropship_repair_tool_types = list(
 	"welder" = /obj/item/tool/weldingtool,
 	"screwdriver" = /obj/item/tool/screwdriver,
-	"multitool" = /obj/item/device/multitool,
 	"wrench" = /obj/item/tool/wrench,
 	"wirecutters" = /obj/item/tool/wirecutters,
 	"crowbar" = /obj/item/tool/crowbar

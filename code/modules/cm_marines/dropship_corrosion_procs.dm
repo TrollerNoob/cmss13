@@ -9,7 +9,7 @@
 	/// If true, corrosion is currently blocking reload
 	var/corrosion_block_reload = FALSE
 	/// Time (in deciseconds) for a corrosion stack to expire (default 300s)
-	var/corrosion_stack_duration = 600
+	var/corrosion_stack_duration = 1800
 	/// If true, weapon is destroyed by corrosion
 	var/corrosion_destroyed = FALSE
 /obj/structure/dropship_equipment/weapon/proc/apply_corrosion_stack(applier)
@@ -22,6 +22,9 @@
 	// Trigger shrapnel spew from the linked console if present
 	if(linked_console)
 		linked_console.spew_incendiary_shrapnel()
+	// Message to Boiler if applier is a Boiler xeno
+	if(istype(applier, /mob/living/carbon/xenomorph/boiler))
+		to_chat(applier, SPAN_XENOHIGHDANGER("The metal bird veers off course! It's been hit!"))
 	// Register for processing if not already
 	if(!src.processing_corrosion)
 		src.processing_corrosion = TRUE
@@ -31,7 +34,7 @@
 		src.repair_actions = list()
 	var/stack = src.corrosion_stacks[length(src.corrosion_stacks)]
 	var/stack_id = stack["stack_id"]
-	var/list/tools = list("welder", "screwdriver", "multitool", "wrench", "crowbar", "wirecutters")
+	var/list/tools = list("welder", "screwdriver", "wrench", "crowbar", "wirecutters")
 	var/list/actions = list()
 	for(var/i in 1 to 3)
 		actions += pick(tools)

@@ -54,12 +54,39 @@
 		return ..()
 	if(istype(src, /obj/structure/dropship_equipment/weapon))
 		var/obj/structure/dropship_equipment/weapon/W = src
+		// Block if already repairing
+		if(W.corrosion_repairing)
+			to_chat(user, SPAN_WARNING("Repair already in progress!"))
+			return TRUE
 		if(W.is_corroded() && islist(W.repair_actions) && length(W.repair_actions))
-			for(var/stack in W.corrosion_stacks)
-				var/stack_id = stack["stack_id"]
+			// Only allow one stack at a time
+			if(!W.corrosion_repairing_stack_id)
+				// Find the first stack with steps left
+				for(var/stack in W.corrosion_stacks)
+					var/stack_id = stack["stack_id"]
+					var/list/actions = W.repair_actions["[stack_id]"]
+					if(actions && length(actions))
+						W.corrosion_repairing_stack_id = stack_id
+						break
+			if(W.corrosion_repairing_stack_id)
+				var/stack_id = W.corrosion_repairing_stack_id
 				var/list/actions = W.repair_actions["[stack_id]"]
 				if(!actions || !length(actions))
-					continue
+					// Stack finished, clear and allow next
+					W.repair_actions["[stack_id]"] = null
+					W.corrosion_repairing_stack_id = null
+					// Do not set corrosion_repairing here
+					// Check if all stacks are repaired
+					var/all_repaired = TRUE
+					for(var/stack in W.corrosion_stacks)
+						var/sid = stack["stack_id"]
+						if(W.repair_actions["[sid]"])
+							all_repaired = FALSE
+							break
+					if(all_repaired)
+						W.clear_corrosion()
+						to_chat(user, SPAN_NOTICE("All corrosion repaired! [W] is operational."))
+					return TRUE
 				var/next_step = actions[1]
 				var/expected_type = get_dropship_repair_tool_type(next_step)
 				if(!expected_type || !istype(I, expected_type))
@@ -73,27 +100,45 @@
 				var/time = 5
 				if(istype(user, /mob/living/carbon/human) && user.job == "Dropship Crew Chief")
 					time = 1
+				// Set repairing flag only during do_after
+				W.corrosion_repairing = TRUE
 				if(!do_after(user, time * 10, INTERRUPT_NO_NEEDHAND | BEHAVIOR_IMMOBILE, BUSY_ICON_BUILD, target = W))
+					W.corrosion_repairing = FALSE
 					to_chat(user, SPAN_WARNING("Repair interrupted!"))
 					return TRUE
 				// Remove the completed step
 				actions.Cut(1,2)
+				if(next_step == "crowbar")
+					playsound(W, 'sound/items/Crowbar.ogg', 25, 1)
+				else if(next_step == "screwdriver")
+					playsound(W, 'sound/items/Screwdriver.ogg', 25, 1)
+				else if(next_step == "welder")
+					playsound(W, 'sound/items/Welder.ogg', 25, 1)
+				else if(next_step == "wirecutters")
+					playsound(W, 'sound/items/Wirecutter.ogg', 25, 1)
+				else if(next_step == "wrench")
+					playsound(W, 'sound/items/Ratchet.ogg', 25, 1)
+				W.corrosion_repairing = FALSE
 				if(length(actions))
 					to_chat(user, SPAN_NOTICE("Step complete. [length(actions)] steps remaining."))
 				else
 					to_chat(user, SPAN_NOTICE("All repair steps complete for malfunction #[stack_id]!"))
 					W.repair_actions["[stack_id]"] = null
-			// If all stacks are repaired, clear corrosion
-			var/all_repaired = TRUE
-			for(var/stack in W.corrosion_stacks)
-				var/stack_id = stack["stack_id"]
-				if(W.repair_actions["[stack_id]"])
-					all_repaired = FALSE
-					break
-			if(all_repaired)
-				W.clear_corrosion()
-				to_chat(user, SPAN_NOTICE("All corrosion repaired! [W] is operational."))
-			return TRUE
+					W.corrosion_repairing_stack_id = null
+					// Check if all stacks are repaired
+					var/all_repaired = TRUE
+					for(var/stack in W.corrosion_stacks)
+						var/sid = stack["stack_id"]
+						if(W.repair_actions["[sid]"])
+							all_repaired = FALSE
+							break
+					if(all_repaired)
+						W.clear_corrosion()
+						to_chat(user, SPAN_NOTICE("All corrosion repaired! [W] is operational."))
+				return TRUE
+			else
+				to_chat(user, SPAN_WARNING("No corrosion stack is available to repair."))
+				return TRUE
 	if(istype(I, /obj/item/powerloader_clamp))
 		var/obj/item/powerloader_clamp/PC = I
 		if(PC.loaded)
@@ -775,6 +820,7 @@
 	/// True if this weapon can only be fired in Fire Missions (not Direct)
 	var/fire_mission_only = TRUE
 	var/list/repair_actions = null
+	var/corrosion_repairing_stack_id = null
 
 /obj/structure/dropship_equipment/weapon/update_equipment()
 	if(ship_base)
@@ -1878,7 +1924,8 @@
 	var/turf/impact = pick(possible_turfs)
 	// Skyspit corrosion check
 	if(impact.skyspit_active)
-		apply_corrosion_stack("skyspit")
+		var/applier = impact.skyspit_applier ? impact.skyspit_applier : user
+		apply_corrosion_stack(applier)
 	sleep(3)
 	SA.source_mob = user
 	SA.detonate_on(impact, src)

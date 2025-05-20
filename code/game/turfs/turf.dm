@@ -70,6 +70,7 @@
 	var/skyspit_active = FALSE
 	var/skyspit_expire_timer = null
 	var/skyspit_overlay = null
+	var/skyspit_applier = null // Boiler mob who created the skyspit
 
 	var/turf_protection_flags = TURF_PROTECTION_NONE
 
