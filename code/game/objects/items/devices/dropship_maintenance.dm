@@ -15,6 +15,7 @@
 	var/list/repair_actions = null
 	var/current_repair_step = null
 	var/obj/structure/dropship_equipment/weapon/last_scanned_weapon = null
+	flags_item = NOBLUDGEON
 
 /obj/item/device/dropship_handheld/afterattack(atom/target, mob/user, proximity)
 	if(istype(target, /obj/structure/dropship_equipment/weapon))
@@ -29,7 +30,10 @@
 			to_chat(user, SPAN_WARNING("No repair data found. Try damaging the weapon again."))
 			return
 		// Store a reference to the weapon for later use with the comp
+		if(!do_after(user, 10, INTERRUPT_NO_NEEDHAND | BEHAVIOR_IMMOBILE, BUSY_ICON_BUILD))
+			return
 		src.last_scanned_weapon = W
+		playsound(src, 'sound/mecha/lowpower.ogg', 50, 1)
 		to_chat(user, SPAN_NOTICE("Repair scan complete. Use the maintenance computer to continue repairs."))
 		return
 	if(istype(target, /obj/item/device/dropship_comp))

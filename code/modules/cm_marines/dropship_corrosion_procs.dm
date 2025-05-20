@@ -12,6 +12,22 @@
 	var/corrosion_stack_duration = 1800
 	/// If true, weapon is destroyed by corrosion
 	var/corrosion_destroyed = FALSE
+	/// Last time a hive message was sent (for cooldown)
+	var/last_hive_corrosion_announce = 0
+	/// Last time the alarm sound was played (for cooldown)
+	var/last_corrosion_alarm = 0
+
+/obj/structure/dropship_equipment/weapon/proc/spew_spall()
+	if(!linked_console) return
+	var/turf/cockpit = get_turf(linked_console)
+	if(!cockpit) return
+	// Offset: 1 tile south, 1 tile west
+	var/turf/center = locate(cockpit.x - 1, cockpit.y - 1, cockpit.z)
+	if(!center) return
+	// 180-degree arc: SOUTH, SOUTHEAST, SOUTHWEST
+	// Use shrapnel_direction = SOUTH (5), shrapnel_spread = 90 for 180-degree arc
+	create_shrapnel(center, 12, SOUTH, 180, /datum/ammo/bullet/shrapnel/spall)
+
 /obj/structure/dropship_equipment/weapon/proc/apply_corrosion_stack(applier)
 	if(src.corrosion_destroyed)
 		return
@@ -19,12 +35,22 @@
 	var/expiry = now + src.corrosion_stack_duration
 	src.corrosion_stacks += list(list("expiry"=expiry, "applier"=applier, "stack_id"=rand(1,999999)))
 	src.corrosion_block_reload = TRUE
-	// Trigger shrapnel spew from the linked console if present
+	// Trigger shrapnel spew in the cockpit if present
 	if(linked_console)
-		linked_console.spew_incendiary_shrapnel()
+		src.spew_spall()
+		// Play alarm sound with 2s cooldown
+		if((now - src.last_corrosion_alarm) >= 20)
+			playsound(linked_console, 'sound/mecha/internaldmgalarm.ogg', 50, 1)
+			src.last_corrosion_alarm = now
 	// Message to Boiler if applier is a Boiler xeno
 	if(istype(applier, /mob/living/carbon/xenomorph/boiler))
 		to_chat(applier, SPAN_XENOHIGHDANGER("The metal bird veers off course! It has been injured!"))
+	// Hive message with 5s cooldown
+	if(istype(applier, /mob/living/carbon/xenomorph))
+		var/mob/living/carbon/xenomorph/xeno = applier
+		if(xeno.hivenumber && (now - src.last_hive_corrosion_announce) >= 50)
+			xeno_message(SPAN_XENOANNOUNCE("The hivemind rumbles. The metal bird has been injured!"), 3, xeno.hivenumber)
+			src.last_hive_corrosion_announce = now
 	// Register for processing if not already
 	if(!src.processing_corrosion)
 		src.processing_corrosion = TRUE
