@@ -204,6 +204,7 @@
 			if(envelope)
 				envelope.change_current_loc(current_turf)
 		var/datum/cas_fire_mission_record/item
+		var/list/just_corroded = list() // Track weapons corroded this step
 		for(item in records)
 			if(length(item.offsets) < step || item.offsets[step] == null || item.offsets[step]=="-")
 				continue
@@ -232,9 +233,41 @@
 							applier = shootloc.skyspit_applier
 						w.apply_corrosion_stack(applier)
 						corroded_this_execution += w
+						just_corroded += w
 			if(shootloc && !CEILING_IS_PROTECTED(area?.ceiling, CEILING_PROTECTION_TIER_3) && !protected_by_pylon(TURF_PROTECTION_CAS, shootloc))
 				if(item && item.weapon)
 					item.weapon.open_fire_firemission(shootloc)
+		if(just_corroded.len)
+			var/msg = "Warning: The following weapons have been corroded: [just_corroded.Join(", ")]."
+			if(linked_console && istype(linked_console, /obj/structure/machinery/computer/dropship_weapons))
+				// Find a user at the console's turf to warn
+				var/turf/console_turf = get_turf(linked_console)
+				var/warned = FALSE
+				for(var/mob/living/user in console_turf)
+					to_chat(user, SPAN_WARNING(msg))
+					warned = TRUE
+					break // Only warn the first user found
+				// If no user at the console, send to all on the shuttle bridge
+				if(!warned && linked_console.shuttle_tag)
+					var/obj/docking_port/mobile/marine_dropship/shuttle = SSshuttle.getShuttle(linked_console.shuttle_tag)
+					if(shuttle && shuttle.shuttle_areas)
+						for(var/area/internal_area in shuttle.shuttle_areas)
+							if(findtext(lowertext(internal_area.name), "bridge") || findtext(lowertext(internal_area.name), "cockpit"))
+								for(var/turf/internal_turf in internal_area)
+									for(var/mob/living/M in internal_turf)
+										to_chat(M, SPAN_WARNING(msg))
+			// Shake the shuttle like the AA cannon deterrence (simulate with screen shake for all on shuttle)
+			if(linked_console.shuttle_tag)
+				var/obj/docking_port/mobile/marine_dropship/shuttle = SSshuttle.getShuttle(linked_console.shuttle_tag)
+				if(shuttle && shuttle.shuttle_areas)
+					for(var/area/internal_area in shuttle.shuttle_areas)
+						for(var/turf/internal_turf in internal_area)
+							for(var/mob/M in internal_turf)
+								to_chat(M, SPAN_DANGER("The ship jostles violently as something rocks the vessel!"))
+								to_chat(M, SPAN_DANGER("You feel the ship turning sharply as it adjusts its course!"))
+								if(istype(M, /mob/living))
+									shake_camera(M, 20, 1)
+						playsound_area(internal_area, 'sound/effects/Explosion1.ogg')
 		sleep(step_delay)
 	if(envelope)
 		envelope.change_current_loc(null)

@@ -142,14 +142,6 @@
 					return TRUE
 				var/next_step = actions[1]
 				var/expected_type = get_dropship_repair_tool_type(next_step)
-				if(!expected_type || !istype(I, expected_type))
-					to_chat(user, SPAN_WARNING("Incorrect tool!"))
-					return TRUE
-				if(next_step == "welder" && istype(I, /obj/item/tool/weldingtool))
-					var/obj/item/tool/weldingtool/WELD = I
-					if(!WELD.welding)
-						to_chat(user, SPAN_WARNING("The welder must be activated!"))
-						return TRUE
 				var/time = 5
 				if(istype(user, /mob/living/carbon/human) && user.job == "Dropship Crew Chief")
 					time = 1
@@ -159,6 +151,19 @@
 					W.corrosion_repairing = FALSE
 					to_chat(user, SPAN_WARNING("Repair interrupted!"))
 					return TRUE
+				// After do_after completes, check if correct tool
+				if(!expected_type || !istype(I, expected_type))
+					to_chat(user, SPAN_WARNING("Incorrect tool!"))
+					W.corrosion_repairing = FALSE
+					return TRUE
+				if(next_step == "welder" && istype(I, /obj/item/tool/weldingtool))
+					var/obj/item/tool/weldingtool/WELD = I
+					if(!WELD.welding)
+						to_chat(user, SPAN_WARNING("The welder must be activated!"))
+						W.corrosion_repairing = FALSE
+						return TRUE
+					// Use eyecheck proc for eye protection and damage
+					WELD.eyecheck(user)
 				// Remove the completed step
 				actions.Cut(1,2)
 				if(next_step == "crowbar")

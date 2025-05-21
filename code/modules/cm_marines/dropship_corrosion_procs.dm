@@ -44,12 +44,15 @@
 			src.last_corrosion_alarm = now
 	// Message to Boiler if applier is a Boiler xeno
 	if(istype(applier, /mob/living/carbon/xenomorph/boiler))
-		to_chat(applier, SPAN_XENOHIGHDANGER("The metal bird veers off course! It has been injured!"))
+		var/mob/boiler = applier
+		if(boiler && !boiler.gc_destroyed && boiler.client)
+			to_chat(boiler, SPAN_XENOHIGHDANGER("The metal bird veers off course! It has been injured!"))
 	// Hive message with 5s cooldown
 	if(istype(applier, /mob/living/carbon/xenomorph))
-		var/mob/living/carbon/xenomorph/xeno = applier
-		if(xeno.hivenumber && (now - src.last_hive_corrosion_announce) >= 50)
-			xeno_message(SPAN_XENOANNOUNCE("The hivemind rumbles. The metal bird has been injured!"), 3, xeno.hivenumber)
+		var/mob/living/carbon/xenomorph/applier_xeno = applier
+		var/mob/mob_xeno = applier_xeno
+		if(applier_xeno && mob_xeno && !mob_xeno.gc_destroyed && applier_xeno.hivenumber && (now - src.last_hive_corrosion_announce) >= 50)
+			xeno_message(SPAN_XENOANNOUNCE("The hivemind rumbles. The metal bird has been injured!"), 3, applier_xeno.hivenumber)
 			src.last_hive_corrosion_announce = now
 	// Register for processing if not already
 	if(!src.processing_corrosion)
