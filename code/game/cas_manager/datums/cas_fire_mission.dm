@@ -237,26 +237,13 @@
 			if(shootloc && !CEILING_IS_PROTECTED(area?.ceiling, CEILING_PROTECTION_TIER_3) && !protected_by_pylon(TURF_PROTECTION_CAS, shootloc))
 				if(item && item.weapon)
 					item.weapon.open_fire_firemission(shootloc)
-		if(just_corroded.len)
-			var/msg = "Warning: The following weapons have been corroded: [just_corroded.Join(", ")]."
-			if(linked_console && istype(linked_console, /obj/structure/machinery/computer/dropship_weapons))
-				// Find a user at the console's turf to warn
-				var/turf/console_turf = get_turf(linked_console)
-				var/warned = FALSE
-				for(var/mob/living/user in console_turf)
-					to_chat(user, SPAN_WARNING(msg))
-					warned = TRUE
-					break // Only warn the first user found
-				// If no user at the console, send to all on the shuttle bridge
-				if(!warned && linked_console.shuttle_tag)
-					var/obj/docking_port/mobile/marine_dropship/shuttle = SSshuttle.getShuttle(linked_console.shuttle_tag)
-					if(shuttle && shuttle.shuttle_areas)
-						for(var/area/internal_area in shuttle.shuttle_areas)
-							if(findtext(lowertext(internal_area.name), "bridge") || findtext(lowertext(internal_area.name), "cockpit"))
-								for(var/turf/internal_turf in internal_area)
-									for(var/mob/living/M in internal_turf)
-										to_chat(M, SPAN_WARNING(msg))
-			// Shake the shuttle like the AA cannon deterrence (simulate with screen shake for all on shuttle)
+			// Audible warning for nearby humans
+			if(envelope && istype(envelope, /datum/cas_fire_envelope))
+				envelope.show_corrosion_audible(current_turf, 10)
+			// Planetside effects: sparks and sound (spam-protected)
+			if(just_corroded.len && !envelope?.corrosion_fx_played)
+				envelope.corrosion_fx_played = TRUE
+			// Shake the shuttle
 			if(linked_console.shuttle_tag)
 				var/obj/docking_port/mobile/marine_dropship/shuttle = SSshuttle.getShuttle(linked_console.shuttle_tag)
 				if(shuttle && shuttle.shuttle_areas)
@@ -271,6 +258,7 @@
 		sleep(step_delay)
 	if(envelope)
 		envelope.change_current_loc(null)
+		envelope.corrosion_fx_played = FALSE
 
 
 /**

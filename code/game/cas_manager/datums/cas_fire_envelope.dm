@@ -24,6 +24,8 @@
 	var/obj/effect/firemission_guidance/guidance
 	var/atom/tracked_object
 
+	var/corrosion_fx_played = FALSE
+
 /datum/cas_fire_envelope/New()
 	..()
 	missions = list()
@@ -434,3 +436,33 @@
 			for(var/obj/structure/dropship_equipment/fuel/ram_rocket/rocket in dropship.equipments)
 				fire_length = 16
 				break
+
+/datum/cas_fire_envelope/proc/show_corrosion_audible(atom/target_turf, range = 10)
+	var/ds_identifier = "LARGE BIRD"
+	for(var/mob/mob in range(range, target_turf))
+		if(mob && !QDELETED(mob) && !mob.gc_destroyed && mob.client)
+			if(mob.mob_flags & KNOWS_TECHNOLOGY)
+				ds_identifier = "DROPSHIP"
+			else
+				ds_identifier = "LARGE BIRD"
+			mob.show_message(
+				SPAN_HIGHDANGER("YOU HEAR THE [ds_identifier] VEER OFF COURSE AS IT FLIES THROUGH A CLOUD OF GAS!"), SHOW_MESSAGE_AUDIBLE
+			)
+	if(!src.corrosion_fx_played)
+		src.corrosion_fx_played = TRUE
+		playsound(target_turf, 'sound/effects/supercapacitors_charging.ogg', vol = 80, vary = TRUE, sound_range = 75, falloff = 8)
+		// Play sparks on up to 9 unique tiles in a 3-tile radius
+		var/list/nearby = list()
+		for(var/turf/T in range(3, target_turf)) if(T != target_turf) nearby += T
+		if(nearby.len)
+			var/list/used = list()
+			var/max_sparks = min(9, nearby.len)
+			for(var/i = 1, i <= max_sparks, i++)
+				var/turf/random_turf = pick(nearby - used)
+				if(random_turf)
+					new /obj/effect/particle_effect/sparks(random_turf)
+					used += random_turf
+		// Shake the camera for all mobs in range for 2 steps
+		for(var/mob/mob in range(range, target_turf))
+			if(mob && !QDELETED(mob) && !mob.gc_destroyed && mob.client && istype(mob, /mob/living))
+				shake_camera(mob, 10, 1)
