@@ -930,7 +930,7 @@
 
 	// Add mortar travel noise for bomb_bay
 	if(istype(src, /obj/structure/dropship_equipment/weapon/bomb_bay))
-		playsound(target_turf, 'sound/weapons/gun_mortar_travel.ogg', 50, 1) // Play mortar travel noise
+		playsound(target_turf, 'sound/effects/bomb_fall.ogg', 50, 1) // Audio warning for bomb bay dropped missiles
 		sleep(25) // Wait 2.5 seconds before proceeding to the warning sound block
 
 	if(ammo_travelling_time && istype(SA, /obj/structure/ship_ammo/rocket/thermobaric))
@@ -1934,10 +1934,6 @@
 
 	var/list/possible_turfs = RANGE_TURFS(ammo_accuracy_range, target_turf)
 	var/turf/impact = pick(possible_turfs)
-	// Skyspit corrosion check
-	if(impact.skyspit_active)
-		var/applier = impact.skyspit_applier ? impact.skyspit_applier : user
-		apply_corrosion_stack(applier)
 	sleep(3)
 	SA.source_mob = user
 	SA.detonate_on(impact, src)
