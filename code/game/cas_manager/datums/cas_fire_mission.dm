@@ -243,8 +243,9 @@
 			// Planetside effects: sparks and sound (spam-protected)
 			if(just_corroded.len && !envelope?.corrosion_fx_played)
 				envelope.corrosion_fx_played = TRUE
-			// Shake the shuttle
-			if(linked_console.shuttle_tag)
+			// Shake the shuttle (only once per firemission)
+			if(linked_console.shuttle_tag && envelope && !envelope.shuttle_shake_played)
+				envelope.shuttle_shake_played = TRUE
 				var/obj/docking_port/mobile/marine_dropship/shuttle = SSshuttle.getShuttle(linked_console.shuttle_tag)
 				if(shuttle && shuttle.shuttle_areas)
 					var/list/all_turfs = list()
@@ -270,6 +271,7 @@
 	if(envelope)
 		envelope.change_current_loc(null)
 		envelope.corrosion_fx_played = FALSE
+		envelope.shuttle_shake_played = FALSE
 
 
 /**

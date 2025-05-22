@@ -1,7 +1,7 @@
 /datum/cas_fire_envelope
 	var/obj/structure/machinery/computer/dropship_weapons/linked_console
 	var/list/datum/cas_fire_mission/missions
-	var/fire_length
+	var/fire_length = 12 //12 is the standard for dropships
 	var/grace_period //how much time you have after initiating fire mission and before you can't change firemissions
 	var/first_warning
 	var/second_warning
@@ -25,6 +25,8 @@
 	var/atom/tracked_object
 
 	var/corrosion_fx_played = FALSE
+
+	var/shuttle_shake_played = FALSE // Track if shuttle shake effect has played this firemission
 
 /datum/cas_fire_envelope/New()
 	..()
@@ -67,7 +69,7 @@
 		fm.build_new_record(wp, fire_length)
 
 	fm.name = firemission_name
-	fm.mission_length = length
+	fm.mission_length = fire_length
 	missions += fm
 	return fm
 
@@ -384,7 +386,7 @@
 	return 1
 
 /datum/cas_fire_envelope/uscm_dropship
-	fire_length = 12
+
 	grace_period = 5 SECONDS
 	first_warning = 6 SECONDS
 	second_warning = 8 SECONDS
