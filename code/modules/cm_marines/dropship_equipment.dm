@@ -830,7 +830,7 @@
 	/// Delay between firing, in deciseconds
 	var/firing_delay = 20
 	/// True if this weapon can only be fired in Fire Missions (not Direct)
-	var/fire_mission_only = TRUE
+	var/fire_mission_only = FALSE
 	var/list/repair_actions = null
 	var/corrosion_repairing_stack_id = null
 

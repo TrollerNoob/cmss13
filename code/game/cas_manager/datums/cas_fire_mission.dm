@@ -238,7 +238,7 @@
 				if(item && item.weapon)
 					item.weapon.open_fire_firemission(shootloc)
 			// Audible warning for nearby humans
-			if(envelope && istype(envelope, /datum/cas_fire_envelope))
+			if(envelope && istype(envelope, /datum/cas_fire_envelope) && shootloc && (shootloc.turf_protection_flags & TURF_PROTECTION_ANTIAIR))
 				envelope.show_corrosion_audible(current_turf, 10)
 			// Planetside effects: sparks and sound (spam-protected)
 			if(just_corroded.len && !envelope?.corrosion_fx_played)

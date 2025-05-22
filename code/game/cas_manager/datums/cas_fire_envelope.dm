@@ -446,7 +446,7 @@
 			else
 				ds_identifier = "LARGE BIRD"
 			mob.show_message(
-				SPAN_HIGHDANGER("YOU HEAR THE [ds_identifier] VEER OFF COURSE AS IT FLIES THROUGH A CLOUD OF GAS!"), SHOW_MESSAGE_AUDIBLE
+				SPAN_HIGHDANGER("YOU HEAR THE [ds_identifier] VEER OFF COURSE AS IT FLIES THROUGH A CLOUD OF ACIDIC GAS!"), SHOW_MESSAGE_AUDIBLE
 			)
 	if(!src.corrosion_fx_played)
 		src.corrosion_fx_played = TRUE
