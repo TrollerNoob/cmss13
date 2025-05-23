@@ -38,12 +38,16 @@
 		return
 	if(istype(target, /obj/item/device/dropship_comp))
 		var/obj/item/device/dropship_comp/comp = target
+		if(!in_range(user, comp, 1))
+			to_chat(user, SPAN_WARNING("You must be next to the maintenance computer to transfer the data."))
+			return
 		if(!comp.activated)
 			to_chat(user, SPAN_WARNING("The maintenance computer is powered off."))
 			return
 		if(!src.last_scanned_weapon || !islist(src.last_scanned_weapon.repair_actions) || !length(src.last_scanned_weapon.repair_actions))
 			to_chat(user, SPAN_WARNING("No repair scan data found on the handheld device."))
 			return
+		playsound(src, 'sound/machines/terminal_success.ogg', 50, 1)
 		to_chat(user, SPAN_NOTICE("Repair steps required for each corrosion stack:"))
 		for(var/stack in src.last_scanned_weapon.corrosion_stacks)
 			var/stack_id = stack["stack_id"]
@@ -76,13 +80,6 @@
 		return
 	if(!proximity || !istype(target, /obj/item/device/dropship_handheld))
 		return
-	var/obj/item/device/dropship_handheld/handheld = target
-	if(!islist(handheld.repair_actions) || !handheld.repair_actions.len)
-		to_chat(user, SPAN_WARNING("No repair scan data found on the handheld device."))
-		return
-	to_chat(user, SPAN_NOTICE("Repair steps required:"))
-	for(var/i in 1 to handheld.repair_actions.len)
-		to_chat(user, SPAN_NOTICE("Step [i]: [handheld.repair_actions[i]]"))
 
 // Utility: Fisher-Yates shuffle for lists
 /proc/randomize_list(list/L)

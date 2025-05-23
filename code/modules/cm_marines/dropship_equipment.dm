@@ -22,6 +22,7 @@
 	var/faction_exclusive //if null all factions can print it
 	var/cavebreaker = FALSE //if TRUE, this equipment can be used to break through cave walls
 
+	var/is_corroded = FALSE //for keeping track of equipment with active corrosion stacks
 
 /obj/structure/dropship_equipment/Destroy()
 	QDEL_NULL(ammo_equipped)

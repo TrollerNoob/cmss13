@@ -816,6 +816,7 @@
 			"firemission_delay" = equipment.ammo_equipped?.fire_mission_delay,
 			"burst" = equipment.ammo_equipped?.ammo_used_per_firing,
 			"icon_state" = equipment.icon_state,
+			"is_corroded" = equipment.is_corroded,
 			"data" = equipment.ui_data(user)
 		)
 		// If this is an autoreloader, add stored ammo info

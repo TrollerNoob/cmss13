@@ -344,6 +344,7 @@
 		/datum/action/xeno_action/onclick/send_thoughts,
 		/datum/action/xeno_action/activable/info_marker/queen,
 		/datum/action/xeno_action/onclick/screech, //custom macro, Screech
+		/datum/action/xeno_action/activable/skyspit/queen,
 		/datum/action/xeno_action/activable/xeno_spit/queen_macro, //third macro
 		/datum/action/xeno_action/onclick/shift_spits,
 		//second macro
@@ -354,6 +355,7 @@
 		/datum/action/xeno_action/onclick/screech, //custom macro, Screech
 		/datum/action/xeno_action/activable/xeno_spit/queen_macro, //third macro
 		/datum/action/xeno_action/onclick/shift_spits, //second macro
+		/datum/action/xeno_action/activable/skyspit/queen,
 	)
 	claw_type = CLAW_TYPE_VERY_SHARP
 
@@ -994,3 +996,32 @@
 	point.color = "#a800a8"
 
 	visible_message("<b>[src]</b> points to [target_atom]", null, null, 5)
+
+/datum/action/xeno_action/activable/skyspit/queen/use_ability(atom/affected_atom)
+	var/mob/living/carbon/xenomorph/xeno = owner
+	if(!xeno)
+		return FALSE
+	var/turf/center = get_turf(xeno)
+	if(!center)
+		to_chat(xeno, SPAN_WARNING("No valid turf to mark!"))
+		return FALSE
+
+	var/list/affected_turfs = list()
+	// Only allow acid version for Queen
+	for(var/turf/T in orange(4, center))
+		if(T.skyspit_active)
+			continue
+		T.skyspit_active = TRUE
+		T.turf_protection_flags |= TURF_PROTECTION_ANTIAIR
+		T.skyspit_applier = xeno // Store the Queen mob who created the skyspit
+		T.skyspit_expire_timer = addtimer(CALLBACK(T, /turf/proc/remove_skyspit_marker), 100, TIMER_UNIQUE) // 10s
+		if(!T.skyspit_overlay)
+			T.skyspit_overlay = new /obj/effect/xenomorph/xeno_telegraph/green(T)
+		affected_turfs += T
+	if(affected_turfs.len)
+		to_chat(xeno, SPAN_NOTICE("You mark the area with corrosive skyspit!"))
+		apply_cooldown()
+		return ..()
+	else
+		to_chat(xeno, SPAN_WARNING("All tiles in range are already marked!"))
+		return FALSE

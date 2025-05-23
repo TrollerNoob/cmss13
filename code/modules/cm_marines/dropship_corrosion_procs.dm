@@ -1,7 +1,6 @@
 #define PROCESS_CONTINUE 0
 
 /obj/structure/dropship_equipment/weapon
-	var/processing_corrosion = FALSE
 	/// Corrosion stacks: list of corrosion info (each is a list with [expiry_time, applier, stack_id])
 	var/list/corrosion_stacks = list()
 	/// If true, corrosion is being repaired (blocks further repair attempts)
@@ -31,6 +30,7 @@
 /obj/structure/dropship_equipment/weapon/proc/apply_corrosion_stack(applier)
 	if(src.corrosion_destroyed)
 		return
+	is_corroded = TRUE
 	var/now = world.time
 	var/expiry = now + src.corrosion_stack_duration
 	var/stack_id = rand(1,999999)
@@ -67,15 +67,23 @@
 /obj/structure/dropship_equipment/weapon/proc/handle_corrosion_stack_expiry(stack_id)
 	if(src.corrosion_destroyed)
 		return
-	// Find and remove the expired stack
+	// Only destroy if the stack still exists (was not repaired)
+	var/stack_found = FALSE
 	for(var/i=length(src.corrosion_stacks); i>=1; i--)
 		var/stack = src.corrosion_stacks[i]
 		if(stack["stack_id"] == stack_id)
+			stack_found = TRUE
 			src.corrosion_stacks.Cut(i,i+1)
 			break
-	// Destroy the weapon and its ammo immediately when any stack expires
+	if(!stack_found)
+		// Stack was already repaired/removed, do nothing
+		if(!length(src.corrosion_stacks))
+			is_corroded = FALSE
+		return
+	// Destroy the weapon and its ammo immediately when any unrepaired stack expires
 	src.corrosion_destroyed = TRUE
 	src.corrosion_block_reload = TRUE
+	is_corroded = FALSE
 	visible_message(SPAN_DANGER("[src] is destroyed by corrosive acid!"))
 	if(src.ammo_equipped)
 		qdel(src.ammo_equipped)
@@ -86,6 +94,7 @@
 	src.corrosion_stacks.Cut()
 	src.corrosion_block_reload = FALSE
 	src.corrosion_repairing = FALSE
+	is_corroded = FALSE
 
 /obj/structure/dropship_equipment/weapon/proc/can_reload()
 	if(src.corrosion_block_reload)

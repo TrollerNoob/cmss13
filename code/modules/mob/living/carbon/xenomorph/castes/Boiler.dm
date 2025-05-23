@@ -75,7 +75,7 @@
 		/datum/action/xeno_action/activable/spray_acid/boiler, //3rd macro
 		/datum/action/xeno_action/onclick/toggle_long_range/boiler, //4th macro
 		/datum/action/xeno_action/onclick/acid_shroud, //5th macro
-		/datum/action/xeno_action/activable/boiler_skyspit/boiler,
+		/datum/action/xeno_action/activable/skyspit/boiler,
 		/datum/action/xeno_action/onclick/tacmap,
 	)
 	skull = /obj/item/skull/boiler
@@ -283,7 +283,7 @@
 			CRASH("Globber has unknown ammo [stabbing_xeno.ammo]! Oh no!")
 		return TRUE
 
-/datum/action/xeno_action/activable/boiler_skyspit/boiler/use_ability(atom/affected_atom)
+/datum/action/xeno_action/activable/skyspit/boiler/use_ability(atom/affected_atom)
 	var/mob/living/carbon/xenomorph/xeno = owner
 	if(!xeno)
 		return FALSE

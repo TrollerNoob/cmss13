@@ -253,3 +253,9 @@
 /datum/action/xeno_action/activable/blockade/proc/handle_dismount_ovipositor(mob/living/carbon/xenomorph/queen/Q)
 	SIGNAL_HANDLER
 	hide_from(Q)
+
+/datum/action/xeno_action/activable/skyspit/queen
+	name = "Skyspit"
+	action_icon_state = "acid_shotgun"
+	plasma_cost = 100
+	xeno_cooldown = 1 SECONDS

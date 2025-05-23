@@ -9,14 +9,32 @@ import type { EquipmentContext } from './types';
 const equipment_xs = [140, 160, 320, 340, 180, 300, 240, 240, 240, 140, 340];
 const equipment_ys = [120, 100, 100, 120, 100, 100, 260, 300, 340, 320, 320];
 
-const DrawWeapon = (props: { readonly x: number; readonly y: number }) => {
+const DrawWeapon = (props: {
+  readonly x: number;
+  readonly y: number;
+  readonly is_corroded?: boolean;
+}) => {
+  const color = props.is_corroded ? '#e90000' : '#00e94e';
   return (
-    <path
-      fillOpacity="1"
-      fill="#00e94e"
-      stroke="#00e94e"
-      d={`M ${props.x + 5} ${props.y} l 0 20 l 10 0 l 0 -20 l -10 0`}
-    />
+    <>
+      <path
+        fillOpacity="1"
+        fill={color}
+        stroke={color}
+        d={`M ${props.x + 5} ${props.y} l 0 20 l 10 0 l 0 -20 l -10 0`}
+      />
+      {props.is_corroded && (
+        <text
+          x={props.x + 10}
+          y={props.y - 10}
+          textAnchor="middle"
+          fontWeight="bold"
+          fill="#e90000"
+        >
+          ERR#R
+        </text>
+      )}
+    </>
   );
 };
 
@@ -69,6 +87,7 @@ const DrawWeaponEquipment = (props: DropshipEquipment) => {
         key={props.mount_point}
         x={equipment_xs[props.mount_point - 1]}
         y={equipment_ys[props.mount_point - 1]}
+        is_corroded={props.is_corroded}
       />
       <DrawWeaponText
         x={equipment_text_xs[props.mount_point - 1]}
