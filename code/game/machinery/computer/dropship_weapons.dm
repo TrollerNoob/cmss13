@@ -994,6 +994,10 @@
 		if (protected_by_pylon(TURF_PROTECTION_CAS, TU))
 			to_chat(weapon_operator, SPAN_WARNING("INVALID TARGET: biological-pattern interference with signal."))
 			return FALSE
+		// Block direct fire if chaff is present
+		if (protected_by_pylon(TURF_PROTECTION_CHAFF, TU))
+			to_chat(weapon_operator, SPAN_WARNING("INVALID TARGET: signal is obscured by a cloud of biomass!"))
+			return FALSE
 		if(!DEW.ammo_equipped.can_fire_at(TU, weapon_operator))
 			return FALSE
 

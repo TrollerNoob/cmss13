@@ -293,24 +293,41 @@
 		return FALSE
 
 	var/list/affected_turfs = list()
-	for(var/turf/T in orange(4, center))
-		if(T.skyspit_active)
-			continue
-		T.skyspit_active = TRUE
-		T.turf_protection_flags |= TURF_PROTECTION_ANTIAIR
-		T.skyspit_applier = xeno // Store the Boiler mob who created the skyspit
-		T.skyspit_expire_timer = addtimer(CALLBACK(T, /turf/proc/remove_skyspit_marker), 100, TIMER_UNIQUE) // 10s
-		if(!T.skyspit_overlay)
-			T.skyspit_overlay = new /obj/effect/xenomorph/xeno_telegraph/green(T)
-		affected_turfs += T
-
-	if(affected_turfs.len)
-		to_chat(xeno, SPAN_NOTICE("You mark the area with corrosive skyspit!"))
-		apply_cooldown()
-		return ..()
-	else
-		to_chat(xeno, SPAN_WARNING("All tiles in range are already marked!"))
-		return FALSE
+	if(xeno.ammo == GLOB.ammo_list[/datum/ammo/xeno/boiler_gas/acid])
+		for(var/turf/T in orange(4, center))
+			if(T.skyspit_active)
+				continue
+			T.skyspit_active = TRUE
+			T.turf_protection_flags |= TURF_PROTECTION_ANTIAIR
+			T.skyspit_applier = xeno // Store the Boiler mob who created the skyspit
+			T.skyspit_expire_timer = addtimer(CALLBACK(T, /turf/proc/remove_skyspit_marker), 100, TIMER_UNIQUE) // 10s
+			if(!T.skyspit_overlay)
+				T.skyspit_overlay = new /obj/effect/xenomorph/xeno_telegraph/green(T)
+			affected_turfs += T
+		if(affected_turfs.len)
+			to_chat(xeno, SPAN_NOTICE("You mark the area with corrosive skyspit!"))
+			apply_cooldown()
+			return ..()
+		else
+			to_chat(xeno, SPAN_WARNING("All tiles in range are already marked!"))
+			return FALSE
+	else if(xeno.ammo == GLOB.ammo_list[/datum/ammo/xeno/boiler_gas])
+		for(var/turf/T in orange(3, center))
+			if(T.chaff_active)
+				continue
+			T.chaff_active = TRUE
+			T.turf_protection_flags |= TURF_PROTECTION_CHAFF
+			T.chaff_expire_timer = addtimer(CALLBACK(T, /turf/proc/remove_chaff_marker), 300, TIMER_UNIQUE) // 30s
+			if(!T.chaff_overlay)
+				T.chaff_overlay = new /obj/effect/xenomorph/xeno_telegraph/brown(T)
+			affected_turfs += T
+		if(affected_turfs.len)
+			to_chat(xeno, SPAN_NOTICE("You mark the area with chaff!"))
+			apply_cooldown()
+			return ..()
+		else
+			to_chat(xeno, SPAN_WARNING("All tiles in range are already marked!"))
+			return FALSE
 
 // Also add cleanup for the overlay in remove_skyspit_marker
 /turf/proc/remove_skyspit_marker()
@@ -323,3 +340,15 @@
 			skyspit_overlay = null
 		for(var/mob/M in src)
 			to_chat(M, SPAN_INFO("The skyspit on the ground evaporates."))
+
+// Add cleanup for chaff overlay and flag
+/turf/proc/remove_chaff_marker()
+	if(chaff_active)
+		chaff_active = FALSE
+		turf_protection_flags &= ~TURF_PROTECTION_CHAFF
+		chaff_expire_timer = null
+		if(chaff_overlay)
+			qdel(chaff_overlay)
+			chaff_overlay = null
+		for(var/mob/M in src)
+			to_chat(M, SPAN_INFO("The chaff on the ground dissipates."))

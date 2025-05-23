@@ -70,10 +70,14 @@
 	/// Can xenomorph weeds grow on the tile
 	var/is_weedable = FULLY_WEEDABLE
 
+	//Anti-Air turf vars for Boiler's Skyspit
 	var/skyspit_active = FALSE
 	var/skyspit_expire_timer = null
 	var/skyspit_overlay = null
 	var/skyspit_applier = null // Boiler mob who created the skyspit
+	var/chaff_active = FALSE // Boiler chaff marker
+	var/chaff_expire_timer = null // Timer for chaff marker
+	var/chaff_overlay = null // Overlay for chaff telegraph
 
 	var/turf_protection_flags = TURF_PROTECTION_NONE
 
@@ -952,3 +956,7 @@ GLOBAL_LIST_INIT(blacklisted_automated_baseturfs, typecacheof(list(
 
 	if(damage_modifier > 0.5)
 		playsound(loc, "slam", 50, 1)
+
+/turf/proc/obstructed_signal()
+	var/area/laser_area = get_area(src)
+	return !istype(laser_area) || CEILING_IS_PROTECTED(laser_area.ceiling, CEILING_PROTECTION_TIER_2)
