@@ -99,13 +99,6 @@ export const RappelMfdPanel = (props: MfdProps) => {
       ]}
       leftButtons={[
         {
-          children: deployLabel,
-          onClick: () =>
-            act('rappel-deploy', {
-              equipment_id: rappel?.mount_point,
-            }),
-        },
-        {
           children: 'CANCEL',
           onClick: () =>
             act('rappel-cancel', {

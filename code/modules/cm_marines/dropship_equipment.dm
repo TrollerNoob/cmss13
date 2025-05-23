@@ -1834,14 +1834,65 @@
 	rope.release_rope()
 	rope_in_use = FALSE
 
+/obj/structure/dropship_equipment/rappel_system/proc/spawn_rappel_warning(turf/target)
+	if(!target) return
+	var/obj/effect/warning/rappel/warn = new /obj/effect/warning/rappel(target)
+	spawn(20)
+		if(warn) qdel(warn)
+
 /obj/structure/dropship_equipment/rappel_system/attack_hand(mob/living/carbon/human/user)
-	if(rope_in_use)
-		to_chat(user, SPAN_WARNING("The rope is currently in use!"))
-		return
-	if(!hatch_rope || !ground_ropes || !length(ground_ropes))
-		to_chat(user, SPAN_WARNING("The rope is not deployed!"))
-		return
-	hatch_rope.attack_hand(user)
+    if(world.time < manual_deploy_cooldown)
+        to_chat(user, SPAN_WARNING("You must wait before deploying the rappel again!"))
+        return
+    if(!can_lock_rappel())
+        to_chat(user, SPAN_WARNING("Rappel system is not ready to deploy."))
+        return
+    var/datum/cas_signal/sig = locked_target
+    if(!sig)
+        to_chat(user, SPAN_WARNING("No rappel target locked."))
+        return
+    if(last_deployed_target == sig)
+        to_chat(user, SPAN_WARNING("Rappel is already deployed to this target."))
+        return
+    var/turf/location = get_turf(sig.signal_loc)
+    var/area/location_area = get_area(location)
+    if(CEILING_IS_PROTECTED(location_area.ceiling, CEILING_PROTECTION_TIER_1))
+        to_chat(user, SPAN_WARNING("You cannot jump to the target. It is probably underground."))
+        return
+    var/list/valid_turfs = list()
+    for(var/turf/T as anything in RANGE_TURFS(2, location))
+        var/area/t_area = get_area(T)
+        if(!t_area || CEILING_IS_PROTECTED(t_area.ceiling, CEILING_PROTECTION_TIER_1))
+            continue
+        if(T.density)
+            continue
+        var/found_dense = FALSE
+        for(var/atom/A in T)
+            if(A.density && A.can_block_movement)
+                found_dense = TRUE
+                break
+        if(found_dense)
+            continue
+        if(protected_by_pylon(TURF_PROTECTION_MORTAR, T))
+            continue
+        valid_turfs += T
+    if(!length(valid_turfs))
+        to_chat(user, SPAN_WARNING("There's nowhere safe for you to land, the landing zone is too congested."))
+        return
+    var/turf/deploy_turf = pick(valid_turfs)
+    spawn_rappel_warning(deploy_turf)
+    cleanup_ropes(FALSE)
+    playsound(src, 'sound/machines/elevator_openclose.ogg', 50, 1)
+    flick("rappel_hatch_opening", src)
+    visible_message(SPAN_NOTICE("[src] flashes green as it locks to a signal."))
+    icon_state = "rappel_hatch_open"
+    spawn(17)
+        var/turf/target_turf = get_turf(deploy_turf)
+        if(target_turf)
+            create_ropes(loc, target_turf)
+            last_deployed_target = sig
+    manual_cancel_cooldown = world.time + 6 SECONDS
+    return
 
 /obj/effect/warning/rappel
 	color = "#cf7a1e"

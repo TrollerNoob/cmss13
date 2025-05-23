@@ -607,84 +607,6 @@
 			RegisterSignal(linked_shuttle, COMSIG_SHUTTLE_SETMODE, PROC_REF(clear_rope_landed))
 			return TRUE
 
-		if("rappel-deploy")
-			var/obj/docking_port/mobile/marine_dropship/linked_shuttle = SSshuttle.getShuttle(shuttle_tag)
-			if(!linked_shuttle)
-				return FALSE
-
-			var/obj/structure/dropship_equipment/rappel_system/rappel = null
-			for(var/obj/structure/dropship_equipment/equipment as anything in linked_shuttle.equipments)
-				if(istype(equipment, /obj/structure/dropship_equipment/rappel_system))
-					rappel = equipment
-					break
-			if(!rappel)
-				to_chat(user, SPAN_WARNING("No rappel system installed on this dropship."))
-				return FALSE
-
-			if(world.time < rappel.manual_deploy_cooldown)
-				to_chat(user, SPAN_WARNING("You must wait before deploying the rappel again!"))
-				return FALSE
-
-			if(!rappel.can_lock_rappel())
-				to_chat(user, SPAN_WARNING("Rappel system is not ready to deploy."))
-				return FALSE
-
-			var/datum/cas_signal/sig = rappel.locked_target
-			if(!sig)
-				to_chat(user, SPAN_WARNING("No rappel target locked."))
-				return FALSE
-
-			if(rappel.last_deployed_target == sig)
-				to_chat(user, SPAN_WARNING("Rappel is already deployed to this target."))
-				return FALSE
-
-			var/turf/location = get_turf(sig.signal_loc)
-			var/area/location_area = get_area(location)
-			if(CEILING_IS_PROTECTED(location_area.ceiling, CEILING_PROTECTION_TIER_1))
-				to_chat(user, SPAN_WARNING("You cannot jump to the target. It is probably underground."))
-				return
-
-			var/list/valid_turfs = list()
-			for(var/turf/T as anything in RANGE_TURFS(2, location))
-				var/area/t_area = get_area(T)
-				if(!t_area || CEILING_IS_PROTECTED(t_area.ceiling, CEILING_PROTECTION_TIER_1))
-					continue
-				if(T.density)
-					continue
-				var/found_dense = FALSE
-				for(var/atom/A in T)
-					if(A.density && A.can_block_movement)
-						found_dense = TRUE
-						break
-				if(found_dense)
-					continue
-				if(protected_by_pylon(TURF_PROTECTION_MORTAR, T))
-					continue
-				valid_turfs += T
-
-			if(!length(valid_turfs))
-				to_chat(user, SPAN_WARNING("There's nowhere safe for you to land, the landing zone is too congested."))
-				return
-
-			var/turf/deploy_turf = pick(valid_turfs)
-
-			spawn_rappel_warning(deploy_turf)
-
-			if(rappel)
-				rappel.cleanup_ropes(FALSE)
-			playsound(src, 'sound/machines/elevator_openclose.ogg', 50, 1)
-			flick("rappel_hatch_opening", rappel)
-			rappel.visible_message(SPAN_NOTICE("[rappel] flashes green as it locks to a signal."))
-			rappel.icon_state = "rappel_hatch_open"
-			// Delay rope creation until after hatch animation (17 frames)
-			spawn(17)
-				var/turf/target_turf = get_turf(deploy_turf)
-				if(target_turf)
-					rappel.create_ropes(rappel.loc, target_turf)
-					rappel.last_deployed_target = sig
-			rappel.manual_cancel_cooldown = world.time + 6 SECONDS
-			return TRUE
-
 		if("rappel-cancel")
 			var/obj/docking_port/mobile/marine_dropship/linked_shuttle = SSshuttle.getShuttle(shuttle_tag)
 			if(!linked_shuttle)
@@ -1179,12 +1101,6 @@
 	else
 		firemission_envelope.change_current_loc(shootloc)
 	return TRUE
-
-/obj/structure/machinery/computer/dropship_weapons/proc/spawn_rappel_warning(turf/target)
-	if(!target) return
-	var/obj/effect/warning/rappel/warn = new /obj/effect/warning/rappel(target)
-	spawn(20)
-		if(warn) qdel(warn)
 
 /obj/structure/machinery/computer/dropship_weapons/dropship1
 	name = "\improper 'Alamo' weapons controls"
