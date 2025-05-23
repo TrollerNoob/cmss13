@@ -631,6 +631,11 @@
 
 		if("select-ammo")
 			var/weapon_tag = params["eqp_tag"]
+			var/ammo_ref = params["ammo_ref"]
+			if(!weapon_tag || !ammo_ref)
+				to_chat(user, SPAN_WARNING("You must select both a weapon and an ammo type."))
+				return TRUE
+
 			var/obj/structure/dropship_equipment/weapon/selected_weapon = get_weapon(weapon_tag)
 			if(!selected_weapon)
 				to_chat(user, SPAN_WARNING("No weapon selected for reloading."))
@@ -646,17 +651,10 @@
 				to_chat(user, SPAN_WARNING("No autoreloader system installed on this dropship."))
 				return TRUE
 
-			// Gather available ammo
-			var/list/available_ammo = list()
-			for(var/obj/structure/ship_ammo/A in auto.stored_ammo)
-				available_ammo += A
-			if(!length(available_ammo))
-				to_chat(user, SPAN_WARNING("No stored ammo available in the autoreloader."))
-				return TRUE
-
-			// Prompt user to select ammo
-			var/obj/structure/ship_ammo/selected_ammo = tgui_input_list(user, "Select ammo to load into [selected_weapon.name]", "Available Ammo", available_ammo)
+			// Find the ammo object by ref
+			var/obj/structure/ship_ammo/selected_ammo = locate(ammo_ref)
 			if(!selected_ammo)
+				to_chat(user, SPAN_WARNING("Selected ammo not found in autoreloader."))
 				return TRUE
 
 			// Check compatibility

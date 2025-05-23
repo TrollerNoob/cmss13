@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { useBackend } from 'tgui/backend';
 import { Box, Stack } from 'tgui/components';
 
@@ -17,18 +18,53 @@ export const AutoReloaderMfdPanel = (props: MfdProps) => {
   );
   const weapons = data.equipment_data?.filter((eq) => eq.is_weapon);
 
+  // Local state for which weapon is being selected for ammo
+  const [pendingWeapon, setPendingWeapon] = useState<number | undefined>(
+    undefined,
+  );
+
   // Use selected_weapon from backend if present
   const selectedWeapon = weapons?.find(
     (w) => w.eqp_tag === data.selected_weapon,
   );
 
+  // Handler for weapon button click
+  const handleWeaponClick = (eqp_tag: number) => {
+    setPendingWeapon(eqp_tag);
+  };
+
+  // Handler for ammo button click
+  const handleAmmoClick = (ammoRef: string) => {
+    if (pendingWeapon !== undefined) {
+      act('select-ammo', { eqp_tag: pendingWeapon, ammo_ref: ammoRef });
+      setPendingWeapon(undefined);
+    }
+  };
+
+  // Handler to cancel ammo selection
+  const handleCancel = () => {
+    setPendingWeapon(undefined);
+  };
+
+  // Build left buttons: weapon selection or ammo selection
+  const leftButtons =
+    pendingWeapon === undefined
+      ? weapons?.map((weap) => ({
+          children: weap.name,
+          onClick: () => handleWeaponClick(weap.eqp_tag),
+        }))
+      : [
+          ...(autoreloader?.stored_ammo?.map((ammo, idx) => ({
+            children: `${ammo.name} (${ammo.ammo_count ?? 0}/${ammo.max_ammo_count ?? 0})`,
+            onClick: () => handleAmmoClick(ammo.ref),
+          })) || []),
+          { children: 'CANCEL', onClick: handleCancel },
+        ];
+
   return (
     <MfdPanel
       panelStateId={props.panelStateId}
-      leftButtons={weapons?.map((weap) => ({
-        children: weap.name,
-        onClick: () => act('select-ammo', { eqp_tag: weap.eqp_tag }),
-      }))}
+      leftButtons={leftButtons}
       topButtons={[
         {
           children: 'EQUIP',
@@ -71,6 +107,16 @@ export const AutoReloaderMfdPanel = (props: MfdProps) => {
                     <Stack.Item>
                       <h4>Selected Weapon</h4>
                       <div>{selectedWeapon.name}</div>
+                    </Stack.Item>
+                  )}
+                  {pendingWeapon !== undefined && (
+                    <Stack.Item>
+                      <h4>Select Ammo for Weapon</h4>
+                      <div>
+                        {autoreloader.stored_ammo?.length
+                          ? 'Choose an ammo type from the left or cancel.'
+                          : 'No ammo available.'}
+                      </div>
                     </Stack.Item>
                   )}
                 </Stack>
