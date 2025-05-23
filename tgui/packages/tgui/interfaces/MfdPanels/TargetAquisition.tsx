@@ -499,6 +499,14 @@ export const TargetAquisitionMfdPanel = (props: MfdProps) => {
               <Stack.Item>
                 <h3>Strike configuration {strikeConfigLabel}</h3>
               </Stack.Item>
+              {firemissionSelected !== undefined && (
+                <Stack.Item>
+                  <h3>
+                    Firemission Length:{' '}
+                    {firemissionSelected?.mission_length ?? 'N/A'}
+                  </h3>
+                </Stack.Item>
+              )}
               <Stack.Item className="TargetText">
                 <h3>
                   Target selected:{' '}
