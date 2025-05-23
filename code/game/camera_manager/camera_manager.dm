@@ -238,6 +238,14 @@
 
 	// Only block camera vision if the true center tile (target) has chaff, Tier 1 ceiling, or is obstructed
 	var/turf/center_turf = null
+	var/allow_render = FALSE
+
+	// Check if this is a dropship weapons console with an active firemission in ON_TARGET or FIRING state
+	if(parent && istype(parent, /obj/structure/machinery/computer/dropship_weapons))
+		var/obj/structure/machinery/computer/dropship_weapons/console = parent
+		if(console.firemission_envelope && (console.firemission_envelope.stat == FIRE_MISSION_STATE_ON_TARGET || console.firemission_envelope.stat == FIRE_MISSION_STATE_FIRING))
+			allow_render = TRUE
+
 	if(render_mode == RENDER_MODE_AREA && current_area && target_z)
 		center_turf = locate(current_area.center_x, current_area.center_y, target_z)
 	else if(render_mode == RENDER_MODE_TARGET && last_camera_turf)
@@ -245,16 +253,17 @@
 	else
 		return
 
-	var/area/laser_area = get_area(center_turf)
-	if(center_turf.turf_protection_flags & TURF_PROTECTION_CHAFF)
-		show_camera_static()
-		return
-	if(!istype(laser_area) || CEILING_IS_PROTECTED(laser_area.ceiling, CEILING_PROTECTION_TIER_1))
-		show_camera_static()
-		return
-	if(center_turf.obstructed_signal())
-		show_camera_static()
-		return
+	if(!allow_render)
+		var/area/laser_area = get_area(center_turf)
+		if(center_turf.turf_protection_flags & TURF_PROTECTION_CHAFF)
+			show_camera_static()
+			return
+		if(!istype(laser_area) || CEILING_IS_PROTECTED(laser_area.ceiling, CEILING_PROTECTION_TIER_1))
+			show_camera_static()
+			return
+		if(center_turf.obstructed_signal())
+			show_camera_static()
+			return
 
 	var/list/bbox = get_bbox_of_atoms(visible_turfs)
 	var/size_x = bbox[3] - bbox[1] + 1
