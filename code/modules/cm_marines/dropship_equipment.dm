@@ -2006,7 +2006,7 @@
 
 	// Variables for ammo storage
 	var/list/stored_ammo = list() // Dynamic list of stored ammo
-	var/max_ammo_slots = 2 // Maximum number of ammo slots (can be changed)
+	var/max_ammo_slots = 3 // Maximum number of ammo slots
 	var/reload_cooldown = 10
 	var/obj/structure/ship_ammo/selected_ammo = null
 	var/obj/structure/dropship_equipment/weapon/selected_weapon = null
