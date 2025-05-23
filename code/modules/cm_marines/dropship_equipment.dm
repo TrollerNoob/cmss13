@@ -62,11 +62,11 @@
 					return TRUE
 				var/obj/structure/ship_ammo/ammo = PC.loaded
 				// Check for duplicate ammo
-				if(ammo == autoreloader.stored_ammo_1 || ammo == autoreloader.stored_ammo_2)
+				if(ammo in autoreloader.stored_ammo)
 					to_chat(user, SPAN_WARNING("[ammo] is already stored in [src]."))
 					return TRUE
 				// Check for available slot
-				if(autoreloader.stored_ammo_1 && autoreloader.stored_ammo_2)
+				if(length(autoreloader.stored_ammo) >= autoreloader.max_ammo_slots)
 					to_chat(user, SPAN_WARNING("[src] cannot store more ammo. Maximum capacity reached."))
 					return TRUE
 				to_chat(user, SPAN_NOTICE("You begin loading [ammo] into [src]."))
@@ -74,14 +74,14 @@
 					to_chat(user, SPAN_WARNING("You stop loading [ammo] into [src]."))
 					return TRUE
 				// Place ammo in the first available slot
-				if(!autoreloader.stored_ammo_1)
-					autoreloader.stored_ammo_1 = ammo
-				else
-					autoreloader.stored_ammo_2 = ammo
-				ammo.forceMove(src) // Move the ammo to the autoreloader
-				PC.loaded = null // Clear the powerloader clamp
-				PC.update_icon() // Update the clamp's icon
-				to_chat(user, SPAN_NOTICE("You successfully load [ammo] into [src]."))
+				if(autoreloader.add_ammo(ammo)) {
+					ammo.forceMove(src) // Move the ammo to the autoreloader
+					PC.loaded = null // Clear the powerloader clamp
+					PC.update_icon() // Update the clamp's icon
+					to_chat(user, SPAN_NOTICE("You successfully load [ammo] into [src]."))
+				} else {
+					to_chat(user, SPAN_WARNING("[src] cannot store more ammo. Maximum capacity reached."))
+				}
 				return TRUE
 			else
 				// Default behavior for other equipment
@@ -2005,20 +2005,30 @@
 	uses_ammo = FALSE
 
 	// Variables for ammo storage
-	var/obj/structure/ship_ammo/stored_ammo_1 = null // First ammo slot
-	var/obj/structure/ship_ammo/stored_ammo_2 = null // Second ammo slot
-	var/max_ammo_slots = 2 // Maximum number of ammo slots
+	var/list/stored_ammo = list() // Dynamic list of stored ammo
+	var/max_ammo_slots = 2 // Maximum number of ammo slots (can be changed)
 	var/reload_cooldown = 10
 	var/obj/structure/ship_ammo/selected_ammo = null
 	var/obj/structure/dropship_equipment/weapon/selected_weapon = null
 
-	// UI data for the autoreloader
 /obj/structure/dropship_equipment/autoreloader/ui_data(mob/user)
 	. = list()
 	.["name"] = name
-	.["max_ammo_slots"] = 2
-	.["available_slots"] = (stored_ammo_1 ?  0 : 1) + (stored_ammo_2 ? 0 : 1)
+	.["max_ammo_slots"] = max_ammo_slots
+	.["available_slots"] = max_ammo_slots - length(stored_ammo)
 	.["selected_weapon"] = selected_weapon ? selected_weapon.ship_base.attach_id : null
+
+/obj/structure/dropship_equipment/autoreloader/proc/add_ammo(obj/structure/ship_ammo/ammo)
+	if(length(stored_ammo) >= max_ammo_slots)
+		return FALSE
+	stored_ammo += ammo
+	return TRUE
+
+/obj/structure/dropship_equipment/autoreloader/proc/remove_ammo(obj/structure/ship_ammo/ammo)
+	if(ammo in stored_ammo)
+		stored_ammo -= ammo
+		return TRUE
+	return FALSE
 
 /obj/structure/dropship_equipment/autoreloader/proc/reload_weapon(mob/user)
 	if(!selected_weapon)
@@ -2044,10 +2054,7 @@
 		return
 
 	selected_weapon.ammo_equipped = selected_ammo
-	if(selected_ammo == stored_ammo_1)
-		stored_ammo_1 = null
-	else if(selected_ammo == stored_ammo_2)
-		stored_ammo_2 = null
+	remove_ammo(selected_ammo)
 	to_chat(user, SPAN_NOTICE("You load [selected_ammo.name] into [selected_weapon.name]."))
 	update_icon()
 	selected_weapon.update_icon()

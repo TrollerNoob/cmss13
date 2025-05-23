@@ -648,10 +648,8 @@
 
 			// Gather available ammo
 			var/list/available_ammo = list()
-			if(auto.stored_ammo_1)
-				available_ammo += list(auto.stored_ammo_1)
-			if(auto.stored_ammo_2)
-				available_ammo += list(auto.stored_ammo_2)
+			for(var/obj/structure/ship_ammo/A in auto.stored_ammo)
+				available_ammo += A
 			if(!length(available_ammo))
 				to_chat(user, SPAN_WARNING("No stored ammo available in the autoreloader."))
 				return TRUE
@@ -819,15 +817,18 @@
 			"is_corroded" = equipment.is_corroded,
 			"data" = equipment.ui_data(user)
 		)
-		// If this is an autoreloader, add stored ammo info
+		// If this is an autoreloader, add stored ammo info as a list
 		if(istype(equipment, /obj/structure/dropship_equipment/autoreloader))
 			var/obj/structure/dropship_equipment/autoreloader/auto = equipment
-			data["stored_ammo_1_name"] = auto.stored_ammo_1?.name
-			data["stored_ammo_1_count"] = auto.stored_ammo_1?.ammo_count
-			data["stored_ammo_1_max"] = auto.stored_ammo_1?.max_ammo_count
-			data["stored_ammo_2_name"] = auto.stored_ammo_2?.name
-			data["stored_ammo_2_count"] = auto.stored_ammo_2?.ammo_count
-			data["stored_ammo_2_max"] = auto.stored_ammo_2?.max_ammo_count
+			data["stored_ammo"] = list()
+			for(var/obj/structure/ship_ammo/A in auto.stored_ammo)
+				data["stored_ammo"] += list(list(
+					"name" = A.name,
+					"ammo_count" = A.ammo_count,
+					"max_ammo_count" = A.max_ammo_count,
+					"ammo_name" = A.ammo_name,
+					"ref" = ref(A)
+				))
 
 		. += list(data)
 

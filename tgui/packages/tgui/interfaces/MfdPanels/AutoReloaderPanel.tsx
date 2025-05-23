@@ -52,20 +52,20 @@ export const AutoReloaderMfdPanel = (props: MfdProps) => {
                     <h3>{autoreloader.name}</h3>
                   </Stack.Item>
                   <Stack.Item>
-                    <h4>Stored Ammo 1</h4>
-                    <div>
-                      {autoreloader.stored_ammo_1_name
-                        ? `${autoreloader.stored_ammo_1_name} (${autoreloader.stored_ammo_1_count ?? 0}/${autoreloader.stored_ammo_1_max ?? 0})`
-                        : 'Empty'}
-                    </div>
-                  </Stack.Item>
-                  <Stack.Item>
-                    <h4>Stored Ammo 2</h4>
-                    <div>
-                      {autoreloader.stored_ammo_2_name
-                        ? `${autoreloader.stored_ammo_2_name} (${autoreloader.stored_ammo_2_count ?? 0}/${autoreloader.stored_ammo_2_max ?? 0})`
-                        : 'Empty'}
-                    </div>
+                    <h4>Stored Ammo</h4>
+                    {Array.isArray(autoreloader.stored_ammo) &&
+                    autoreloader.stored_ammo.length > 0 ? (
+                      <>
+                        {autoreloader.stored_ammo.map((ammo, idx) => (
+                          <div key={ammo.ref || idx}>
+                            {ammo.name} ({ammo.ammo_count ?? 0}/
+                            {ammo.max_ammo_count ?? 0})
+                          </div>
+                        ))}
+                      </>
+                    ) : (
+                      <div>Empty</div>
+                    )}
                   </Stack.Item>
                   {selectedWeapon && (
                     <Stack.Item>
