@@ -1994,35 +1994,14 @@
 /obj/structure/dropship_equipment/paradrop_system/attack_hand(mob/living/carbon/human/user)
 	return
 
-// used in the simulation room for cas runs, removed the sound and ammo depletion methods.
-// copying code is definitely bad, but adding an unnecessary sim or not sim boolean check in the open_fire_firemission just doesn't seem right.
-/obj/structure/dropship_equipment/weapon/proc/open_simulated_fire_firemission(obj/selected_target, mob/user = usr)
-	set waitfor = FALSE
-	var/turf/target_turf = get_turf(selected_target)
-	var/obj/structure/ship_ammo/SA = ammo_equipped //necessary because we nullify ammo_equipped when firing big rockets
-	var/ammo_accuracy_range = SA.accuracy_range
-	// no warning sound and no travel time
-	last_fired = world.time
-
-	if(locate(/obj/structure/dropship_equipment/electronics/targeting_system) in linked_shuttle.equipments)
-		ammo_accuracy_range = max(ammo_accuracy_range - 2, 0)
-
-	ammo_accuracy_range /= 2 //buff for basically pointblanking the ground
-
-	var/list/possible_turfs = RANGE_TURFS(ammo_accuracy_range, target_turf)
-	var/turf/impact = pick(possible_turfs)
-	sleep(3)
-	SA.source_mob = user
-	SA.detonate_on(impact, src)
-
 // Autoreloader System
 
 /obj/structure/dropship_equipment/autoreloader
 	name = "\improper RMT-08 Autoreloader System"
 	desc = "An automated reloading system capable of storing two munitions and reloading a selected dropship weapon. Fits inside the crew weapon emplacement."
-	icon_state = "medevac_system"
+	icon_state = "autoreloader"
 	shorthand = "RMT"
-	icon = 'icons/obj/structures/props/dropship/dropship_equipment.dmi'
+	icon = 'icons/obj/structures/props/dropship/dropship_equipment64.dmi'
 	equip_categories = list(DROPSHIP_CREW_WEAPON) // Fits inside the central spot of the dropship
 	point_cost = 300
 	is_interactable = TRUE
@@ -2035,6 +2014,13 @@
 	var/reload_cooldown = 10
 	var/obj/structure/ship_ammo/selected_ammo = null
 	var/obj/structure/dropship_equipment/weapon/selected_weapon = null
+
+/obj/structure/dropship_equipment/autoreloader/update_equipment()
+	if(ship_base)
+		icon_state = "autoreloader_installed"
+		density = FALSE
+	else
+		icon_state = "autoreloader"
 
 /obj/structure/dropship_equipment/autoreloader/ui_data(mob/user)
 	. = list()
@@ -2081,7 +2067,9 @@
 
 	selected_weapon.ammo_equipped = selected_ammo
 	remove_ammo(selected_ammo)
+	flick("autoreloader_reloading", src)
 	to_chat(user, SPAN_NOTICE("You load [selected_ammo.name] into [selected_weapon.name]."))
+	icon_state = "autoreloader_installed"
 	update_icon()
 	selected_weapon.update_icon()
 
@@ -2089,6 +2077,28 @@
 	if(!ishuman(user))
 		return
 	reload_weapon(user)
+
+
+// used in the simulation room for cas runs, removed the sound and ammo depletion methods.
+// copying code is definitely bad, but adding an unnecessary sim or not sim boolean check in the open_fire_firemission just doesn't seem right.
+/obj/structure/dropship_equipment/weapon/proc/open_simulated_fire_firemission(obj/selected_target, mob/user = usr)
+	set waitfor = FALSE
+	var/turf/target_turf = get_turf(selected_target)
+	var/obj/structure/ship_ammo/SA = ammo_equipped //necessary because we nullify ammo_equipped when firing big rockets
+	var/ammo_accuracy_range = SA.accuracy_range
+	// no warning sound and no travel time
+	last_fired = world.time
+
+	if(locate(/obj/structure/dropship_equipment/electronics/targeting_system) in linked_shuttle.equipments)
+		ammo_accuracy_range = max(ammo_accuracy_range - 2, 0)
+
+	ammo_accuracy_range /= 2 //buff for basically pointblanking the ground
+
+	var/list/possible_turfs = RANGE_TURFS(ammo_accuracy_range, target_turf)
+	var/turf/impact = pick(possible_turfs)
+	sleep(3)
+	SA.source_mob = user
+	SA.detonate_on(impact, src)
 
 // corrosion
 
