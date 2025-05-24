@@ -1180,7 +1180,7 @@
 		if(ship_base)
 			icon_state = "laser_beam_installed"
 		else
-		 icon_state = "laser_beam"
+			icon_state = "laser_beam"
 
 /obj/structure/dropship_equipment/weapon/launch_bay
 	name = "\improper LAG-14 Internal Sentry Launcher"
