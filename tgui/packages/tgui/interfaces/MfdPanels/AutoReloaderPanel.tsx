@@ -53,7 +53,7 @@ export const AutoReloaderMfdPanel = (props: MfdProps) => {
   const leftButtons =
     pendingWeapon === undefined
       ? selectableWeapons?.map((weap) => ({
-          children: weap.name,
+          children: weap.shorthand, // Use shorthand instead of name
           onClick: () => handleWeaponClick(weap.eqp_tag),
         }))
       : [
