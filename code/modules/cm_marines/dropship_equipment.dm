@@ -2016,7 +2016,8 @@
 	.["name"] = name
 	.["max_ammo_slots"] = max_ammo_slots
 	.["available_slots"] = max_ammo_slots - length(stored_ammo)
-	.["selected_weapon"] = selected_weapon ? selected_weapon.ship_base.attach_id : null
+	.["selected_weapon"] = selected_weapon
+	.["selected_ammo"] = selected_ammo
 
 /obj/structure/dropship_equipment/autoreloader/proc/add_ammo(obj/structure/ship_ammo/ammo)
 	if(length(stored_ammo) >= max_ammo_slots)

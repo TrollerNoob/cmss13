@@ -180,18 +180,57 @@ export const AutoReloaderMfdPanel = (props: MfdProps) => {
                     </div>
                   </>
                 )}
-                {selectedWeapon && (
-                  <>
-                    <h4
-                      style={{
-                        textAlign: 'center',
-                        margin: '0.5em 0 0.25em 0',
-                      }}
-                    >
-                      Selected Weapon
-                    </h4>
-                    <div>{selectedWeapon.name}</div>
-                  </>
+                {/* Show currently selected weapon and ammo from AutoreloaderSpec if available */}
+                {(autoreloader.data?.selected_weapon ||
+                  autoreloader.data?.selected_ammo) && (
+                  <div
+                    style={{
+                      display: 'flex',
+                      flexDirection: 'column', // Change to column for stacking
+                      justifyContent: 'center',
+                      alignItems: 'center',
+                      gap: '0.5em',
+                      marginTop: '1em',
+                      marginBottom: '0.5em',
+                    }}
+                  >
+                    {autoreloader.data?.selected_weapon &&
+                      typeof autoreloader.data.selected_weapon === 'string' &&
+                      autoreloader.data.selected_weapon.trim() !== '' && (
+                        <div style={{ minWidth: '10em', textAlign: 'center' }}>
+                          <h4
+                            style={{
+                              textAlign: 'center',
+                              margin: '0.5em 0 0.25em 0',
+                              fontSize: '1.25em',
+                            }}
+                          >
+                            Selected Weapon
+                          </h4>
+                          <div style={{ fontSize: '1.15em' }}>
+                            {autoreloader.data.selected_weapon}
+                          </div>
+                        </div>
+                      )}
+                    {autoreloader.data?.selected_ammo &&
+                      typeof autoreloader.data.selected_ammo === 'string' &&
+                      autoreloader.data.selected_ammo.trim() !== '' && (
+                        <div style={{ minWidth: '10em', textAlign: 'center' }}>
+                          <h4
+                            style={{
+                              textAlign: 'center',
+                              margin: '0.5em 0 0.25em 0',
+                              fontSize: '1.25em',
+                            }}
+                          >
+                            Selected Ammo
+                          </h4>
+                          <div style={{ fontSize: '1.15em' }}>
+                            {autoreloader.data.selected_ammo}
+                          </div>
+                        </div>
+                      )}
+                  </div>
                 )}
               </Box>
             </Stack.Item>
