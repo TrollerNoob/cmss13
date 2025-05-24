@@ -3806,6 +3806,17 @@
 /obj/item/reagent_container/food/snacks/mre_pack/meal1,
 /turf/open/floor/almayer/silver,
 /area/almayer/living/cafeteria_officer)
+"air" = (
+/obj/item/storage/toolbox/mechanical/green{
+	pixel_x = 5;
+	pixel_y = 12
+	},
+/obj/item/clothing/glasses/welding{
+	pixel_x = 7;
+	pixel_y = 19
+	},
+/turf/open/floor/plating/plating_catwalk,
+/area/almayer/hallways/hangar)
 "ais" = (
 /obj/structure/window/reinforced,
 /turf/open/floor/wood/ship,
@@ -4246,6 +4257,10 @@
 	},
 /turf/open/floor/almayer/sterile_green_corner,
 /area/almayer/medical/containment)
+"ajA" = (
+/obj/effect/decal/cleanable/blood/oil,
+/turf/open/floor/almayer,
+/area/almayer/hallways/hangar)
 "ajB" = (
 /obj/effect/decal/warning_stripes{
 	icon_state = "N";
@@ -4371,6 +4386,18 @@
 	},
 /turf/open/floor/almayer/research/containment/corner_var1/east,
 /area/almayer/medical/containment/cell)
+"ajL" = (
+/obj/structure/surface/table/almayer,
+/obj/item/device/dropship_handheld{
+	pixel_x = -3;
+	pixel_y = 2
+	},
+/turf/open/floor/almayer,
+/area/almayer/hallways/hangar)
+"ajM" = (
+/obj/structure/sign/banners/colonial_marines_flag,
+/turf/closed/wall/almayer,
+/area/almayer/living/pilotbunks)
 "ajN" = (
 /obj/effect/decal/cleanable/dirt,
 /turf/open/floor/almayer/flooredge/east,
@@ -6229,6 +6256,10 @@
 	dir = 4
 	},
 /obj/structure/disposalpipe/trunk,
+/obj/item/device/dropship_handheld{
+	pixel_x = -5;
+	pixel_y = -7
+	},
 /turf/open/floor/almayer/plate,
 /area/almayer/living/pilotbunks)
 "api" = (
@@ -15067,6 +15098,14 @@
 /area/almayer/hallways/hangar)
 "baR" = (
 /obj/structure/surface/table/almayer,
+/obj/item/storage/toolbox/mechanical{
+	pixel_x = 6;
+	pixel_y = 10
+	},
+/obj/item/clothing/head/welding{
+	pixel_x = -4;
+	pixel_y = 7
+	},
 /turf/open/floor/almayer,
 /area/almayer/hallways/hangar)
 "baS" = (
@@ -15775,12 +15814,15 @@
 /area/almayer/squads/alpha)
 "bfJ" = (
 /obj/structure/surface/table/almayer,
-/obj/item/prop/almayer/handheld1,
+/obj/item/device/dropship_handheld,
 /turf/open/floor/almayer,
 /area/almayer/hallways/hangar)
 "bfK" = (
 /obj/structure/surface/table/almayer,
-/obj/item/prop/almayer/comp_closed,
+/obj/item/device/dropship_comp{
+	pixel_x = -1;
+	pixel_y = 7
+	},
 /turf/open/floor/almayer,
 /area/almayer/hallways/hangar)
 "bfL" = (
@@ -15797,7 +15839,7 @@
 /area/almayer/hallways/hangar)
 "bfY" = (
 /obj/structure/surface/table/almayer,
-/obj/item/prop/almayer/comp_open,
+/obj/item/device/dropship_comp,
 /turf/open/floor/almayer,
 /area/almayer/hallways/hangar)
 "bfZ" = (
@@ -88706,7 +88748,7 @@ iWH
 aqe
 apI
 apy
-aiX
+ajM
 apd
 bTU
 gZK
@@ -90943,8 +90985,8 @@ gjm
 aYu
 ilG
 aYt
-bfJ
-btO
+ajL
+air
 btO
 btO
 btO
@@ -91147,7 +91189,7 @@ xyw
 bcc
 aYt
 bfK
-aYt
+ajA
 aYt
 aYt
 aYt

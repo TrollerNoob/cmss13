@@ -98,6 +98,7 @@
 					PC.loaded = ammo
 					PC.update_icon()
 					to_chat(user, SPAN_NOTICE("You unload [ammo] from [src] into the powerloader clamp."))
+					A.selected_ammo = null
 				} else {
 					to_chat(user, SPAN_WARNING("Failed to unload ammo from [src]."))
 				}
@@ -2003,15 +2004,17 @@
 	shorthand = "RMT"
 	icon = 'icons/obj/structures/props/dropship/dropship_equipment64.dmi'
 	equip_categories = list(DROPSHIP_CREW_WEAPON) // Fits inside the central spot of the dropship
+	bound_height = 64
+	density = FALSE
 	point_cost = 300
 	is_interactable = TRUE
 	combat_equipment = FALSE
 	uses_ammo = FALSE
 
 	// Variables for ammo storage
-	var/list/stored_ammo = list() // Dynamic list of stored ammo
+	var/list/stored_ammo = list() // Stored ammo list
 	var/max_ammo_slots = 3 // Maximum number of ammo slots
-	var/reload_cooldown = 10
+	var/reload_cooldown = 20
 	var/obj/structure/ship_ammo/selected_ammo = null
 	var/obj/structure/dropship_equipment/weapon/selected_weapon = null
 
@@ -2050,6 +2053,23 @@
 		to_chat(user, SPAN_WARNING("No ammo selected for reloading."))
 		return
 
+	// Cooldown check (project convention)
+	if(reload_cooldown > world.time)
+		var/remaining = round((reload_cooldown - world.time) / 10, 1)
+		to_chat(user, SPAN_WARNING("Autoreloader is cooling down. Please wait [remaining] seconds."))
+		return
+
+	// Prevent reloading the same ammo repeatedly
+	if(selected_weapon.ammo_equipped == selected_ammo)
+		to_chat(user, SPAN_WARNING("[selected_ammo.name] is already loaded in [selected_weapon.name]."))
+		return
+
+	// Prevent reloading if weapon already has ammo equipped
+	if(selected_weapon.ammo_equipped)
+		to_chat(user, SPAN_WARNING("[selected_weapon.name] already has ammo loaded. Unload it first!"))
+		return
+
+
 	// Check if the ammo is compatible with the weapon
 	if(istype(selected_ammo.equipment_type, /list))
 		var/eq_types = selected_ammo.equipment_type
@@ -2068,10 +2088,14 @@
 	selected_weapon.ammo_equipped = selected_ammo
 	remove_ammo(selected_ammo)
 	flick("autoreloader_reloading", src)
+	playsound(src, 'sound/machines/outputclick2.ogg', 50, 1)
 	to_chat(user, SPAN_NOTICE("You load [selected_ammo.name] into [selected_weapon.name]."))
 	icon_state = "autoreloader_installed"
 	update_icon()
 	selected_weapon.update_icon()
+	selected_ammo = null
+	selected_weapon = null
+	reload_cooldown = world.time + (10 * initial(reload_cooldown))
 
 /obj/structure/dropship_equipment/autoreloader/attack_hand(mob/user)
 	if(!ishuman(user))
