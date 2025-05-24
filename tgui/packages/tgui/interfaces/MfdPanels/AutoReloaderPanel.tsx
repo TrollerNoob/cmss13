@@ -81,45 +81,118 @@ export const AutoReloaderMfdPanel = (props: MfdProps) => {
       <Box className="NavigationMenu">
         {autoreloader ? (
           <Stack>
+            {/* Left: SVG label and line */}
             <Stack.Item>
-              <Box width="300px">
-                <Stack vertical className="WeaponsDesc">
-                  <Stack.Item>
-                    <h3>{autoreloader.name}</h3>
-                  </Stack.Item>
-                  <Stack.Item>
-                    <h4>Stored Ammo</h4>
-                    {Array.isArray(autoreloader.stored_ammo) &&
-                    autoreloader.stored_ammo.length > 0 ? (
-                      <>
-                        {autoreloader.stored_ammo.map((ammo, idx) => (
-                          <div key={ammo.ref || idx}>
-                            {ammo.name} ({ammo.ammo_count ?? 0}/
-                            {ammo.max_ammo_count ?? 0})
-                          </div>
-                        ))}
-                      </>
-                    ) : (
-                      <div>Empty</div>
-                    )}
-                  </Stack.Item>
-                  {selectedWeapon && (
-                    <Stack.Item>
-                      <h4>Selected Weapon</h4>
-                      <div>{selectedWeapon.name}</div>
-                    </Stack.Item>
-                  )}
-                  {pendingWeapon !== undefined && (
-                    <Stack.Item>
-                      <h4>Select Ammo for Weapon</h4>
-                      <div>
-                        {autoreloader.stored_ammo?.length
-                          ? 'Choose an ammo type from the left or cancel.'
-                          : 'No ammo available.'}
+              <svg height="501" width="300" style={{ display: 'block' }}>
+                <text
+                  stroke="#00e94e"
+                  x={60}
+                  y={230}
+                  textAnchor="start"
+                  fontSize="1.2em"
+                >
+                  {pendingWeapon === undefined ? 'SELECT WPN' : 'SELECT AMMO'}
+                </text>
+                <path
+                  fillOpacity="0"
+                  stroke="#00e94e"
+                  d="M 80 210 l -20 0 l -20 -180 l -40 0"
+                />
+              </svg>
+            </Stack.Item>
+            {/* Center: Main content */}
+            <Stack.Item grow>
+              <Box
+                width="100%"
+                style={{
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  textIndent: '-300px',
+                }}
+              >
+                <h3 style={{ textAlign: 'center', margin: 0 }}>
+                  {autoreloader.name}
+                </h3>
+                <h4
+                  style={{
+                    fontSize: '1.25em',
+                    textAlign: 'center',
+                    margin: '0.5em 0 0.25em 0',
+                  }}
+                >
+                  Stored Ammo
+                </h4>
+                {Array.isArray(autoreloader.stored_ammo) &&
+                autoreloader.stored_ammo.length > 0 ? (
+                  <div
+                    style={{
+                      fontSize: '1.15em',
+                      textAlign: 'center',
+                      marginBottom: '0.5em',
+                    }}
+                  >
+                    {autoreloader.stored_ammo.map((ammo, idx) => (
+                      <div key={ammo.ref || idx}>
+                        {ammo.name} ({ammo.ammo_count ?? 0}/
+                        {ammo.max_ammo_count ?? 0})
                       </div>
-                    </Stack.Item>
-                  )}
-                </Stack>
+                    ))}
+                  </div>
+                ) : (
+                  <div
+                    style={{
+                      fontSize: '1.15em',
+                      textAlign: 'center',
+                      marginBottom: '0.5em',
+                    }}
+                  >
+                    Empty
+                  </div>
+                )}
+                {pendingWeapon !== undefined && (
+                  <>
+                    <h4
+                      style={{
+                        textAlign: 'center',
+                        margin: '0.5em 0 0.25em 0',
+                        fontSize: '1.25em',
+                      }}
+                    >
+                      Select Ammo for Weapon
+                    </h4>
+                    <div
+                      style={{
+                        textAlign: 'center',
+                        marginBottom: '0.5em',
+                      }}
+                    >
+                      {autoreloader.stored_ammo?.length ? (
+                        <span style={{ fontSize: '1.25em' }}>
+                          Choose an ammo type from the left or cancel.
+                        </span>
+                      ) : (
+                        <span style={{ fontSize: '1.25em' }}>
+                          No ammo available.
+                        </span>
+                      )}
+                    </div>
+                  </>
+                )}
+                {selectedWeapon && (
+                  <>
+                    <h4
+                      style={{
+                        textAlign: 'center',
+                        margin: '0.5em 0 0.25em 0',
+                      }}
+                    >
+                      Selected Weapon
+                    </h4>
+                    <div>{selectedWeapon.name}</div>
+                  </>
+                )}
               </Box>
             </Stack.Item>
           </Stack>
