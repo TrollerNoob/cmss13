@@ -1220,7 +1220,7 @@
 /obj/structure/dropship_equipment/weapon/bomb_bay
 	name = "\improper LAB-107 Bomb Bay"
 	desc = "A bomb bay capable of dropping unguided munitions using ejector racks. Ordinance released from these bomb cradles are capable of penetrating fortified bunkers, leading to it being commonly employed against CLF hideouts. Munitions must be manually locked into place after loading. Fits inside the dropship's crew weapon emplacement. Moving this will require some sort of lifter."
-	icon_state = "launch_bay"
+	icon_state = "bomb_bay"
 	icon = 'icons/obj/structures/props/dropship/dropship_equipment.dmi'
 	firing_sound = 'sound/weapons/gun_flare_explode.ogg'
 	firing_delay = 1800 // 3 minutes
@@ -1232,7 +1232,19 @@
 	cavebreaker = TRUE // Can fire at caves
 	uses_ammo = TRUE
 	is_weapon = TRUE
+	density = TRUE
 	var/locked_ammo = FALSE // Tracks whether the ammo is locked in place
+
+/obj/structure/dropship_equipment/weapon/bomb_bay/update_equipment()
+	if(ship_base)
+		icon = 'icons/obj/structures/props/dropship/dropship_equipment64.dmi' // installed state uses 64.dmi
+		icon_state = "bomb_bay_installed"
+		bound_height = 64
+		density = FALSE // Only not dense when installed
+	else
+		icon = 'icons/obj/structures/props/dropship/dropship_equipment.dmi' // base state uses base dmi
+		icon_state = "bomb_bay"
+		density = TRUE // Dense when not installed
 
 	// Use attack_hand to lock the ammo
 /obj/structure/dropship_equipment/weapon/bomb_bay/attack_hand(mob/user)
