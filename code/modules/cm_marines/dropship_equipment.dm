@@ -967,10 +967,33 @@
 	var/list/possible_turfs = RANGE_TURFS(ammo_accuracy_range, target_turf)
 	var/turf/impact = pick(possible_turfs)
 
-	// Add mortar travel noise for bomb_bay
+	// Add mortar travel noise and text warnings for bomb_bay
 	if(istype(src, /obj/structure/dropship_equipment/weapon/bomb_bay))
 		playsound(target_turf, 'sound/effects/bomb_fall.ogg', 50, 1) // Audio warning for bomb bay dropped missiles
 		sleep(25) // Wait 2.5 seconds before proceeding to the warning sound block
+		// Text-based warning system (copied and adapted from mortar shell logic)
+		var/relative_dir
+		for(var/mob/mob in range(15, target_turf))
+			if(get_turf(mob) == target_turf)
+				relative_dir = 0
+			else
+				relative_dir = Get_Compass_Dir(mob, target_turf)
+			mob.show_message( \
+				SPAN_DANGER("A BOMB IS COMING DOWN [SPAN_UNDERLINE(relative_dir ? uppertext(("TO YOUR " + dir2text(relative_dir))) : uppertext("right above you"))]!"), SHOW_MESSAGE_VISIBLE, \
+				SPAN_DANGER("YOU HEAR SOMETHING COMING DOWN [SPAN_UNDERLINE(relative_dir ? uppertext(("TO YOUR " + dir2text(relative_dir))) : uppertext("right above you"))]!"), SHOW_MESSAGE_AUDIBLE \
+			)
+		sleep(25) // Sleep a bit to give a message (2.5 seconds)
+		for(var/mob/mob in range(10, target_turf))
+			if(get_turf(mob) == target_turf)
+				relative_dir = 0
+			else
+				relative_dir = Get_Compass_Dir(mob, target_turf)
+			mob.show_message( \
+				SPAN_HIGHDANGER("A BOMB IS ABOUT TO IMPACT [SPAN_UNDERLINE(relative_dir ? uppertext(("TO YOUR " + dir2text(relative_dir))) : uppertext("right above you"))]!"), SHOW_MESSAGE_VISIBLE, \
+				SPAN_HIGHDANGER("YOU HEAR SOMETHING VERY CLOSE COMING DOWN [SPAN_UNDERLINE(relative_dir ? uppertext(("TO YOUR " + dir2text(relative_dir))) : uppertext("right above you"))]!"), SHOW_MESSAGE_AUDIBLE \
+			)
+		sleep(10)
+		// No need to add another sleep here, the existing sleep in the loop is sufficient
 
 	if(ammo_travelling_time && istype(SA, /obj/structure/ship_ammo/rocket/thermobaric))
 		playsound(impact, ammo_warn_sound, ammo_warn_sound_volume, 1, 15)
@@ -1219,10 +1242,10 @@
 
 /obj/structure/dropship_equipment/weapon/bomb_bay
 	name = "\improper LAB-107 Bomb Bay"
-	desc = "A bomb bay capable of dropping unguided munitions using ejector racks. Ordinance released from these bomb cradles are capable of penetrating fortified bunkers, leading to it being commonly employed against CLF hideouts. Munitions must be manually locked into place after loading. Fits inside the dropship's crew weapon emplacement. Moving this will require some sort of lifter."
+	desc = "A bomb bay capable of dropping unguided munitions by utilizing ejector racks. Ordinance released from these bomb cradles are capable of penetrating fortified bunkers, leading to it being commonly employed against CLF hideouts. Munitions must be manually locked into place after loading. Fits inside the dropship's crew weapon emplacement. Moving this will require some sort of lifter. Accepts select AGM and AIM missile systems."
 	icon_state = "bomb_bay"
 	icon = 'icons/obj/structures/props/dropship/dropship_equipment.dmi'
-	firing_sound = 'sound/weapons/gun_flare_explode.ogg'
+	firing_sound = 'sound/effects/rocketpod_fire.ogg'
 	firing_delay = 1800 // 3 minutes
 	bound_height = 32
 	equip_categories = list(DROPSHIP_CREW_WEAPON) // fits inside the central spot of the dropship
@@ -1266,6 +1289,7 @@
 		to_chat(user, SPAN_WARNING("You stop locking the ammo in place for [src]."))
 		return
 
+	playsound(user, 'sound/machines/lockenable.ogg', 50, 1)
 	locked_ammo = TRUE
 	to_chat(user, SPAN_NOTICE("You successfully lock the ammo in place for [src]."))
 

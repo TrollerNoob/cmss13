@@ -286,11 +286,12 @@
 //this one is air-to-air only
 /obj/structure/ship_ammo/rocket/widowmaker
 	name = "\improper AIM-224B 'Widowmaker'"
-	desc = "The AIM-224B missile is a retrofit of the latest in air-to-air missile technology. Earning the nickname of 'Widowmaker' from various dropship pilots after improvements to its guidance warhead prevents it from being jammed leading to its high kill rate. Not well suited for ground bombardment but its high velocity makes it reach its target quickly. This one has been modified to be a free-fall bomb as a result of dropship ammo shortages. Can be loaded into the LAU-444 Guided Missile Launcher."
+	desc = "The AIM-224B missile is a retrofit of the latest in air-to-air missile technology. Earning the nickname of 'Widowmaker' from various dropship pilots after improvements to its guidance warhead prevents it from being jammed leading to its high kill rate. Not well suited for ground bombardment but its high velocity makes it reach its target quickly. This one has been modified to be a free-fall bomb as a result of dropship ammo shortages. Can be loaded into the LAU-444 Guided Missile Launcher and LAB-107 Bomb Bay."
 	icon_state = "single"
 	travelling_time = 40 //not powerful, but reaches target fast
 	ammo_id = ""
 	point_cost = 300
+	equipment_type = list(/obj/structure/dropship_equipment/weapon/rocket_pod, /obj/structure/dropship_equipment/weapon/bomb_bay)
 
 /obj/structure/ship_ammo/rocket/widowmaker/detonate_on(turf/impact, obj/structure/dropship_equipment/weapon/fired_from)
 	impact.ceiling_debris_check(3)
@@ -303,6 +304,7 @@
 	icon_state = "banshee"
 	ammo_id = "b"
 	point_cost = 300
+	equipment_type = list(/obj/structure/dropship_equipment/weapon/rocket_pod, /obj/structure/dropship_equipment/weapon/bomb_bay)
 
 /obj/structure/ship_ammo/rocket/banshee/detonate_on(turf/impact, obj/structure/dropship_equipment/weapon/fired_from)
 	impact.ceiling_debris_check(3)
@@ -342,7 +344,7 @@
 
 /obj/structure/ship_ammo/rocket/napalm
 	name = "\improper AGM-99 'Napalm'"
-	desc = "The AGM-99 'Napalm' is an incendiary missile used to turn specific targeted areas into giant balls of fire for a long time. Can be loaded into the LAU-444 Guided Missile Launcher."
+	desc = "The AGM-99 'Napalm' is an incendiary missile used to turn specific targeted areas into giant balls of fire for a long time. Can be loaded into the LAU-444 Guided Missile Launcher and LAB-107 Bomb Bay."
 	icon_state = "napalm"
 	ammo_id = "n"
 	equipment_type = list(/obj/structure/dropship_equipment/weapon/rocket_pod, /obj/structure/dropship_equipment/weapon/bomb_bay)
