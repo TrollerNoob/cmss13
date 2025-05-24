@@ -57,6 +57,16 @@
 			var/obj/structure/dropship_equipment/autoreloader/A = src
 			// Loading ammo into autoreloader
 			if(PC.loaded) {
+				// Prevent loading if shuttle is not idle
+				if(!(A.linked_shuttle.mode in list(SHUTTLE_IDLE, SHUTTLE_IGNITING, SHUTTLE_RECHARGING))) {
+					to_chat(user, SPAN_WARNING("You cannot load ammo while the dropship is in flight or busy!"))
+					return TRUE
+				}
+				// Only allow rockets and missiles
+				if(!istype(PC.loaded, /obj/structure/ship_ammo/rocket) && !istype(PC.loaded, /obj/structure/ship_ammo/missile)) {
+					to_chat(user, SPAN_WARNING("Only rockets and missiles can be loaded into the autoreloader!"))
+					return TRUE
+				}
 				if(!istype(PC.loaded, /obj/structure/ship_ammo)) {
 					to_chat(user, SPAN_WARNING("You need to use a powerloader holding dropship ammo to load [src]."))
 					return TRUE
@@ -71,6 +81,7 @@
 					return TRUE
 				}
 				to_chat(user, SPAN_NOTICE("You begin loading [ammo] into [src]."))
+				playsound(src, 'sound/machines/hydraulics_1.ogg', 40, 1)
 				if(!do_after(user, 20, INTERRUPT_NO_NEEDHAND | BEHAVIOR_IMMOBILE, BUSY_ICON_BUILD, target = src)) {
 					to_chat(user, SPAN_WARNING("You stop loading [ammo] into [src]."))
 					return TRUE
@@ -78,6 +89,7 @@
 				if(A.add_ammo(ammo)) {
 					ammo.forceMove(src)
 					PC.loaded = null
+					playsound(src, 'sound/machines/hydraulics_2.ogg', 40, 1)
 					PC.update_icon()
 					to_chat(user, SPAN_NOTICE("You successfully load [ammo] into [src]."))
 				} else {

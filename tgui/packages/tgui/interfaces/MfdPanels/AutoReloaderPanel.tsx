@@ -46,10 +46,13 @@ export const AutoReloaderMfdPanel = (props: MfdProps) => {
     setPendingWeapon(undefined);
   };
 
+  // Only show weapons that do not have ammo_equipped (ammo property is null or 0)
+  const selectableWeapons = weapons?.filter((w) => !w.ammo);
+
   // Build left buttons: weapon selection or ammo selection
   const leftButtons =
     pendingWeapon === undefined
-      ? weapons?.map((weap) => ({
+      ? selectableWeapons?.map((weap) => ({
           children: weap.name,
           onClick: () => handleWeaponClick(weap.eqp_tag),
         }))
