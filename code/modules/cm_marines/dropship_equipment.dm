@@ -1060,7 +1060,7 @@
 	var/linked_equipment = null
 	name = "\improper GAU-24/B Belly Gunner Station System"
 	icon = 'icons/obj/structures/props/dropship/dropship_equipment.dmi'
-	icon_state = "launch_bay"
+	icon_state = "gunner_bay"
 	desc = "A compartment that enables a gunner station underneath the dropship operated by crew, allowing manual fire of a GAU-24/B support rotary cannon. This version fits solely on crew compartment attach points of dropships. Utilizes the same 30mm ammunition as the standard GAU-21. You need a powerloader to lift it."
 	bound_height = 32
 	shorthand = "GAU-B"
@@ -1072,7 +1072,7 @@
 	equip_categories = list(DROPSHIP_CREW_WEAPON)
 	density = FALSE
 	can_buckle = TRUE
-
+	density = TRUE
 	// Buckling support
 	var/buckling_y = 0 //pixel y shift to give to the buckled mob.
 	var/buckling_x = 0 //pixel x shift to give to the buckled mob.
@@ -1080,18 +1080,28 @@
 	buckling_x = 0
 	buckling_y = 0
 
-/obj/structure/dropship_equipment/weapon/heavygun/bay/update_equipment()
-	if(ship_base)
-		icon_state = "launch_bay_deployed"
+/obj/structure/dropship_equipment/weapon/heavygun/bay/update_icon()
+	if(ammo_equipped)
+		density = FALSE
+		icon = 'icons/obj/structures/props/dropship/dropship_equipment.dmi'
+		icon_state = "gunner_bay_loaded[ammo_equipped.ammo_count?"1":"0"]"
 	else
-		icon_state = "launch_bay"
+		if(ship_base)
+			density = FALSE
+			icon_state = "gunner_bay_installed"
+		else
+			icon_state = "gunner_bay"
 
 	// Override afterbuckle to open UI for buckled mob
 /obj/structure/dropship_equipment/weapon/heavygun/bay/afterbuckle(mob/M)
 	. = ..()
+	playsound(src, 'sound/machines/terminal_on.ogg', 20)
 	if((!personal_console || QDELETED(personal_console)) && buckled_mob == M && ishuman(M))
 		var/obj/docking_port/mobile/marine_dropship/dropship = src.linked_shuttle
 		personal_console = new /obj/structure/machinery/computer/dropship_weapons/belly_gun(get_turf(src))
+		personal_console.icon = 'icons/obj/structures/props/dropship/dropship_equipment.dmi'
+		personal_console.icon_state = "gunner_bay_console"
+		personal_console.layer = ABOVE_MOB_LAYER
 		personal_console.shuttle_tag = dropship?.id
 		personal_console.name = "Belly Gunner Weapons Console"
 		personal_console.selected_equipment = src
@@ -1100,7 +1110,8 @@
 		if(personal_console.tacmap && personal_console.tacmap.map_holder)
 			personal_console.camera_mapname_update(personal_console, personal_console.tacmap.map_holder.map_ref)
 		personal_console.tgui_interact(M)
-	// Clean up console on unbuckle
+
+// Clean up console on unbuckle
 /obj/structure/dropship_equipment/weapon/heavygun/bay/unbuckle()
 	if(personal_console)
 		// Only close the UI for the mob that was buckled in
