@@ -693,7 +693,8 @@
 /obj/structure/dropship_equipment/fuel/ram_rocket
 	name = "\improper TF-220/A-14 ramrocket"
 	desc = "A ramrocket powered engine for dropships. It produces additional thrust during high-speed flight, allowing the dropship to operate at a wide range of speed envelopes. At low speeds though, it is extremely inefficient, leading to less overall flyby time. Fits inside the engine attach points. You need a powerloader to lift it."
-	icon_state = "cooling_system"
+	icon_state = "ram_rocket"
+	bound_width = 64
 	point_cost = 800
 
 
