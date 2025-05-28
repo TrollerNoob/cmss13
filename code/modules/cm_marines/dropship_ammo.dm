@@ -36,7 +36,13 @@
 	var/mob/source_mob
 	var/combat_equipment = TRUE
 	var/faction_exclusive //if this ammo is obtainable only by certain faction
-	var/sleep_per_shot = 1 //delay in how fast to loop the simulation, mainly for GAU/Laser currently
+	//delay in how fast to loop the simulation, mainly for GAU/Laser currently
+	var/sleep_per_shot = 1
+	//if this ammo doesn't require a powerloader to be moved
+	var/handheld = FALSE
+	//if this ammo has a safety toggle
+	var/safety_enabled = FALSE
+	var/handheld_type = null // Type path to the corresponding handheld item, if any
 
 /obj/structure/ship_ammo/update_icon()
 	. = ..()
@@ -551,19 +557,159 @@
 		return FALSE
 	return TRUE
 
-/obj/structure/ship_ammo/flare/
+/obj/structure/ship_ammo/flare
 	name = "\improper AN/ALE-557 Flare Launcher cartridge"
-	desc = "A cartidge containing several M97-P flares packed tightly into individual silos. These parachute flares are designed to be launched out of a dropship's flare launcher to provide battlefield illumination during hours of darkness."
-	icon_state = "m94"
-	icon = 'icons/obj/items/storage/packets.dmi'
+	desc = "A cartidge containing several M97-P flare sticks packed tightly into individual silos. These parachute flares are designed to be launched out of a dropship's flare launcher to provide battlefield illumination during hours of darkness. Use a screwdriver to disable the safety panel."
+	icon_state = "flare_cartridge_safety"
 	equipment_type = /obj/structure/dropship_equipment/weapon/flare_launcher
+	safety_enabled = TRUE // safety is enabled by default, preventing loading into a flare launcher
 	point_cost = 250
-	ammo_count = 6
+	ammo_count = 3
 	max_ammo_count = 6
 	travelling_time = 20 // parachute flares light up the sky very quickly
 	accuracy_range = 4 // though not very accurate
 	max_inaccuracy = 6
+	handheld = TRUE // flare cartridges are manually installed by hand
+	density = FALSE
+	anchored = FALSE
+	handheld_type = /obj/item/ship_ammo_handheld/flare
 
 /obj/structure/ship_ammo/flare/detonate_on(turf/impact, obj/structure/dropship_equipment/weapon/fired_from)
-	new /obj/item/device/flashlight/flare/on/illumination(impact)
+	new /obj/item/device/flashlight/flare/on/illumination/parachute(impact)
 	playsound(impact, 'sound/weapons/gun_flare.ogg', 50, 1, 4)
+
+/obj/structure/ship_ammo/flare/update_icon()
+	// Only set icon_state based on safety_enabled, do not append ammo stage
+	if (safety_enabled)
+		icon_state = "flare_cartridge_safety"
+	else
+		icon_state = "flare_cartridge"
+
+/obj/structure/ship_ammo/flare/attackby(obj/item/I, mob/user)
+	if(istype(I, /obj/item/tool/screwdriver))
+		if(!do_after(user, 10, INTERRUPT_NO_NEEDHAND | BEHAVIOR_IMMOBILE, BUSY_ICON_GENERIC))
+			return
+		if(safety_enabled)
+			safety_enabled = FALSE
+			icon_state = "flare_cartridge"
+			to_chat(user, SPAN_NOTICE("You disable the safety on [src]. It can now be loaded into a flare launcher."))
+		else
+			safety_enabled = TRUE
+			icon_state = "flare_cartridge_safety"
+			to_chat(user, SPAN_NOTICE("You re-enable the safety on [src]. It can no longer be loaded into a flare launcher."))
+		return
+	. = ..()
+
+// Handheld item version of ship_ammo (base for all handheld ship ammo)
+/obj/item/ship_ammo_handheld
+	var/ammo_count
+	var/max_ammo_count
+	var/safety_enabled = FALSE
+	var/structure_type = null
+
+/obj/item/ship_ammo_handheld/flare
+	name = "AN/ALE-557 Flare Launcher cartridge"
+	desc = "A cartridge containing several M97-P flare sticks packed tightly into individual silos. These parachute flares are designed to be launched out of a dropship's flare launcher to provide battlefield illumination during hours of darkness. Use a screwdriver to disable the safety panel."
+	icon = 'icons/obj/structures/props/dropship/dropship_ammo.dmi'
+	icon_state = "flare_cartridge"
+	w_class = SIZE_HUGE
+	safety_enabled = TRUE
+	structure_type = /obj/structure/ship_ammo/flare
+
+/obj/item/ship_ammo_handheld/flare/attack_hand(mob/user)
+	if(anchored)
+		to_chat(user, SPAN_WARNING("[src] is anchored and cannot be picked up."))
+		return FALSE
+	if(user.is_mob_restrained() || user.buckled || user.is_mob_incapacitated(TRUE))
+		to_chat(user, SPAN_WARNING("You can't pick this up right now."))
+		return FALSE
+	if(ammo_count < 1)
+		to_chat(user, SPAN_WARNING("The [src] has ran out of ammo, so you discard it!"))
+		qdel(src)
+		return FALSE
+	if(istype(user, /mob/living/carbon/human))
+		var/mob/living/carbon/human/H = user
+		var/obj/item/ship_ammo_handheld/flare/I = new /obj/item/ship_ammo_handheld/flare()
+		I.ammo_count = src.ammo_count
+		I.max_ammo_count = src.max_ammo_count
+		I.safety_enabled = src.safety_enabled
+		I.icon_state = src.icon_state // Copy icon state
+		if(H.put_in_hands(I))
+			qdel(src)
+			to_chat(user, SPAN_NOTICE("You pick up [I] by hand."))
+			return TRUE
+		else
+			qdel(I)
+			to_chat(user, SPAN_WARNING("You need a free hand to pick this up."))
+			return FALSE
+	else
+		to_chat(user, SPAN_WARNING("You can't pick this up by hand."))
+		return FALSE
+
+/obj/item/ship_ammo_handheld/flare/dropped(mob/user)
+	. = ..()
+	if(QDELETED(src))
+		return .
+	var/turf/T = get_turf(user)
+	var/obj/structure/ship_ammo/flare/S = new /obj/structure/ship_ammo/flare(T)
+	S.ammo_count = src.ammo_count
+	S.max_ammo_count = src.max_ammo_count
+	S.safety_enabled = src.safety_enabled
+	S.icon_state = src.icon_state // Copy icon state back
+	qdel(src)
+	return .
+
+/obj/item/ship_ammo_handheld/flare/attackby(obj/item/I, mob/user)
+	if(istype(I, /obj/item/tool/screwdriver))
+		if(!do_after(user, 10, INTERRUPT_NO_NEEDHAND | BEHAVIOR_IMMOBILE, BUSY_ICON_GENERIC))
+			return
+		if(safety_enabled)
+			safety_enabled = FALSE
+			icon_state = "flare_cartridge"
+			to_chat(user, SPAN_NOTICE("You disable the safety on [src]. It can now be loaded into a flare launcher."))
+		else
+			safety_enabled = TRUE
+			icon_state = "flare_cartridge_safety"
+			to_chat(user, SPAN_NOTICE("You re-enable the safety on [src]. It can no longer be loaded into a flare launcher."))
+		return
+	. = ..()
+
+/obj/structure/ship_ammo/proc/dropped(mob/user)
+	// No-op to prevent undefined proc error when handled as an item
+	return
+
+/obj/structure/ship_ammo/attack_hand(mob/user)
+	if(!handheld)
+		return ..()
+	if(anchored)
+		to_chat(user, SPAN_WARNING("[src] is anchored and cannot be picked up."))
+		return FALSE
+	if(user.is_mob_restrained() || user.buckled || user.is_mob_incapacitated(TRUE))
+		to_chat(user, SPAN_WARNING("You can't pick this up right now."))
+		return FALSE
+	if(ammo_count < 1)
+		to_chat(user, SPAN_WARNING("The [src] has ran out of ammo, so you discard it!"))
+		qdel(src)
+		return FALSE
+	if(istype(user, /mob/living/carbon/human))
+		var/mob/living/carbon/human/H = user
+		if(!src.handheld_type)
+			to_chat(user, SPAN_WARNING("This ammo cannot be picked up by hand."))
+			return FALSE
+		var/obj/item/ship_ammo_handheld/I = new src.handheld_type()
+		I.ammo_count = src.ammo_count
+		I.max_ammo_count = src.max_ammo_count
+		I.safety_enabled = src.safety_enabled
+		I.icon_state = src.icon_state
+		I.structure_type = src.type
+		if(H.put_in_hands(I))
+			qdel(src)
+			to_chat(user, SPAN_NOTICE("You pick up [I] by hand."))
+			return TRUE
+		else
+			qdel(I)
+			to_chat(user, SPAN_WARNING("You need a free hand to pick this up."))
+			return FALSE
+	else
+		to_chat(user, SPAN_WARNING("You can't pick this up by hand."))
+		return FALSE

@@ -507,6 +507,12 @@
 /obj/item/device/flashlight/flare/on/illumination/ex_act(severity)
 	return //Nope
 
+/obj/item/device/flashlight/flare/on/illumination/parachute //subtype for the dropship's flare launcher
+	name = "parachute flare"
+	desc = "A sparkling bright light in the sky. It gently falls down with a small parachute."
+	light_range = 4
+	light_power = 3
+
 /obj/item/device/flashlight/flare/on/starshell_ash
 	name = "burning star shell ash"
 	desc = "Bright burning ash from a Star Shell 40mm. Don't touch, or it'll burn ya'."

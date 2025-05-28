@@ -21,6 +21,7 @@
 	var/combat_equipment = TRUE
 	var/faction_exclusive //if null all factions can print it
 	var/cavebreaker = FALSE //if TRUE, this equipment can be used to break through cave walls
+	var/stackable_ammo = FALSE 	/// Whether the ammo inside this equipment can be directly replenished without needing to uninstall the existing ammo
 
 	var/is_corroded = FALSE //for keeping track of equipment with active corrosion stacks
 
@@ -120,7 +121,24 @@
 		// Default behavior for other equipment
 		if(PC.loaded) {
 			if(ammo_equipped) {
-				to_chat(user, SPAN_WARNING("You need to unload \the [ammo_equipped] from \the [src] first!"))
+				// Allow stacking if stackable_ammo is TRUE, types match, and not full
+				if(stackable_ammo && istype(PC.loaded, /obj/structure/ship_ammo) && ammo_equipped.type == PC.loaded.type && ammo_equipped.ammo_count < ammo_equipped.max_ammo_count) {
+					// Add do_after before stacking
+					if(!do_after(user, 1 * user.get_skill_duration_multiplier(SKILL_ENGINEER), INTERRUPT_NO_NEEDHAND | BEHAVIOR_IMMOBILE, BUSY_ICON_BUILD))
+						to_chat(user, SPAN_WARNING("You stop topping off [src] with the ammo."))
+						return TRUE
+					var/obj/structure/ship_ammo/SA = PC.loaded
+					var/amt_to_add = min(SA.ammo_count, ammo_equipped.max_ammo_count - ammo_equipped.ammo_count)
+					ammo_equipped.ammo_count += amt_to_add
+					SA.ammo_count -= amt_to_add
+					if(SA.ammo_count <= 0)
+						qdel(SA)
+					PC.loaded = null
+					to_chat(user, SPAN_NOTICE("You top off [src] with the ammo."))
+					update_equipment()
+					return TRUE
+				}
+				to_chat(user, SPAN_WARNING("You need to unload \\the [ammo_equipped] from \\the [src] first!"))
 				return TRUE
 			}
 			if(uses_ammo) {
@@ -135,6 +153,79 @@
 			}
 		}
 		return TRUE
+	// Support for loading handheld ship_ammo by hand
+	if(istype(I, /obj/structure/ship_ammo) || istype(I, /obj/item/ship_ammo_handheld))
+		var/obj/structure/ship_ammo/hand_ammo
+		var/obj/item/ship_ammo_handheld/handheld_ammo
+		if(istype(I, /obj/structure/ship_ammo))
+			hand_ammo = I
+		else if(istype(I, /obj/item/ship_ammo_handheld))
+			handheld_ammo = I
+			// Convert to structure for stacking, using the correct type
+			var/typepath = handheld_ammo.structure_type ? handheld_ammo.structure_type : /obj/structure/ship_ammo/flare
+			hand_ammo = new typepath()
+			hand_ammo.ammo_count = handheld_ammo.ammo_count
+			hand_ammo.max_ammo_count = handheld_ammo.max_ammo_count
+			hand_ammo.safety_enabled = handheld_ammo.safety_enabled
+			hand_ammo.icon_state = handheld_ammo.icon_state
+			hand_ammo.handheld = TRUE
+
+		if(stackable_ammo && ammo_equipped && hand_ammo && hand_ammo.type == ammo_equipped.type)
+			// Add a 2 second do_after before stacking
+			if(!do_after(user, 20, INTERRUPT_NO_NEEDHAND | BEHAVIOR_IMMOBILE, BUSY_ICON_BUILD, target = src))
+				to_chat(user, SPAN_WARNING("You stop topping off [src] with the ammo."))
+				return TRUE
+			var/amt_to_add = min(hand_ammo.ammo_count, ammo_equipped.max_ammo_count - ammo_equipped.ammo_count)
+			ammo_equipped.ammo_count += amt_to_add
+			hand_ammo.ammo_count -= amt_to_add
+			if(handheld_ammo)
+				handheld_ammo.ammo_count = hand_ammo.ammo_count
+				if(hand_ammo.ammo_count <= 0)
+					qdel(handheld_ammo)
+					if(hand_ammo != I) // Only qdel if we created it
+						qdel(hand_ammo)
+			else
+				if(hand_ammo.ammo_count <= 0)
+					qdel(hand_ammo)
+			to_chat(user, SPAN_NOTICE("You top off [src] with the ammo."))
+			update_equipment()
+			return TRUE
+
+		// Manual install of ship_ammo_handheld if equipment is empty and compatible
+		if(!ammo_equipped && handheld_ammo && handheld_ammo.structure_type)
+			// Prevent loading flare ammo with safety enabled
+			if(istype(handheld_ammo, /obj/item/ship_ammo_handheld/flare) && handheld_ammo.safety_enabled)
+				to_chat(user, SPAN_WARNING("You must disable the safety on [handheld_ammo] before loading it into [src]!"))
+				return TRUE
+			var/typepath = handheld_ammo.structure_type
+			var/obj/structure/ship_ammo/proto = new typepath()
+			var/equip_types = proto.equipment_type
+			var/compatible = FALSE
+			if(islist(equip_types))
+				for(var/eq_type in equip_types)
+					if(istype(src, eq_type))
+						compatible = TRUE
+						break
+			else if(equip_types)
+				if(istype(src, equip_types))
+					compatible = TRUE
+			qdel(proto)
+			if(compatible)
+				to_chat(user, SPAN_NOTICE("You begin installing [handheld_ammo.name] into [src]."))
+				if(!do_after(user, 20, INTERRUPT_NO_NEEDHAND | BEHAVIOR_IMMOBILE, BUSY_ICON_BUILD, target = src))
+					to_chat(user, SPAN_WARNING("You stop installing [handheld_ammo.name] into [src]."))
+					return TRUE
+				var/obj/structure/ship_ammo/installed = new typepath(src)
+				installed.ammo_count = handheld_ammo.ammo_count
+				installed.max_ammo_count = handheld_ammo.max_ammo_count
+				installed.safety_enabled = handheld_ammo.safety_enabled
+				installed.icon_state = handheld_ammo.icon_state
+				installed.handheld = TRUE
+				ammo_equipped = installed
+				qdel(handheld_ammo)
+				to_chat(user, SPAN_NOTICE("You install [installed.name] into [src]."))
+				update_equipment()
+				return TRUE
 		//Handle corrosion repair logic
 	// Exclude dropship_handheld from repair logic
 	if(istype(I, /obj/item/device/dropship_handheld))
@@ -246,6 +337,11 @@
 	if(!ship_base || !uses_ammo || ammo_equipped || !istype(PC.loaded, /obj/structure/ship_ammo))
 		return
 	var/obj/structure/ship_ammo/SA = PC.loaded
+
+	// Prevent loading any ship_ammo with safety enabled
+	if(SA.safety_enabled)
+		to_chat(user, SPAN_WARNING("You must disable the safety on [SA] before loading it into [src]!"))
+		return
 
 	// Check if equipment_type is a list
 	if(istype(SA.equipment_type, /list))
@@ -1166,7 +1262,7 @@
 		if(ship_base)
 			icon_state = "minirocket_pod_installed"
 		else
-			icon_state = "minirocket_pod"
+		 icon_state = "minirocket_pod"
 
 /obj/structure/dropship_equipment/weapon/minirocket_pod/deplete_ammo()
 	..()
@@ -1195,7 +1291,7 @@
 		if(ship_base)
 			icon_state = "rocket_pod_installed"
 		else
-			icon_state = "rocket_pod"
+		 icon_state = "rocket_pod"
 
 /obj/structure/dropship_equipment/weapon/laser_beam_gun
 	name = "\improper LWU-6B Laser Cannon"
@@ -1249,8 +1345,25 @@
 	uses_ammo = TRUE
 	is_interactable = TRUE
 	combat_equipment = TRUE
+	stackable_ammo = TRUE
 	equip_categories = list(DROPSHIP_ELECTRONICS) //fits inside the front parts next to the weapons
 	point_cost = 400
+
+/obj/structure/dropship_equipment/weapon/flare_launcher/update_icon()
+    if(ammo_equipped && ammo_equipped.ammo_count)
+        if(ship_base)
+            var/percent = ammo_equipped.ammo_count / ammo_equipped.max_ammo_count
+            if(percent > 0.5)
+                icon_state = "flare_launcher_installed1"
+            else
+                icon_state = "flare_launcher_installed2"
+        else
+            icon_state = "flare_launcher"
+    else
+        if(ship_base)
+            icon_state = "flare_launcher_installed"
+        else
+            icon_state = "flare_launcher"
 
 /obj/structure/dropship_equipment/weapon/bomb_bay
 	name = "\improper LAB-107 Bomb Bay"
