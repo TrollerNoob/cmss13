@@ -524,6 +524,36 @@ export const TargetAquisitionMfdPanel = (props: MfdProps) => {
                 </h3>
               </Stack.Item>
               <Stack.Item>
+                <h2>
+                  Target Durability Reading:{' '}
+                  <span
+                    style={{
+                      color:
+                        typeof data.offset_ceiling_protection_tier === 'number'
+                          ? data.offset_ceiling_protection_tier >= 1 &&
+                            data.offset_ceiling_protection_tier < 2
+                            ? '#FFD700'
+                            : data.offset_ceiling_protection_tier >= 2 &&
+                                data.offset_ceiling_protection_tier < 4
+                              ? '#FF0000'
+                              : undefined
+                          : undefined,
+                      fontWeight: 'bold',
+                      fontSize: '1.25em',
+                    }}
+                  >
+                    {data.offset_ceiling_protection_tier !== undefined &&
+                    data.offset_ceiling_protection_tier !== null
+                      ? String(
+                          Math.floor(
+                            Number(data.offset_ceiling_protection_tier),
+                          ),
+                        )
+                      : 'N/A'}
+                  </span>
+                </h2>
+              </Stack.Item>
+              <Stack.Item>
                 <h3>
                   Guidance computer {strikeReady ? 'READY' : 'INCOMPLETE'}
                 </h3>

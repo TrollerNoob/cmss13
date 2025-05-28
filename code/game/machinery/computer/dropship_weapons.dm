@@ -46,6 +46,10 @@
 	// Warning laser targeting pod is being used
 	var/obj/effect/overlay/temp/guidance_laser/direct_fire_laser_dot = null
 
+	// Store the last UI offset values for camera/firemission targeting
+	var/last_ui_offset_x = 0
+	var/last_ui_offset_y = 0
+
 /obj/structure/machinery/computer/dropship_weapons/New()
 	..()
 	if(firemission_envelope)
@@ -259,6 +263,20 @@
 
 	.["can_modify_direct_offset"] = (dropship && locate(/obj/structure/dropship_equipment/electronics/targeting_designator) in dropship.equipments) || (selected_equipment && istype(selected_equipment, /obj/structure/dropship_equipment/weapon/heavygun/bay))
 
+	var/offset_ceiling = null
+	if(camera_target_id)
+		if(sig && sig.signal_loc)
+			var/turf/base_turf = get_turf(sig.signal_loc)
+			if(base_turf)
+				var/dx = src.last_ui_offset_x
+				var/dy = src.last_ui_offset_y
+				var/turf/offset_turf = locate(base_turf.x + dx, base_turf.y + dy, base_turf.z)
+				if(offset_turf)
+					var/area/offset_area = get_area(offset_turf)
+					if(offset_area)
+						offset_ceiling = offset_area.ceiling
+	.["offset_ceiling_protection_tier"] = offset_ceiling
+
 /obj/structure/machinery/computer/dropship_weapons/ui_act(action, list/params, datum/tgui/ui, datum/ui_state/state)
 	. = ..()
 	if(.)
@@ -444,7 +462,9 @@
 			var/y_offset_value = params["y_offset_value"]
 			var/direct_x_offset_value = params["direct_x_offset_value"]
 			var/direct_y_offset_value = params["direct_y_offset_value"]
-
+			// Store the latest UI offsets for use in ui_data
+			src.last_ui_offset_x = text2num(x_offset_value)
+			src.last_ui_offset_y = text2num(y_offset_value)
 			camera_target_id = target_id
 
 			// Only allow changing direct fire offsets if offsetter is installed

@@ -10,10 +10,12 @@ export interface ButtonProps {
 export type LazeTarget = {
   target_name: string;
   target_tag: number;
+  ceiling_protection_tier?: number;
 };
 
 export type TargetContext = {
   targets_data: Array<LazeTarget>;
+  offset_ceiling_protection_tier?: number;
 };
 
 export type FultonProps = {
@@ -114,17 +116,4 @@ export type AutoreloaderSpec = {
   cooldown: number; // Remaining cooldown time for reloading
   selected_weapon: string;
   selected_ammo: string;
-};
-
-export const dirMap = (dir) => {
-  switch (dir) {
-    case 'NORTH':
-      return 1;
-    case 'SOUTH':
-      return 2;
-    case 'EAST':
-      return 4;
-    case 'WEST':
-      return 8;
-  }
 };

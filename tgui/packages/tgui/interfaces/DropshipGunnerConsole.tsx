@@ -41,6 +41,7 @@ type MedevacTargets = {
 type LazeTarget = {
   target_name: string;
   target_tag: number;
+  ceiling_protection_tier?: number;
 };
 
 export type DropshipEquipment = {
