@@ -1204,6 +1204,7 @@
 		personal_console.selected_equipment = src
 		personal_console.faction = FACTION_MARINE
 		personal_console.minimap_type = MINIMAP_FLAG_USCM
+		personal_console.pixel_y = -4
 		if(personal_console.tacmap && personal_console.tacmap.map_holder)
 			personal_console.camera_mapname_update(personal_console, personal_console.tacmap.map_holder.map_ref)
 		personal_console.tgui_interact(M)
@@ -1262,7 +1263,7 @@
 		if(ship_base)
 			icon_state = "minirocket_pod_installed"
 		else
-		 icon_state = "minirocket_pod"
+			icon_state = "minirocket_pod"
 
 /obj/structure/dropship_equipment/weapon/minirocket_pod/deplete_ammo()
 	..()
@@ -1271,7 +1272,7 @@
 
 /obj/structure/dropship_equipment/weapon/missile_silo
 	name = "\improper MK. 14 Missile Silo"
-	icon_state = "rocket_pod"
+	icon_state = "missile_silo"
 	desc = "A missile silo that unfurls during subsonic flight, specialized in use for low altitude ground bombardments. Can not be used during suborbital strikes. Moving this will require some sort of lifter. Accepts MK and ATM missile systems."
 	firing_sound = 'sound/effects/rocketpod_fire.ogg'
 	firing_delay = 5
@@ -1286,12 +1287,16 @@
 
 /obj/structure/dropship_equipment/weapon/missile_silo/update_icon()
 	if(ammo_equipped && ammo_equipped.ammo_count)
-		icon_state = "rocket_pod_loaded[ammo_equipped.ammo_id]"
+		var/ammo_stage = ammo_equipped.ammo_count / ammo_equipped.ammo_used_per_firing
+		icon_state = "[initial(icon_state)]_loaded_[ammo_stage]"
+
+		if (ammo_equipped.ammo_count == ammo_equipped.max_ammo_count)
+			icon_state = "[initial(icon_state)]_loaded"
 	else
 		if(ship_base)
-			icon_state = "rocket_pod_installed"
+			icon_state = "missile_silo_installed"
 		else
-		 icon_state = "rocket_pod"
+			icon_state = "missile_silo"
 
 /obj/structure/dropship_equipment/weapon/laser_beam_gun
 	name = "\improper LWU-6B Laser Cannon"
