@@ -454,10 +454,18 @@
 /obj/structure/ship_ammo/missile/detonate_on(turf/impact, obj/structure/dropship_equipment/weapon/fired_from)
 	qdel(src)
 
+/obj/structure/ship_ammo/missile/show_loaded_desc(mob/user)
+	if(ammo_count)
+		return "It's loaded with \a [src] containing [ammo_count] missile\s."
+
+/obj/structure/ship_ammo/missile/get_examine_text(mob/user)
+	. = ..()
+	. += "It has [ammo_count] missile\s."
+
 /obj/structure/ship_ammo/missile/zeus
 	name = "\improper MK.12 'Zeus'"
 	desc = "The MK.12 'Zeus' is an unguided, spin stabilized rocket system which has become a mainstay option for low altitude air strikes against personnel. Its nickname 'Zeus' comes from its resembelance to a bolt of lightning when striking upon targets. It is capable of being fired from the Mk.14 Missile Silo."
-	icon_state = "double"
+	icon_state = "zeus"
 	travelling_time = 40
 	point_cost = 300
 
@@ -472,11 +480,11 @@
 /obj/structure/ship_ammo/missile/sgw
 	name = "\improper MK.91 'SGW'"
 	desc = "The MK.91 'SGW' is short range 'fire and forget' missile designed for use against light armor and entrenched positions. Its popularity skyrocketed upon rumors of a single well placed payload decimating an entire CLF guerilla bunker. It is capable of being fired from the Mk.14 Missile Silo."
-	icon_state = "double"
+	icon_state = "sgw"
 	travelling_time = 40
 	point_cost = 300
-	ammo_count = 3
-	max_ammo_count = 3
+	ammo_count = 4
+	max_ammo_count = 4
 	fire_mission_delay = 3 // moderate cooldown
 
 /obj/structure/ship_ammo/missile/sgw/detonate_on(turf/impact, obj/structure/dropship_equipment/weapon/fired_from)
@@ -490,11 +498,11 @@
 /obj/structure/ship_ammo/missile/banshee
 	name = "\improper MK.25 'Banshee'"
 	desc = "The Mk.25 'Banshee' is modified version of the standard AGM-228, designed for use in missile silos. As opposed to releasing a flaming willypete compound, it instead employs incendiary flechette capable of puncturing and igniting heavy armor. It is capable of being fired from the Mk.14 Missile Silo."
-	icon_state = "double"
+	icon_state = "bansheeM"
 	travelling_time = 40
 	point_cost = 300
-	ammo_count = 3
-	max_ammo_count = 3
+	ammo_count = 4
+	max_ammo_count = 4
 
 /obj/structure/ship_ammo/missile/banshee/detonate_on(turf/impact, obj/structure/dropship_equipment/weapon/fired_from)
 	impact.ceiling_debris_check(2)
@@ -507,11 +515,11 @@
 /obj/structure/ship_ammo/missile/hellhound
 	name = "\improper ATM-230D 'HELLHOUND IV'"
 	desc = "The ATM-230D 'HELLHOUND IV' is the latest installment of multi-role tactical missiles employed by gunship pilots. Designed specifically for use against high priority targets such as vehicles, buildings and bunkers, it houses a complicated three stage motor. It is capable of being fired from the Mk.14 Missile Silo."
-	icon_state = "double"
+	icon_state = "hellhound"
 	travelling_time = 40
 	point_cost = 500
-	ammo_count = 2
-	max_ammo_count = 2
+	ammo_count = 4
+	max_ammo_count = 4
 	fire_mission_delay = 4 // high cooldown
 
 /obj/structure/ship_ammo/missile/hellhound/detonate_on(turf/impact, obj/structure/dropship_equipment/weapon/fired_from)
