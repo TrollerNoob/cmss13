@@ -1142,7 +1142,7 @@
 
 /obj/structure/machinery/computer/dropship_weapons/belly_gun
 	name = "\improper 'Belly Gun' weapons controls"
-	desc = "A computer to manage the belly gun's equipment and weapons."
+	desc = "A computer to manage the dropship's belly gun system, fit with sophisticated targeting controls."
 	firemission_envelope = new /datum/cas_fire_envelope/uscm_dropship()
 	req_one_access = list(ACCESS_MARINE_LEADER, ACCESS_MARINE_DROPSHIP, ACCESS_WY_FLIGHT)
 
