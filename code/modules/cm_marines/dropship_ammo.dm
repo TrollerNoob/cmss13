@@ -466,6 +466,7 @@
 	name = "\improper MK.12 'Zeus'"
 	desc = "The MK.12 'Zeus' is an unguided, spin stabilized rocket system which has become a mainstay option for low altitude air strikes against personnel. Its nickname 'Zeus' comes from its resembelance to a bolt of lightning when striking upon targets. It is capable of being fired from the Mk.14 Missile Silo."
 	icon_state = "zeus"
+	ammo_id = "z"
 	travelling_time = 40
 	point_cost = 300
 
@@ -481,6 +482,7 @@
 	name = "\improper MK.91 'SGW'"
 	desc = "The MK.91 'SGW' is short range 'fire and forget' missile designed for use against light armor and entrenched positions. Its popularity skyrocketed upon rumors of a single well placed payload decimating an entire CLF guerilla bunker. It is capable of being fired from the Mk.14 Missile Silo."
 	icon_state = "sgw"
+	ammo_id = "sg"
 	travelling_time = 40
 	point_cost = 300
 	ammo_count = 4
@@ -499,6 +501,7 @@
 	name = "\improper MK.25 'Banshee'"
 	desc = "The Mk.25 'Banshee' is modified version of the standard AGM-228, designed for use in missile silos. As opposed to releasing a flaming willypete compound, it instead employs incendiary flechette capable of puncturing and igniting heavy armor. It is capable of being fired from the Mk.14 Missile Silo."
 	icon_state = "bansheeM"
+	ammo_id = "bm"
 	travelling_time = 40
 	point_cost = 300
 	ammo_count = 4
@@ -516,6 +519,7 @@
 	name = "\improper ATM-230D 'HELLHOUND IV'"
 	desc = "The ATM-230D 'HELLHOUND IV' is the latest installment of multi-role tactical missiles employed by gunship pilots. Designed specifically for use against high priority targets such as vehicles, buildings and bunkers, it houses a complicated three stage motor. It is capable of being fired from the Mk.14 Missile Silo."
 	icon_state = "hellhound"
+	ammo_id = "h"
 	travelling_time = 40
 	point_cost = 500
 	ammo_count = 4

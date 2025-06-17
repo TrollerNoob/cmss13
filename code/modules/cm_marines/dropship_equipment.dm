@@ -1288,10 +1288,10 @@
 /obj/structure/dropship_equipment/weapon/missile_silo/update_icon()
 	if(ammo_equipped && ammo_equipped.ammo_count)
 		var/ammo_stage = ammo_equipped.ammo_count / ammo_equipped.ammo_used_per_firing
-		icon_state = "[initial(icon_state)]_loaded_[ammo_stage]"
+		icon_state = "missile_silo_loaded[ammo_equipped.ammo_id]_[ammo_stage]"
 
 		if (ammo_equipped.ammo_count == ammo_equipped.max_ammo_count)
-			icon_state = "[initial(icon_state)]_loaded"
+			icon_state = "missile_silo_loaded[ammo_equipped.ammo_id]"
 	else
 		if(ship_base)
 			icon_state = "missile_silo_installed"
