@@ -226,10 +226,15 @@
 				to_chat(user, SPAN_NOTICE("You install [installed.name] into [src]."))
 				update_equipment()
 				return TRUE
-		//Handle corrosion repair logic
+
+	//Handle corrosion repair logic
 	// Exclude dropship_handheld from repair logic
 	if(istype(I, /obj/item/device/dropship_handheld))
 		return ..()
+	// Only allow people that have at least level 1 in Piloting or Engineering to repair corrosion
+	if(istype(user, /mob/living/carbon/human) && !skillcheck(user, SKILL_ENGINEER, SKILL_ENGINEER_TRAINED) && !skillcheck(user, SKILL_PILOT, SKILL_PILOT_TRAINED))
+		to_chat(user, SPAN_WARNING("You don't even understand how to begin fixing this equipment!"))
+		return TRUE
 	// Block all repair tools if installed
 	if(src.ship_base)
 		if(istype(I, /obj/item/tool/weldingtool) || istype(I, /obj/item/tool/screwdriver) || istype(I, /obj/item/tool/wrench) || istype(I, /obj/item/tool/crowbar) || istype(I, /obj/item/tool/wirecutters))
@@ -272,20 +277,16 @@
 					return TRUE
 				var/next_step = actions[1]
 				var/expected_type = get_dropship_repair_tool_type(next_step)
-				var/time = 5
-				if(istype(user, /mob/living/carbon/human) && user.job == "Dropship Crew Chief")
-					time = 1
-				// --- Begin wirecutters electrocution logic ---
+				// If the next step is wirecutters, check for electrocution
 				if(next_step == "wirecutters")
 					var/mob/living/L = user
 					if(L.electrocute_act(10, W))
 						W.corrosion_repairing = FALSE
 						to_chat(user, SPAN_DANGER("You are shocked by the exposed wiring!"))
 						return TRUE
-				// --- End wirecutters electrocution logic ---
 				// Set repairing flag only during do_after
 				W.corrosion_repairing = TRUE
-				if(!do_after(user, time * 10, INTERRUPT_NO_NEEDHAND | BEHAVIOR_IMMOBILE, BUSY_ICON_BUILD, target = W))
+				if(!do_after(user, (5 SECONDS) * user.get_skill_duration_multiplier(SKILL_ENGINEER), INTERRUPT_NO_NEEDHAND | BEHAVIOR_IMMOBILE, BUSY_ICON_BUILD, target = W))
 					W.corrosion_repairing = FALSE
 					to_chat(user, SPAN_WARNING("Repair interrupted!"))
 					return TRUE
