@@ -1274,8 +1274,8 @@
 	name = "\improper MK. 14 Missile Silo"
 	icon_state = "missile_silo"
 	desc = "A missile silo that unfurls during subsonic flight, specialized in use for low altitude ground bombardments. Can not be used during suborbital strikes. Moving this will require some sort of lifter. Accepts MK and ATM missile systems."
-	firing_sound = 'sound/effects/rocketpod_fire.ogg'
-	firing_delay = 5
+	firing_sound = 'sound/effects/missilesilo_fire.ogg'
+	firing_delay = 5 // redundant since it can't direct fire anyways
 	point_cost = 600
 	shorthand = "SIL"
 	fire_mission_only = TRUE
