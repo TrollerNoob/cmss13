@@ -275,6 +275,14 @@
 				var/time = 5
 				if(istype(user, /mob/living/carbon/human) && user.job == "Dropship Crew Chief")
 					time = 1
+				// --- Begin wirecutters electrocution logic ---
+				if(next_step == "wirecutters")
+					var/mob/living/L = user
+					if(L.electrocute_act(10, W))
+						W.corrosion_repairing = FALSE
+						to_chat(user, SPAN_DANGER("You are shocked by the exposed wiring!"))
+						return TRUE
+				// --- End wirecutters electrocution logic ---
 				// Set repairing flag only during do_after
 				W.corrosion_repairing = TRUE
 				if(!do_after(user, time * 10, INTERRUPT_NO_NEEDHAND | BEHAVIOR_IMMOBILE, BUSY_ICON_BUILD, target = W))
@@ -304,6 +312,11 @@
 					playsound(W, 'sound/items/Welder.ogg', 25, 1)
 				else if(next_step == "wirecutters")
 					playsound(W, 'sound/items/Wirecutter.ogg', 25, 1)
+					// --- Begin spark_spread effect for wirecutters ---
+					var/datum/effect_system/spark_spread/sparks = new /datum/effect_system/spark_spread
+					sparks.set_up(5, 1, W.loc)
+					sparks.start()
+					// --- End spark_spread effect ---
 				else if(next_step == "wrench")
 					playsound(W, 'sound/items/Ratchet.ogg', 25, 1)
 				W.corrosion_repairing = FALSE
