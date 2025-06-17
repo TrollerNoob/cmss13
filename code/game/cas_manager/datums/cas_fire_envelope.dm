@@ -44,8 +44,15 @@
 		.["missions"] += list(mission.ui_data(user))
 
 /datum/cas_fire_envelope/proc/update_weapons(list/obj/structure/dropship_equipment/weapon/weapons)
+	// Exclude heavygun/bay from firemission weapons unless this is a belly_gun console
+	var/is_belly_gun_console = istype(linked_console, /obj/structure/machinery/computer/dropship_weapons/belly_gun)
+	var/list/obj/structure/dropship_equipment/weapon/filtered_weapons = list()
+	for(var/obj/structure/dropship_equipment/weapon/weapon in weapons)
+		if(istype(weapon, /obj/structure/dropship_equipment/weapon/heavygun/bay) && !is_belly_gun_console)
+			continue
+		filtered_weapons += weapon
 	for(var/datum/cas_fire_mission/mission in missions)
-		mission.update_weapons(weapons, fire_length)
+		mission.update_weapons(filtered_weapons, fire_length)
 
 /datum/cas_fire_envelope/proc/generate_mission(firemission_name, length)
 	if(!missions || !linked_console)
@@ -60,8 +67,12 @@
 			fire_length = 16
 			break
 
+	// Exclude heavygun/bay from firemission weapons unless this is a belly_gun console
+	var/is_belly_gun_console = istype(linked_console, /obj/structure/machinery/computer/dropship_weapons/belly_gun)
 	for(var/obj/structure/dropship_equipment/equipment as anything in dropship.equipments)
 		if(equipment.is_weapon)
+			if(istype(equipment, /obj/structure/dropship_equipment/weapon/heavygun/bay) && !is_belly_gun_console)
+				continue
 			weapons += equipment
 
 	var/datum/cas_fire_mission/fm = new()
