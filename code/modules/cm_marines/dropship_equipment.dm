@@ -1064,6 +1064,13 @@
 			ammo_travelling_time = max(ammo_travelling_time - 20, 10)
 			break
 
+	// Pick initial impact turf and spawn overlay
+	var/list/possible_turfs = RANGE_TURFS(ammo_accuracy_range, target_turf)
+	var/turf/impact = pick(possible_turfs)
+	var/obj/effect/overlay/temp/impact_reticle/impact_overlay = null
+	if(impact)
+		impact_overlay = new /obj/effect/overlay/temp/impact_reticle(impact)
+
 	msg_admin_niche("[key_name(user)] is direct-firing [SA] onto [selected_target] at ([target_turf.x],[target_turf.y],[target_turf.z]) [ADMIN_JMP(target_turf)]")
 	if(ammo_travelling_time && !istype(SA, /obj/structure/ship_ammo/rocket/thermobaric))
 		var/total_seconds = max(floor(ammo_travelling_time / 10), 1)
@@ -1071,12 +1078,17 @@
 			sleep(10)
 			if(!selected_target || !selected_target.loc) //if laser disappeared before we reached the target,
 				ammo_accuracy_range++ //accuracy decreases
-
+				ammo_accuracy_range = min(ammo_accuracy_range, ammo_max_inaccuracy)
+				// Repick impact turf and update overlay
+				if(impact_overlay)
+					qdel(impact_overlay)
+				possible_turfs = RANGE_TURFS(ammo_accuracy_range, target_turf)
+				impact = pick(possible_turfs)
+				if(impact)
+					impact_overlay = new /obj/effect/overlay/temp/impact_reticle(impact)
 	// clamp back to maximum inaccuracy
 	ammo_accuracy_range = min(ammo_accuracy_range, ammo_max_inaccuracy)
 
-	var/list/possible_turfs = RANGE_TURFS(ammo_accuracy_range, target_turf)
-	var/turf/impact = pick(possible_turfs)
 
 	// Add mortar travel noise and text warnings for bomb_bay
 	if(istype(src, /obj/structure/dropship_equipment/weapon/bomb_bay))
@@ -1119,6 +1131,10 @@
 	sleep(10)
 	SA.source_mob = user
 	SA.detonate_on(impact, src)
+	// --- Impact reticle overlay: delete after detonation ---
+	if(impact_overlay)
+		qdel(impact_overlay)
+	return
 
 /obj/structure/dropship_equipment/weapon/proc/open_fire_firemission(obj/selected_target, mob/user = usr)
 	set waitfor = 0

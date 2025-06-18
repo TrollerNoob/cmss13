@@ -162,6 +162,45 @@
 		return "Weapon [weapon_string] has not enough ammunition to complete this Fire Mission"
 	return "Unknown Error"
 
+/// Returns a list of all turfs that will be targeted by this firemission, before any shots are fired
+/datum/cas_fire_mission/proc/get_all_target_turfs(initial_turf, direction, steps)
+	if(!initial_turf || !steps || !length(records))
+		return list()
+
+	var/list/target_turfs = list()
+	var/turf/current_turf = initial_turf
+	var/tally_step = steps / mission_length
+	var/next_step = tally_step
+	var/sx = 0
+	var/sy = 0
+
+	switch(direction)
+		if(NORTH)
+			sx = 1
+			sy = 0
+		if(SOUTH)
+			sx = -1
+			sy = 0
+		if(EAST)
+			sx = 0
+			sy = -1
+		if(WEST)
+			sx = 0
+			sy = 1
+
+	for(var/step = 1; step <= steps; step++)
+		if(step > next_step)
+			current_turf = get_step(current_turf, direction)
+			next_step += tally_step
+		for(var/datum/cas_fire_mission_record/record in records)
+			if(length(record.offsets) < step || record.offsets[step] == null || record.offsets[step] == "-")
+				continue
+			var/offset = record.offsets[step]
+			var/turf/shootloc = locate(current_turf.x + sx*offset, current_turf.y + sy*offset, current_turf.z)
+			if(shootloc && !(shootloc in target_turfs))
+				target_turfs += shootloc
+	return target_turfs
+
 /datum/cas_fire_mission/proc/execute_firemission(obj/structure/machinery/computer/dropship_weapons/linked_console, turf/initial_turf, direction = NORTH, steps = 12, step_delay = 3, datum/cas_fire_envelope/envelope = null)
 	if(initial_turf == null || check(linked_console) != FIRE_MISSION_ALL_GOOD)
 		return FIRE_MISSION_NOT_EXECUTABLE
@@ -175,6 +214,14 @@
 			break
 	if(has_nozzle)
 		step_delay = step_delay - 1 // 33% faster
+
+	// --- Impact reticle overlay: spawn on ALL shootlocs at the start of the firemission ---
+	var/list/all_impact_reticles = list()
+	var/list/all_target_turfs = get_all_target_turfs(initial_turf, direction, steps)
+	for(var/turf/impact_turf in all_target_turfs)
+		if(impact_turf)
+			var/obj/effect/overlay/temp/impact_reticle/impact_reticle = new /obj/effect/overlay/temp/impact_reticle(impact_turf)
+			all_impact_reticles += impact_reticle
 
 	var/turf/current_turf = initial_turf
 	var/tally_step = steps / mission_length //how much shots we need before moving to next turf
@@ -272,6 +319,11 @@
 		envelope.change_current_loc(null)
 		envelope.corrosion_fx_played = FALSE
 		envelope.shuttle_shake_played = FALSE
+
+	// --- Impact reticle overlay: delete all at the end of the firemission ---
+	for(var/obj/effect/overlay/temp/impact_reticle/ret in all_impact_reticles)
+		if(ret)
+			qdel(ret)
 
 
 /**
