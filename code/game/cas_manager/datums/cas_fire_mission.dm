@@ -215,13 +215,13 @@
 	if(has_nozzle)
 		step_delay = step_delay - 1 // 33% faster
 
-	// --- Impact reticle overlay: spawn on ALL shootlocs at the start of the firemission ---
-	var/list/all_impact_reticles = list()
+	// Firemission reticle overlay. Spawns on ALL shootlocs at the start of the firemission
+	var/list/all_firemission_reticles = list()
 	var/list/all_target_turfs = get_all_target_turfs(initial_turf, direction, steps)
 	for(var/turf/impact_turf in all_target_turfs)
 		if(impact_turf)
-			var/obj/effect/overlay/temp/impact_reticle/impact_reticle = new /obj/effect/overlay/temp/impact_reticle(impact_turf)
-			all_impact_reticles += impact_reticle
+			var/obj/effect/overlay/temp/firemission_reticle/firemission_reticle = new /obj/effect/overlay/temp/firemission_reticle(impact_turf)
+			all_firemission_reticles += firemission_reticle
 
 	var/turf/current_turf = initial_turf
 	var/tally_step = steps / mission_length //how much shots we need before moving to next turf
@@ -321,7 +321,7 @@
 		envelope.shuttle_shake_played = FALSE
 
 	// --- Impact reticle overlay: delete all at the end of the firemission ---
-	for(var/obj/effect/overlay/temp/impact_reticle/ret in all_impact_reticles)
+	for(var/obj/effect/overlay/temp/firemission_reticle/ret in all_firemission_reticles)
 		if(ret)
 			qdel(ret)
 
