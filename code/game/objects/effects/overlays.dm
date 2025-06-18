@@ -319,3 +319,59 @@
 	icon = 'icons/mob/xenos/effects.dmi'
 	icon_state = "pool_splash"
 	effect_duration = 10 SECONDS
+
+/obj/effect/overlay/temp/dropship_reticle
+	name = "Direct Fire Reticle"
+	desc = "A targeting reticle projected by dropship systems."
+	icon = 'icons/mob/hud/dropship_hud.dmi'
+	icon_state = "direct_fire_reticle"
+	anchored = TRUE
+	layer = ABOVE_LIGHTING_LAYER
+	plane = ABOVE_LIGHTING_PLANE // Ensures reticle appears above darkness/lighting
+	effect_duration = 600
+
+	var/target_x = null
+	var/target_y = null
+	var/target_z = null
+	var/image/reticle_image = null
+
+/obj/effect/overlay/temp/dropship_reticle/proc/update_visibility_for_mob(mob/M)
+	var/show_reticle = FALSE
+	if(GLOB.huds[MOB_HUD_DROPSHIP] && (M in GLOB.huds[MOB_HUD_DROPSHIP].hudusers))
+		show_reticle = TRUE
+	if(show_reticle)
+		var/datum/mob_hud/dropship/dropship_hud = GLOB.huds[MOB_HUD_DROPSHIP]
+		if(dropship_hud)
+			dropship_hud.add_hud_to(M, src)
+		if(M.client)
+			M.client.images += src.get_reticle_image()
+	else
+		var/datum/mob_hud/dropship/dropship_hud = GLOB.huds[MOB_HUD_DROPSHIP]
+		if(dropship_hud)
+			dropship_hud.remove_hud_from(M, src)
+		if(M.client)
+			M.client.images -= src.get_reticle_image()
+
+/obj/effect/overlay/temp/dropship_reticle/proc/get_reticle_image()
+	if(!reticle_image)
+		var/turf/T = locate(target_x, target_y, target_z)
+		reticle_image = image(icon, T, icon_state, layer)
+	return reticle_image
+
+/obj/effect/overlay/temp/dropship_reticle/proc/update_target(x, y, z)
+	target_x = x
+	target_y = y
+	target_z = z
+	reticle_image = null // force refresh on next get_reticle_image()
+
+/obj/effect/overlay/temp/dropship_reticle/proc/remove_from_all_clients()
+	var/image/I = src.get_reticle_image()
+	var/datum/mob_hud/dropship/dropship_hud = GLOB.huds[MOB_HUD_DROPSHIP]
+	if(dropship_hud)
+		for(var/mob/M in dropship_hud.hudusers)
+			if(M.client)
+				M.client.images -= I
+	// Also remove from all living human clients for legacy/cleanup
+	for(var/mob/living/carbon/human/M in GLOB.alive_human_list)
+		if(M.client)
+			M.client.images -= I

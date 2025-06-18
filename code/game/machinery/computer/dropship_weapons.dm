@@ -50,6 +50,9 @@
 	var/last_ui_offset_x = 0
 	var/last_ui_offset_y = 0
 
+	// In-world dropship reticle
+	var/obj/effect/overlay/temp/dropship_reticle/direct_fire_reticle = null
+
 /obj/structure/machinery/computer/dropship_weapons/New()
 	..()
 	if(firemission_envelope)
@@ -752,6 +755,17 @@
 
 	var/datum/cas_signal/target = get_cas_signal(target_ref)
 	camera_target_id = target_ref
+
+	// --- IN-WORLD DROPSHIP RETICLE LOGIC ---
+	if(src.direct_fire_reticle)
+		qdel(src.direct_fire_reticle)
+		src.direct_fire_reticle = null
+
+	if(target && target.signal_loc)
+		var/turf/target_turf = get_turf(target.signal_loc)
+		if(target_turf)
+			src.direct_fire_reticle = new /obj/effect/overlay/temp/dropship_reticle(target_turf)
+
 	if(!target)
 		SEND_SIGNAL(src, COMSIG_CAMERA_CLEAR)
 		return

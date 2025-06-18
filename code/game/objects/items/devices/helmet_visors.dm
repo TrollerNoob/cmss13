@@ -351,3 +351,31 @@
 
 /obj/item/device/helmet_visor/night_vision/marine_raider/process(delta_time)
 	return PROCESS_KILL
+
+/obj/item/device/helmet_visor/pilot
+	name = "pilot optic"
+	desc = "A tactical eyepiece able to be affixed to a USCM Pilot's helmet. It filters flight data and targeting information to a Heads-up Display."
+	icon_state = "pilot_sight"
+	hud_type = MOB_HUD_DROPSHIP
+	action_icon_string = "pilot_sight_down"
+	helmet_overlay = "pilot_sight_left"
+
+/obj/item/device/helmet_visor/pilot/deactivate_visor(obj/item/clothing/head/helmet/marine/attached_helmet, mob/living/carbon/human/user)
+	. = ..()
+	// Robustly remove the dropship HUD datum from the user
+	if(user && ismob(user)) {
+		var/datum/mob_hud/dropship/dropship_hud = GLOB.huds[MOB_HUD_DROPSHIP]
+		if(dropship_hud) {
+			// Remove all dropship HUD overlays for this user
+			dropship_hud.remove_hud_from(user, attached_helmet)
+			// Remove from hudusers if present
+			if(user in dropship_hud.hudusers)
+				dropship_hud.hudusers -= user
+		}
+	}
+	// Remove any stuck reticle overlays from the client
+	if(user?.client) {
+		for(var/image/I in user.client.images)
+			if(I.icon_state == "direct_fire_reticle" || I.icon_state == "dropship_reticle")
+				user.client.images -= I
+	}

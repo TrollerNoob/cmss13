@@ -106,6 +106,13 @@
 	SIGNAL_HANDLER
 	if(current)
 		UnregisterSignal(current, COMSIG_PARENT_QDELETING)
+	// Remove dropship reticle overlay if present
+	if(parent && istype(parent, /obj/structure/machinery/computer/dropship_weapons))
+		var/obj/structure/machinery/computer/dropship_weapons/console = parent
+		if(console.direct_fire_reticle)
+			console.direct_fire_reticle.remove_from_all_clients()
+			qdel(console.direct_fire_reticle)
+			console.direct_fire_reticle = null
 	current_area = null
 	current = null
 	target_x = null
@@ -264,6 +271,22 @@
 		if(center_turf.obstructed_signal())
 			show_camera_static()
 			return
+
+	// SPAWN DROPSHIP RETICLE AS CLIENT OVERLAY
+	if(parent && istype(parent, /obj/structure/machinery/computer/dropship_weapons))
+		var/obj/structure/machinery/computer/dropship_weapons/console = parent
+		// Remove any previous reticle image overlays from all clients
+		if(console.direct_fire_reticle)
+			console.direct_fire_reticle.remove_from_all_clients()
+			qdel(console.direct_fire_reticle)
+			console.direct_fire_reticle = null
+		// Create a new reticle object (not placed in the world)
+		console.direct_fire_reticle = new /obj/effect/overlay/temp/dropship_reticle()
+		console.direct_fire_reticle.loc = null // Not in the world
+		console.direct_fire_reticle.update_target(center_turf.x, center_turf.y, center_turf.z)
+		// Add the reticle image to eligible clients only
+		for(var/mob/living/carbon/human/M in GLOB.alive_human_list)
+			console.direct_fire_reticle.update_visibility_for_mob(M)
 
 	var/list/bbox = get_bbox_of_atoms(visible_turfs)
 	var/size_x = bbox[3] - bbox[1] + 1
