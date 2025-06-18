@@ -237,7 +237,58 @@ GLOBAL_LIST_INIT_TYPED(huds, /datum/mob_hud, list(
 	hud_icons = list(SPYCAM_HUD)
 
 /datum/mob_hud/dropship
-	// Add any specific logic or icons here if needed in the future
+	hud_icons = list(CAS_PROFILING_HUD)
+
+/datum/mob_hud/dropship/add_to_single_hud(mob/user, mob/target)
+	if(!user.client || user == target)
+		return
+	// Marines: show 'friendly' HUD if their faction is FACTION_MARINE
+	if(istype(target, /mob/living/carbon/human) && target.faction == FACTION_MARINE)
+		if("friendly" in target.hud_list)
+			user.client.images |= target.hud_list["friendly"]
+		return
+	// Xenos: show tiered 'enemy' HUD
+	if(istype(target, /mob/living/carbon/xenomorph))
+		var/mob/living/carbon/xenomorph/X = target
+		var/icon_state = null
+		if(istype(X, /mob/living/carbon/xenomorph/queen) || X.tier >= 3)
+			icon_state = "enemy_heavy"
+		else if(X.tier == 2)
+			icon_state = "enemy_medium"
+		else if(X.tier == 1)
+			icon_state = "enemy_light"
+		// Tier 0: icon_state remains null, so no overlay
+		if(icon_state && (icon_state in X.hud_list))
+			var/image/overlay = X.hud_list[icon_state]
+			// Center overlay for large xenos
+			if(istype(X, /mob/living/carbon/xenomorph/lurker) || istype(X, /mob/living/carbon/xenomorph/sentinel) || istype(X, /mob/living/carbon/xenomorph/drone))
+				overlay.pixel_x = 12
+				overlay.pixel_y = 0
+			else if(istype(X, /mob/living/carbon/xenomorph/crusher))
+				overlay.pixel_x = 16
+				overlay.pixel_y = 4
+			else
+				overlay.pixel_x = 16
+				overlay.pixel_y = 0
+			user.client.images |= overlay
+		return
+
+// Override for dropship HUD: remove custom overlays
+/datum/mob_hud/dropship/remove_from_single_hud(mob/user, mob/target)
+	if(!user.client || user == target)
+		return
+	// Marines: remove 'friendly' overlay
+	if(istype(target, /mob/living/carbon/human) && target.faction == FACTION_MARINE)
+		if("friendly" in target.hud_list)
+			user.client.images -= target.hud_list["friendly"]
+		return
+	// Xenos: remove tiered 'enemy' overlays
+	if(istype(target, /mob/living/carbon/xenomorph))
+		var/list/enemy_states = list("enemy_light", "enemy_medium", "enemy_heavy")
+		for(var/state in enemy_states)
+			if(state in target.hud_list)
+				user.client.images -= target.hud_list[state]
+		return
 ///////// MOB PROCS //////////////////////////////:
 
 
@@ -254,12 +305,17 @@ GLOBAL_LIST_INIT_TYPED(huds, /datum/mob_hud, list(
 			continue
 		hud.add_to_hud(src)
 	hud_set_new_player()
+	init_dropship_hud_overlays()
 
 /mob/living/carbon/xenomorph/add_to_all_mob_huds()
 	for(var/datum/mob_hud/hud in GLOB.huds)
 		if(!istype(hud, /datum/mob_hud/xeno))
 			continue
 		hud.add_to_hud(src)
+	// Ensure xenos are also enrolled in the dropship HUD for pilot overlays
+	if(GLOB.huds[MOB_HUD_DROPSHIP])
+		GLOB.huds[MOB_HUD_DROPSHIP].add_to_hud(src)
+	init_dropship_hud_overlays()
 
 
 /mob/proc/remove_from_all_mob_huds()
@@ -884,3 +940,15 @@ GLOBAL_DATUM_INIT(hud_icon_new_player_3, /image, image('icons/mob/hud/hud.dmi', 
 	holder.overlays += marker
 	hud_list[NEW_PLAYER_HUD] = holder
 	return TRUE
+
+/mob/living/carbon/human/proc/init_dropship_hud_overlays()
+	if(!("friendly" in hud_list))
+		hud_list["friendly"] = image('icons/mob/hud/hud.dmi', src, "friendly")
+
+/mob/living/carbon/xenomorph/proc/init_dropship_hud_overlays()
+	if(!("enemy_light" in hud_list))
+		hud_list["enemy_light"] = image('icons/mob/hud/hud.dmi', src, "enemy_light")
+	if(!("enemy_medium" in hud_list))
+		hud_list["enemy_medium"] = image('icons/mob/hud/hud.dmi', src, "enemy_medium")
+	if(!("enemy_heavy" in hud_list))
+		hud_list["enemy_heavy"] = image('icons/mob/hud/hud.dmi', src, "enemy_heavy")
