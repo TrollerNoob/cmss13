@@ -242,6 +242,12 @@ GLOBAL_LIST_INIT_TYPED(huds, /datum/mob_hud, list(
 /datum/mob_hud/dropship/add_to_single_hud(mob/user, mob/target)
 	if(!user.client || user == target)
 		return
+	// Only show HUD if user is in either the Alamo or Normandy (as it uses the dropship's TIAS)
+	if(!(istype(get_area(user), /area/shuttle/drop1) || istype(get_area(user), /area/shuttle/drop2)))
+		return
+	// Do not show overlays if the target is also in a dropship area
+	if(istype(get_area(target), /area/shuttle/drop1) || istype(get_area(target), /area/shuttle/drop2))
+		return
 	// Marines: show 'friendly' HUD if their faction is FACTION_MARINE
 	if(istype(target, /mob/living/carbon/human) && target.faction == FACTION_MARINE)
 		if("friendly" in target.hud_list)
@@ -952,3 +958,57 @@ GLOBAL_DATUM_INIT(hud_icon_new_player_3, /image, image('icons/mob/hud/hud.dmi', 
 		hud_list["enemy_medium"] = image('icons/mob/hud/hud.dmi', src, "enemy_medium")
 	if(!("enemy_heavy" in hud_list))
 		hud_list["enemy_heavy"] = image('icons/mob/hud/hud.dmi', src, "enemy_heavy")
+
+// --- Dynamic Dropship HUD Refresh on Area Change ---
+/mob/Move(NewLoc, Dir, step_x, step_y, step_z)
+	var/old_area = get_area(src)
+	. = ..(NewLoc, Dir, step_x, step_y, step_z)
+	var/new_area = get_area(src)
+	var/was_dropship = istype(old_area, /area/shuttle/drop1) || istype(old_area, /area/shuttle/drop2)
+	var/is_dropship = istype(new_area, /area/shuttle/drop1) || istype(new_area, /area/shuttle/drop2)
+	if(was_dropship != is_dropship && GLOB.huds[MOB_HUD_DROPSHIP])
+		var/datum/mob_hud/dropship/dropship_hud = GLOB.huds[MOB_HUD_DROPSHIP]
+		if(src in dropship_hud.hudusers)
+			if(is_dropship)
+				dropship_hud.refresh_hud(src, dropship_hud.hudusers[src])
+			else
+				// Pilot left dropship: forcibly remove all overlays
+				for(var/mob/target in dropship_hud.hudmobs)
+					dropship_hud.remove_from_single_hud(src, target)
+		for(var/mob/user in dropship_hud.hudusers)
+			if(user != src)
+				if(is_dropship)
+					dropship_hud.add_to_single_hud(user, src)
+				else
+					dropship_hud.remove_from_single_hud(user, src)
+		// Keep hudmobs in sync: remove from hudmobs if entering shuttle, add if leaving
+		if(is_dropship)
+			dropship_hud.remove_from_hud(src)
+		else
+			dropship_hud.add_to_hud(src)
+
+/mob/Entered(atom/movable/O)
+	var/old_area = get_area(src)
+	..(O)
+	var/new_area = get_area(src)
+	var/was_dropship = istype(old_area, /area/shuttle/drop1) || istype(old_area, /area/shuttle/drop2)
+	var/is_dropship = istype(new_area, /area/shuttle/drop1) || istype(new_area, /area/shuttle/drop2)
+	if(was_dropship != is_dropship && GLOB.huds[MOB_HUD_DROPSHIP])
+		var/datum/mob_hud/dropship/dropship_hud = GLOB.huds[MOB_HUD_DROPSHIP]
+		if(src in dropship_hud.hudusers)
+			if(is_dropship)
+				dropship_hud.refresh_hud(src, dropship_hud.hudusers[src])
+			else
+				for(var/mob/target in dropship_hud.hudmobs)
+					dropship_hud.remove_from_single_hud(src, target)
+		for(var/mob/user in dropship_hud.hudusers)
+			if(user != src)
+				if(is_dropship)
+					dropship_hud.add_to_single_hud(user, src)
+				else
+					dropship_hud.remove_from_single_hud(user, src)
+		// Keep hudmobs in sync: remove from hudmobs if entering shuttle, add if leaving
+		if(is_dropship)
+			dropship_hud.remove_from_hud(src)
+		else
+			dropship_hud.add_to_hud(src)
