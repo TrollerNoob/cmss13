@@ -62,6 +62,34 @@
 	instance.screen_loc = "[map_name]:CENTER"
 	cam_plane_masters["[instance.plane]"] = instance
 
+/datum/component/camera_manager/proc/show_pilot_camera_overlay_for_user(mob/user)
+	if(user && parent && istype(parent, /obj/structure/machinery/computer/dropship_weapons))
+		for(var/plane_id in cam_plane_masters)
+			var/atom/movable/screen/plane_master/plane = cam_plane_masters[plane_id]
+			var/atom/movable/screen/fullscreen/pilot_camera/overlay = new /atom/movable/screen/fullscreen/pilot_camera()
+			overlay:assigned_map = map_name
+			// Use pixel_x and pixel_y to manually position the overlay on the map panel
+			overlay:pixel_x = -224 // Set to desired horizontal offset in pixels
+			overlay:pixel_y = -224 // Set to desired vertical offset in pixels
+			overlay:screen_loc = null // screen_loc is ignored for vis_contents overlays on map panels
+			overlay:layer = plane:layer + 1
+			overlay:plane = plane:plane
+			plane:vis_contents += overlay
+			if(!islist(plane:vars["cas_hud_overlays"])) plane:vars["cas_hud_overlays"] = list()
+			plane:vars["cas_hud_overlays"] += overlay
+
+/datum/component/camera_manager/proc/hide_pilot_camera_overlay_for_user(mob/user)
+	if(user && parent && istype(parent, /obj/structure/machinery/computer/dropship_weapons))
+		// Remove the CAS HUD overlay from the camera panel's plane masters
+		for(var/plane_id in cam_plane_masters)
+			var/atom/movable/screen/plane_master/plane = cam_plane_masters[plane_id]
+			if(islist(plane:vars["cas_hud_overlays"]))
+				for(var/overlay in plane:vars["cas_hud_overlays"])
+					var/atom/movable/screen/fullscreen/pilot_camera/typed_overlay = overlay
+					plane:vis_contents -= typed_overlay
+					qdel(typed_overlay)
+				plane:vars["cas_hud_overlays"] = list()
+
 /datum/component/camera_manager/proc/register(source, mob/user)
 	SIGNAL_HANDLER
 	var/client/user_client = user.client
@@ -71,6 +99,8 @@
 	user_client.register_map_obj(cam_background)
 	for(var/plane_id in cam_plane_masters)
 		user_client.register_map_obj(cam_plane_masters[plane_id])
+	// Always show the pilot camera overlay when registering the camera panel
+	show_pilot_camera_overlay_for_user(user)
 
 /datum/component/camera_manager/proc/unregister(source, mob/user)
 	SIGNAL_HANDLER
@@ -78,6 +108,8 @@
 	if(!user_client)
 		return
 	user_client.clear_map(map_name)
+	// Always hide the pilot camera overlay when unregistering the camera panel
+	hide_pilot_camera_overlay_for_user(user)
 
 /datum/component/camera_manager/RegisterWithParent()
 	. = ..()
@@ -299,3 +331,6 @@
 #undef DEFAULT_MAP_SIZE
 #undef RENDER_MODE_TARGET
 #undef RENDER_MODE_AREA
+
+/atom/movable/screen/plane_master
+	var/list/cas_hud_overlays = null
