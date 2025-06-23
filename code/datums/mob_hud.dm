@@ -972,7 +972,7 @@ GLOBAL_DATUM_INIT(hud_icon_new_player_3, /image, image('icons/mob/hud/hud.dmi', 
 	hud_list["enemy_medium"].icon_state = "hudblank"
 	hud_list["enemy_heavy"].icon_state = "hudblank"
 	hud_list["enemy_dead"].icon_state = "hudblank"
-	if(stat == DEAD)
+	if(stat == DEAD && src.tier > 0)
 		hud_list["enemy_dead"].icon_state = "enemy_dead"
 	else
 		var/icon_state = null
