@@ -285,27 +285,28 @@
 		if(console.firemission_envelope && (console.firemission_envelope.stat == FIRE_MISSION_STATE_ON_TARGET || console.firemission_envelope.stat == FIRE_MISSION_STATE_FIRING))
 			allow_render = TRUE
 
-	if(render_mode == RENDER_MODE_AREA && current_area && target_z)
-		center_turf = locate(current_area.center_x, current_area.center_y, target_z)
-	else if(render_mode == RENDER_MODE_TARGET && last_camera_turf)
-		center_turf = last_camera_turf
-	else
-		return
-
-	if(!allow_render)
-		var/area/laser_area = get_area(center_turf)
-		if(center_turf.turf_protection_flags & TURF_PROTECTION_CHAFF)
-			show_camera_static()
-			return
-		if(!istype(laser_area) || CEILING_IS_PROTECTED(laser_area.ceiling, CEILING_PROTECTION_TIER_1))
-			show_camera_static()
-			return
-		if(center_turf.obstructed_signal())
-			show_camera_static()
-			return
-
-	// SPAWN DROPSHIP RETICLE AS CLIENT OVERLAY
+	// Only perform the static checks if this is a dropship weapons console
 	if(parent && istype(parent, /obj/structure/machinery/computer/dropship_weapons))
+		if(render_mode == RENDER_MODE_AREA && current_area && target_z)
+			center_turf = locate(current_area.center_x, current_area.center_y, target_z)
+		else if(render_mode == RENDER_MODE_TARGET && last_camera_turf)
+			center_turf = last_camera_turf
+		else
+			return
+
+		if(!allow_render)
+			var/area/laser_area = get_area(center_turf)
+			if(center_turf.turf_protection_flags & TURF_PROTECTION_CHAFF)
+				show_camera_static()
+				return
+			if(!istype(laser_area) || CEILING_IS_PROTECTED(laser_area.ceiling, CEILING_PROTECTION_TIER_1))
+				show_camera_static()
+				return
+			if(center_turf.obstructed_signal())
+				show_camera_static()
+				return
+
+		// SPAWN DROPSHIP RETICLE AS CLIENT OVERLAY
 		var/obj/structure/machinery/computer/dropship_weapons/console = parent
 		// Remove any previous reticle image overlays from all clients
 		if(console.direct_fire_reticle)
