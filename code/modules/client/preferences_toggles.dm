@@ -723,8 +723,26 @@
 	observer_user.HUD_toggled[hud_choice] = prefs.observer_huds[hud_choice]
 	if(observer_user.HUD_toggled[hud_choice])
 		H.add_hud_to(observer_user, observer_user)
+		// Update all CAS reticle overlays for ghosts if toggled on
+		if(hud_choice == "CAS HUD" && isobserver(observer_user) && istype(H, /datum/mob_hud/dropship))
+			var/datum/mob_hud/dropship/ghost = H
+			ghost.add_cas_reticles_to_observer(observer_user)
 	else
 		H.remove_hud_from(observer_user, observer_user)
+		// Remove from hudusers if present (robust cleanup)
+		if(hud_choice == "CAS HUD" && isobserver(observer_user) && istype(H, /datum/mob_hud/dropship)) {
+			var/datum/mob_hud/dropship/ghost = H
+			ghost.remove_cas_reticles_from_observer(observer_user)
+			// Robustly remove observer from hudusers
+			if(observer_user in ghost.hudusers)
+				ghost.hudusers -= observer_user
+			// Failsafe: forcibly remove any dropship reticle images from client
+			if(observer_user.client) {
+				for(var/image/I in observer_user.client.images)
+					if(I.icon_state == "direct_fire_reticle" || I.icon_state == "impact_reticle" || I.icon_state == "firemission_reticle")
+						observer_user.client.images -= I
+			}
+		}
 
 /client/proc/toggle_ghost_health_scan()
 	set name = "Toggle Health Scan"

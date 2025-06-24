@@ -376,145 +376,43 @@
 		if(M.client)
 			M.client.images -= I
 
-/obj/effect/overlay/temp/impact_reticle
+// --- Direct Impact Reticle ---
+/obj/effect/overlay/temp/dropship_reticle/direct
 	name = "Impact Reticle"
 	desc = "The projected suborbital impact zone for a dropship's HUD."
 	icon = 'icons/mob/hud/dropship_hud.dmi'
 	icon_state = "impact_reticle"
-	anchored = TRUE
-	layer = ABOVE_LIGHTING_LAYER
-	plane = ABOVE_LIGHTING_PLANE
-	effect_duration = 600
 
-	var/target_x = null
-	var/target_y = null
-	var/target_z = null
-	var/image/reticle_image = null
-
-/obj/effect/overlay/temp/impact_reticle/proc/update_visibility_for_mob(mob/M)
-	var/show_reticle = FALSE
-	if(GLOB.huds[MOB_HUD_DROPSHIP] && (M in GLOB.huds[MOB_HUD_DROPSHIP].hudusers))
-		show_reticle = TRUE
-	if(show_reticle)
-		var/datum/mob_hud/dropship/dropship_hud = GLOB.huds[MOB_HUD_DROPSHIP]
-		if(dropship_hud)
-			dropship_hud.add_hud_to(M, src)
-		if(M.client)
-			M.client.images += src.get_reticle_image()
-	else
-		var/datum/mob_hud/dropship/dropship_hud = GLOB.huds[MOB_HUD_DROPSHIP]
-		if(dropship_hud)
-			dropship_hud.remove_hud_from(M, src)
-		if(M.client)
-			M.client.images -= src.get_reticle_image()
-
-/obj/effect/overlay/temp/impact_reticle/proc/get_reticle_image()
-	if(!reticle_image)
-		var/turf/T = locate(target_x, target_y, target_z)
-		reticle_image = image(icon, T, icon_state, layer)
-	return reticle_image
-
-/obj/effect/overlay/temp/impact_reticle/proc/update_target(x, y, z)
-	target_x = x
-	target_y = y
-	target_z = z
-	reticle_image = null // force refresh on next get_reticle_image()
-
-/obj/effect/overlay/temp/impact_reticle/proc/remove_from_all_clients()
-	var/image/I = src.get_reticle_image()
-	var/datum/mob_hud/dropship/dropship_hud = GLOB.huds[MOB_HUD_DROPSHIP]
-	if(dropship_hud)
-		for(var/mob/M in dropship_hud.hudusers)
-			if(M.client)
-				M.client.images -= I
-	// Also remove from all living human clients for legacy/cleanup
-	for(var/mob/living/carbon/human/M in GLOB.alive_human_list)
-		if(M.client)
-			M.client.images -= I
-
-/obj/effect/overlay/temp/firemission_reticle
-	name = "Firemission Reticle"
-	desc = "The projected firemission target zone for a dropship's HUD."
-	icon = 'icons/mob/hud/dropship_hud.dmi'
-	icon_state = "firemission_reticle"
-	anchored = TRUE
-	layer = ABOVE_LIGHTING_LAYER
-	plane = ABOVE_LIGHTING_PLANE
-	effect_duration = 600
-
-	var/target_x = null
-	var/target_y = null
-	var/target_z = null
-	var/image/reticle_image = null
-
-/obj/effect/overlay/temp/firemission_reticle/proc/update_visibility_for_mob(mob/M)
-	var/show_reticle = FALSE
-	if(GLOB.huds[MOB_HUD_DROPSHIP] && (M in GLOB.huds[MOB_HUD_DROPSHIP].hudusers))
-		show_reticle = TRUE
-	if(show_reticle)
-		var/datum/mob_hud/dropship/dropship_hud = GLOB.huds[MOB_HUD_DROPSHIP]
-		if(dropship_hud)
-			dropship_hud.add_hud_to(M, src)
-		if(M.client)
-			M.client.images += src.get_reticle_image()
-	else
-		var/datum/mob_hud/dropship/dropship_hud = GLOB.huds[MOB_HUD_DROPSHIP]
-		if(dropship_hud)
-			dropship_hud.remove_hud_from(M, src)
-		if(M.client)
-			M.client.images -= src.get_reticle_image()
-
-/obj/effect/overlay/temp/firemission_reticle/proc/get_reticle_image()
-	if(!reticle_image)
-		var/turf/T = locate(target_x, target_y, target_z)
-		reticle_image = image(icon, T, icon_state, layer)
-	return reticle_image
-
-/obj/effect/overlay/temp/firemission_reticle/proc/update_target(x, y, z)
-	target_x = x
-	target_y = y
-	target_z = z
-	reticle_image = null // force refresh on next get_reticle_image()
-
-/obj/effect/overlay/temp/firemission_reticle/proc/remove_from_all_clients()
-	var/image/I = src.get_reticle_image()
-	var/datum/mob_hud/dropship/dropship_hud = GLOB.huds[MOB_HUD_DROPSHIP]
-	if(dropship_hud)
-		for(var/mob/M in dropship_hud.hudusers)
-			if(M.client)
-				M.client.images -= I
-	// Also remove from all living human clients for legacy/cleanup
-	for(var/mob/living/carbon/human/M in GLOB.alive_human_list)
-		if(M.client)
-			M.client.images -= I
-
-// --- Dropship reticle overlays: DO NOT PLACE IN THE WORLD ---
-// These overlays must never be placed in the world (do not set loc or parent to a turf/atom).
-// Always use the spawn helper proc to create and show them as image overlays only.
-
-/obj/effect/overlay/temp/impact_reticle/proc/spawn_reticle(x, y, z)
-	var/obj/effect/overlay/temp/impact_reticle/O = new()
+/obj/effect/overlay/temp/dropship_reticle/direct/proc/spawn_reticle(x, y, z)
+	var/obj/effect/overlay/temp/dropship_reticle/direct/O = new()
 	O.target_x = x
 	O.target_y = y
 	O.target_z = z
 	O.reticle_image = null
 	return O
 
-/obj/effect/overlay/temp/impact_reticle/New(loc)
+/obj/effect/overlay/temp/dropship_reticle/direct/New(loc)
 	if(loc)
 		qdel(src)
 		return
 	..()
 
-/obj/effect/overlay/temp/firemission_reticle/proc/spawn_reticle(x, y, z)
-	var/obj/effect/overlay/temp/firemission_reticle/O = new()
+// --- Firemission Reticle ---
+/obj/effect/overlay/temp/dropship_reticle/firemission
+	name = "Firemission Reticle"
+	desc = "The projected firemission target zone for a dropship's HUD."
+	icon = 'icons/mob/hud/dropship_hud.dmi'
+	icon_state = "firemission_reticle"
+
+/obj/effect/overlay/temp/dropship_reticle/firemission/proc/spawn_reticle(x, y, z)
+	var/obj/effect/overlay/temp/dropship_reticle/firemission/O = new()
 	O.target_x = x
 	O.target_y = y
 	O.target_z = z
 	O.reticle_image = null
 	return O
 
-/obj/effect/overlay/temp/firemission_reticle/New(loc)
+/obj/effect/overlay/temp/dropship_reticle/firemission/New(loc)
 	if(loc)
 		qdel(src)
 		return

@@ -1037,3 +1037,19 @@ GLOBAL_DATUM_INIT(hud_icon_new_player_3, /image, image('icons/mob/hud/hud.dmi', 
 			dropship_hud.remove_from_hud(src)
 		else
 			dropship_hud.add_to_hud(src)
+
+/datum/mob_hud/dropship/proc/add_cas_reticles_to_observer(mob/dead/observer/ghost)
+	if(!ghost)
+		return
+	// Show all active dropship reticles to this ghost
+	for(var/obj/effect/overlay/temp/dropship_reticle/R in world)
+		if(QDELETED(R)) continue
+		R.update_visibility_for_mob(ghost)
+
+/datum/mob_hud/dropship/proc/remove_cas_reticles_from_observer(mob/dead/observer/ghost)
+	if(!ghost)
+		return
+	// Hide all active dropship reticles from this ghost
+	for(var/obj/effect/overlay/temp/dropship_reticle/R in world)
+		if(QDELETED(R)) continue
+		R.update_visibility_for_mob(ghost)

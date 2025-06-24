@@ -1067,7 +1067,7 @@
 	// Pick initial impact turf and spawn overlay
 	var/list/possible_turfs = RANGE_TURFS(ammo_accuracy_range, target_turf)
 	var/turf/impact = pick(possible_turfs)
-	var/obj/effect/overlay/temp/impact_reticle/impact_overlay = null
+	var/obj/effect/overlay/temp/dropship_reticle/direct/impact_overlay = null
 	if(impact)
 		impact_overlay = new()
 		impact_overlay.target_x = impact.x

@@ -220,7 +220,7 @@
 	var/list/all_target_turfs = get_all_target_turfs(initial_turf, direction, steps)
 	for(var/turf/impact_turf in all_target_turfs)
 		if(impact_turf)
-			var/obj/effect/overlay/temp/firemission_reticle/firemission_reticle = new()
+			var/obj/effect/overlay/temp/dropship_reticle/firemission/firemission_reticle = new()
 			firemission_reticle.target_x = impact_turf.x
 			firemission_reticle.target_y = impact_turf.y
 			firemission_reticle.target_z = impact_turf.z
@@ -330,7 +330,7 @@
 		envelope.shuttle_shake_played = FALSE
 
 	// --- Impact reticle overlay: delete all at the end of the firemission ---
-	for(var/obj/effect/overlay/temp/firemission_reticle/ret in all_firemission_reticles)
+	for(var/obj/effect/overlay/temp/dropship_reticle/firemission/ret in all_firemission_reticles)
 		if(ret)
 			ret.remove_from_all_clients()
 			qdel(ret)
