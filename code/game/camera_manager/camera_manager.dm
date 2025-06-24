@@ -110,6 +110,15 @@
 	user_client.clear_map(map_name)
 	// Always hide the pilot camera overlay when unregistering the camera panel
 	hide_pilot_camera_overlay_for_user(user)
+	// Remove dropship reticle overlay if present (on camera panel exit)
+	if(parent && istype(parent, /obj/structure/machinery/computer/dropship_weapons)) {
+		var/obj/structure/machinery/computer/dropship_weapons/console = parent
+		if(console.direct_fire_reticle) {
+			console.direct_fire_reticle.remove_from_all_clients()
+			qdel(console.direct_fire_reticle)
+			console.direct_fire_reticle = null
+		}
+	}
 
 /datum/component/camera_manager/RegisterWithParent()
 	. = ..()

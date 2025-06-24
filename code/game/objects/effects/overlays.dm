@@ -327,7 +327,7 @@
 	icon_state = "direct_fire_reticle"
 	anchored = TRUE
 	layer = ABOVE_LIGHTING_LAYER
-	plane = ABOVE_LIGHTING_PLANE // Ensures reticle appears above darkness/lighting
+	plane = ABOVE_LIGHTING_PLANE
 	effect_duration = 600
 
 	var/target_x = null
