@@ -322,7 +322,7 @@
 
 /obj/effect/overlay/temp/dropship_reticle
 	name = "Direct Fire Reticle"
-	desc = "A targeting reticle projected by dropship systems."
+	desc = "A targeting reticle for a dropship's HUD."
 	icon = 'icons/mob/hud/dropship_hud.dmi'
 	icon_state = "direct_fire_reticle"
 	anchored = TRUE
@@ -378,7 +378,7 @@
 
 /obj/effect/overlay/temp/impact_reticle
 	name = "Impact Reticle"
-	desc = "A projected impact marker for dropship ordnance."
+	desc = "The projected suborbital impact zone for a dropship's HUD."
 	icon = 'icons/mob/hud/dropship_hud.dmi'
 	icon_state = "impact_reticle"
 	anchored = TRUE
@@ -427,14 +427,14 @@
 		for(var/mob/M in dropship_hud.hudusers)
 			if(M.client)
 				M.client.images -= I
-		// Also remove from all living human clients for legacy/cleanup
-		for(var/mob/living/carbon/human/M in GLOB.alive_human_list)
-			if(M.client)
-				M.client.images -= I
+	// Also remove from all living human clients for legacy/cleanup
+	for(var/mob/living/carbon/human/M in GLOB.alive_human_list)
+		if(M.client)
+			M.client.images -= I
 
 /obj/effect/overlay/temp/firemission_reticle
 	name = "Firemission Reticle"
-	desc = "A projected firemission marker for dropship ordnance."
+	desc = "The projected firemission target zone for a dropship's HUD."
 	icon = 'icons/mob/hud/dropship_hud.dmi'
 	icon_state = "firemission_reticle"
 	anchored = TRUE
@@ -487,3 +487,35 @@
 	for(var/mob/living/carbon/human/M in GLOB.alive_human_list)
 		if(M.client)
 			M.client.images -= I
+
+// --- Dropship reticle overlays: DO NOT PLACE IN THE WORLD ---
+// These overlays must never be placed in the world (do not set loc or parent to a turf/atom).
+// Always use the spawn helper proc to create and show them as image overlays only.
+
+/obj/effect/overlay/temp/impact_reticle/proc/spawn_reticle(x, y, z)
+	var/obj/effect/overlay/temp/impact_reticle/O = new()
+	O.target_x = x
+	O.target_y = y
+	O.target_z = z
+	O.reticle_image = null
+	return O
+
+/obj/effect/overlay/temp/impact_reticle/New(loc)
+	if(loc)
+		qdel(src)
+		return
+	..()
+
+/obj/effect/overlay/temp/firemission_reticle/proc/spawn_reticle(x, y, z)
+	var/obj/effect/overlay/temp/firemission_reticle/O = new()
+	O.target_x = x
+	O.target_y = y
+	O.target_z = z
+	O.reticle_image = null
+	return O
+
+/obj/effect/overlay/temp/firemission_reticle/New(loc)
+	if(loc)
+		qdel(src)
+		return
+	..()

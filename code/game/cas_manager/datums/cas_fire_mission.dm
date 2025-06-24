@@ -220,8 +220,17 @@
 	var/list/all_target_turfs = get_all_target_turfs(initial_turf, direction, steps)
 	for(var/turf/impact_turf in all_target_turfs)
 		if(impact_turf)
-			var/obj/effect/overlay/temp/firemission_reticle/firemission_reticle = new /obj/effect/overlay/temp/firemission_reticle(impact_turf)
+			var/obj/effect/overlay/temp/firemission_reticle/firemission_reticle = new()
+			firemission_reticle.target_x = impact_turf.x
+			firemission_reticle.target_y = impact_turf.y
+			firemission_reticle.target_z = impact_turf.z
+			firemission_reticle.reticle_image = null
 			all_firemission_reticles += firemission_reticle
+			// Only show to CAS HUD users
+			if(GLOB.huds[MOB_HUD_DROPSHIP])
+				for(var/mob/M in GLOB.huds[MOB_HUD_DROPSHIP].hudusers)
+					if(M)
+						firemission_reticle.update_visibility_for_mob(M)
 
 	var/turf/current_turf = initial_turf
 	var/tally_step = steps / mission_length //how much shots we need before moving to next turf
@@ -323,6 +332,7 @@
 	// --- Impact reticle overlay: delete all at the end of the firemission ---
 	for(var/obj/effect/overlay/temp/firemission_reticle/ret in all_firemission_reticles)
 		if(ret)
+			ret.remove_from_all_clients()
 			qdel(ret)
 
 

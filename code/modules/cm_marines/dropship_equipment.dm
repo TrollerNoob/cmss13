@@ -1069,7 +1069,16 @@
 	var/turf/impact = pick(possible_turfs)
 	var/obj/effect/overlay/temp/impact_reticle/impact_overlay = null
 	if(impact)
-		impact_overlay = new /obj/effect/overlay/temp/impact_reticle(impact)
+		impact_overlay = new()
+		impact_overlay.target_x = impact.x
+		impact_overlay.target_y = impact.y
+		impact_overlay.target_z = impact.z
+		impact_overlay.reticle_image = null
+		// Only show to CAS HUD users
+		if(GLOB.huds[MOB_HUD_DROPSHIP])
+			for(var/mob/M in GLOB.huds[MOB_HUD_DROPSHIP].hudusers)
+				if(M)
+					impact_overlay.update_visibility_for_mob(M)
 
 	msg_admin_niche("[key_name(user)] is direct-firing [SA] onto [selected_target] at ([target_turf.x],[target_turf.y],[target_turf.z]) [ADMIN_JMP(target_turf)]")
 	if(ammo_travelling_time && !istype(SA, /obj/structure/ship_ammo/rocket/thermobaric))
@@ -1085,7 +1094,11 @@
 				possible_turfs = RANGE_TURFS(ammo_accuracy_range, target_turf)
 				impact = pick(possible_turfs)
 				if(impact)
-					impact_overlay = new /obj/effect/overlay/temp/impact_reticle(impact)
+					impact_overlay = new()
+					impact_overlay.target_x = impact.x
+					impact_overlay.target_y = impact.y
+					impact_overlay.target_z = impact.z
+					impact_overlay.reticle_image = null
 	// clamp back to maximum inaccuracy
 	ammo_accuracy_range = min(ammo_accuracy_range, ammo_max_inaccuracy)
 
@@ -1133,6 +1146,7 @@
 	SA.detonate_on(impact, src)
 	// --- Impact reticle overlay: delete after detonation ---
 	if(impact_overlay)
+		impact_overlay.remove_from_all_clients()
 		qdel(impact_overlay)
 	return
 
