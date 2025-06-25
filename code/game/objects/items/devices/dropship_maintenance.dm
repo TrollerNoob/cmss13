@@ -36,13 +36,10 @@
 		playsound(src, 'sound/mecha/lowpower.ogg', 50, 1)
 		to_chat(user, SPAN_NOTICE("Repair scan complete. Use the maintenance computer to continue repairs."))
 		return
-	if(istype(target, /obj/item/device/dropship_comp))
-		var/obj/item/device/dropship_comp/comp = target
+	if(istype(target, /obj/item/device/dropship_computer))
+		var/obj/item/device/dropship_computer/comp = target
 		if(!in_range(user, comp, 1))
 			to_chat(user, SPAN_WARNING("You must be next to the maintenance computer to transfer the data."))
-			return
-		if(!comp.activated)
-			to_chat(user, SPAN_WARNING("The maintenance computer is powered off."))
 			return
 		if(!src.last_scanned_weapon || !islist(src.last_scanned_weapon.repair_actions) || !length(src.last_scanned_weapon.repair_actions))
 			to_chat(user, SPAN_WARNING("No repair scan data found on the handheld device."))
@@ -56,30 +53,124 @@
 				to_chat(user, SPAN_NOTICE("Malfunction #[stack_id]: [actions.Join(", ")]."))
 		return
 
-/obj/item/device/dropship_comp
+/obj/item/device/dropship_computer
 	name = "dropship maintenance computer"
 	desc = "A dropship maintenance computer that technicians and pilots use to find out what's wrong with a dropship. It has various outlets for different systems."
-	icon_state = "hangar_comp"
-	icon = 'icons/obj/structures/props/almayer/almayer_props.dmi'
+	icon_state = "dropshipcomp_cl"
+	icon = 'icons/obj/structures/props/dropshipcomp.dmi'
 	w_class = SIZE_LARGE
-	var/activated = FALSE
+	has_special_table_placement = TRUE
+	var/open = FALSE
+	var/on = FALSE
+	var/obj/item/cell/cell
+	var/cell_type = /obj/item/cell/super
+	var/obj/item/device/dropship_handheld/linked_handheld = null
+	var/screen_state = 0
 
-/obj/item/device/dropship_comp/attack_self(mob/user)
-	if(!activated)
-		activated = TRUE
-		icon_state = "hangar_comp_open"
-		to_chat(user, SPAN_NOTICE("You power on the dropship maintenance computer."))
+/obj/item/device/dropship_computer/Initialize(mapload)
+	. = ..()
+	if(cell_type)
+		cell = new cell_type()
+		cell.charge = cell.maxcharge
+
+/obj/item/device/dropship_computer/Destroy()
+	. = ..()
+	QDEL_NULL(cell)
+
+/obj/item/device/dropship_computer/Move(NewLoc, direct)
+	..()
+	if(table_setup || open || on)
+		teardown()
+
+/obj/item/device/dropship_computer/attack_hand(mob/user)
+	if(!table_setup)
+		return ..()
+	if(!on)
+		icon_state = "dropshipcomp_on"
+		on = TRUE
+		START_PROCESSING(SSobj, src)
+		playsound(src, 'sound/machines/terminal_on.ogg', 25, FALSE)
+		tgui_interact(user)
+
+/obj/item/device/dropship_computer/attackby(obj/item/object, mob/user)
+	if(istype(object, /obj/item/device/dropship_handheld))
+		var/obj/item/device/dropship_handheld/handheld = object
+		if(linked_handheld == handheld)
+			to_chat(user, SPAN_NOTICE("Handheld already linked."))
+			return
+		linked_handheld = handheld
+		to_chat(user, SPAN_NOTICE("Handheld device linked to maintenance computer."))
+		playsound(src, 'sound/machines/terminal_success.ogg', 50, 1)
 	else
-		activated = FALSE
-		icon_state = "hangar_comp"
-		to_chat(user, SPAN_NOTICE("You power off the dropship maintenance computer."))
+		..()
 
-/obj/item/device/dropship_comp/afterattack(atom/target, mob/user, proximity)
-	if(!activated)
+/obj/item/device/dropship_computer/get_examine_text()
+	. = ..()
+	if(cell)
+		. += "A [cell.name] is loaded. It has [cell.charge]/[cell.maxcharge] charge remaining."
+	else
+		. += "It has no battery inserted."
+
+	if(table_setup)
+		. += "The computer can be dragged towards you to pick it up."
+	else
+		. += "The computer must be placed on a table to be used."
+
+/obj/item/device/dropship_computer/proc/unlink_handheld()
+	linked_handheld = null
+
+/obj/item/device/dropship_computer/teardown()
+	open = FALSE
+	on = FALSE
+	icon_state = "dropshipcomp_cl"
+	playsound(src, 'sound/machines/terminal_off.ogg', 25, FALSE)
+	STOP_PROCESSING(SSobj, src)
+	unlink_handheld()
+
+/obj/item/device/dropship_computer/proc/power_on()
+	if(open && !on)
+		on = TRUE
+		icon_state = "dropshipcomp_on"
+		playsound(src, 'sound/machines/terminal_on.ogg', 25, FALSE)
+
+/obj/item/device/dropship_computer/afterattack(atom/target, mob/user, proximity)
+	if(!on)
 		to_chat(user, SPAN_WARNING("The maintenance computer is powered off."))
 		return
 	if(!proximity || !istype(target, /obj/item/device/dropship_handheld))
 		return
+	// Only allow linking, not repair transfer here
+
+/obj/item/device/dropship_handheld/proc/get_repair_data()
+	if(!src.last_scanned_weapon || !islist(src.last_scanned_weapon.repair_actions) || !length(src.last_scanned_weapon.repair_actions))
+		return null
+	var/list/repair_info = list()
+	for(var/stack in src.last_scanned_weapon.corrosion_stacks)
+		var/stack_id = stack["stack_id"]
+		var/list/actions = src.last_scanned_weapon.repair_actions["[stack_id]"]
+		if(actions && length(actions))
+			repair_info += list(list("Malfunction #[stack_id]", actions))
+	return repair_info
+
+/obj/item/device/dropship_computer/tgui_interact(mob/user, datum/tgui/ui)
+	ui = SStgui.try_update_ui(user, src, ui)
+	if(!ui)
+		ui = new(user, src, "DropshipMaintenanceUI", name)
+		ui.open()
+
+/obj/item/device/dropship_computer/ui_data(mob/user)
+	. = list()
+	var/obj/item/device/dropship_handheld/handheld = linked_handheld
+	. ["handheld"] = list(
+		linked = !!handheld,
+		name = handheld ? handheld.name : null,
+		repair_list = handheld ? handheld.get_repair_data() : null
+	)
+	. ["screen_state"] = screen_state
+
+/obj/item/device/dropship_computer/ui_static_data(mob/user)
+	. = list()
+	. ["screen_state"] = screen_state
 
 // Utility: Fisher-Yates shuffle for lists
 /proc/randomize_list(list/L)

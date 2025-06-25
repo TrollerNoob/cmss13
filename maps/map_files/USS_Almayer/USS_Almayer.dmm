@@ -15819,7 +15819,7 @@
 /area/almayer/hallways/hangar)
 "bfK" = (
 /obj/structure/surface/table/almayer,
-/obj/item/device/dropship_comp{
+/obj/item/device/dropship_computer{
 	pixel_x = -1;
 	pixel_y = 7
 	},
@@ -15839,7 +15839,7 @@
 /area/almayer/hallways/hangar)
 "bfY" = (
 /obj/structure/surface/table/almayer,
-/obj/item/device/dropship_comp,
+/obj/item/device/dropship_computer,
 /turf/open/floor/almayer,
 /area/almayer/hallways/hangar)
 "bfZ" = (
