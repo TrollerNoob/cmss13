@@ -9,6 +9,7 @@ type RepairStep = string;
 interface Malfunction {
   id: string;
   steps: RepairStep[];
+  mount_point?: number; // Added for equipment highlighting
 }
 interface DropshipMaintenanceData {
   repair_list: Malfunction[];
@@ -61,6 +62,51 @@ const EmptyDisplay = () => {
   );
 };
 
+// --- Dropship SVG Drawing for Maintenance UI ---
+
+const equipment_xs = [140, 160, 320, 340, 180, 300, 240, 240, 240, 140, 340];
+const equipment_ys = [120, 100, 100, 120, 100, 100, 260, 300, 340, 320, 320];
+
+const DrawEquipment = ({
+  damagedMounts,
+}: {
+  readonly damagedMounts: number[];
+}) => {
+  return (
+    <>
+      {equipment_xs.map((x, i) => {
+        const isDamaged = damagedMounts.includes(i + 1);
+        return (
+          <circle
+            key={i}
+            cx={x}
+            cy={equipment_ys[i]}
+            r={12}
+            fill={isDamaged ? '#e90000' : '#00e94e'}
+            stroke={isDamaged ? '#e90000' : '#00e94e'}
+            strokeWidth={isDamaged ? 3 : 1}
+          />
+        );
+      })}
+    </>
+  );
+};
+
+const DropshipDiagram = ({
+  damagedMounts,
+}: {
+  readonly damagedMounts: number[];
+}) => {
+  return (
+    <Box className="DropshipDiagram" style={{ margin: 'auto', width: '500px' }}>
+      <svg height="400" width="500">
+        {/* (Optional) Add dropship outline here if desired */}
+        <DrawEquipment damagedMounts={damagedMounts} />
+      </svg>
+    </Box>
+  );
+};
+
 export const DropshipMaintenanceUI = () => {
   const { data, act } = useBackend<
     DropshipMaintenanceData & { screen_state: number }
@@ -68,6 +114,12 @@ export const DropshipMaintenanceUI = () => {
   const { repair_list, screen_state } = data;
 
   const hasRepairs = repair_list && repair_list.length > 0;
+
+  // Collect damaged mount points from repair_list (if present)
+  // Assumes each malfunction has a mount_point field (number)
+  const damagedMounts = (repair_list || [])
+    .map((malf) => malf.mount_point)
+    .filter((x) => typeof x === 'number');
 
   return (
     <Window theme="crtgreen" width={600} height={500}>
@@ -84,12 +136,16 @@ export const DropshipMaintenanceUI = () => {
                 <div className="BottomPanelSlide" />
               </div>
             )}
-            {screen_state === 1 &&
-              (!hasRepairs ? (
-                <EmptyDisplay />
-              ) : (
-                <MalfunctionList repair_list={repair_list} />
-              ))}
+            {screen_state === 1 && (
+              <>
+                <DropshipDiagram damagedMounts={damagedMounts} />
+                {!hasRepairs ? (
+                  <EmptyDisplay />
+                ) : (
+                  <MalfunctionList repair_list={repair_list} />
+                )}
+              </>
+            )}
           </Stack.Item>
         </Stack>
       </Window.Content>

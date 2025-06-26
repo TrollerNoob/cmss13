@@ -24,7 +24,7 @@
 	var/obj/effect/firemission_guidance/guidance
 	var/atom/tracked_object
 
-	var/corrosion_fx_played = FALSE
+	var/antiair_fx_played = FALSE
 
 	var/shuttle_shake_played = FALSE // Track if shuttle shake effect has played this firemission
 
@@ -450,7 +450,7 @@
 				fire_length = 16
 				break
 
-/datum/cas_fire_envelope/proc/show_corrosion_audible(atom/target_turf, range = 10)
+/datum/cas_fire_envelope/proc/anti_air_success(atom/target_turf, range = 10)
 	var/ds_identifier = "LARGE BIRD"
 	for(var/mob/mob in range(range, target_turf))
 		if(mob && !QDELETED(mob) && !mob.gc_destroyed && mob.client)
@@ -461,8 +461,8 @@
 			mob.show_message(
 				SPAN_HIGHDANGER("YOU HEAR THE [ds_identifier] VEER OFF COURSE AS IT FLIES THROUGH A CLOUD OF ACIDIC GAS!"), SHOW_MESSAGE_AUDIBLE
 			)
-	if(!src.corrosion_fx_played)
-		src.corrosion_fx_played = TRUE
+	if(!src.antiair_fx_played)
+		src.antiair_fx_played = TRUE
 		playsound(target_turf, 'sound/effects/supercapacitors_charging.ogg', vol = 80, vary = TRUE, sound_range = 75, falloff = 8)
 		// Play sparks on up to 9 unique tiles in a 3-tile radius
 		var/list/nearby = list()

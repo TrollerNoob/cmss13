@@ -299,6 +299,7 @@
 				continue
 			T.skyspit_active = TRUE
 			T.turf_protection_flags |= TURF_PROTECTION_ANTIAIR
+			T.antiair_effect_type = /datum/dropship_antiair/boiler_corrosion
 			T.skyspit_applier = xeno // Store the Boiler mob who created the skyspit
 			T.skyspit_expire_timer = addtimer(CALLBACK(T, /turf/proc/remove_skyspit_marker), 100, TIMER_UNIQUE) // 10s
 			if(!T.skyspit_overlay)

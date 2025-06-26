@@ -68,7 +68,7 @@ export type DropshipEquipment = {
     ref: string;
   }>;
   icon_state?: string;
-  is_corroded?: boolean;
+  damaged?: boolean;
 };
 
 const xOffset = 40;

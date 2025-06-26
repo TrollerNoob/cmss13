@@ -135,3 +135,66 @@ GLOBAL_DATUM(almayer_aa_cannon, /obj/structure/anti_air_cannon)
 
 	tgui_interact(user)
 	return TRUE
+
+// Generic anti-air effect datum for dropship equipment
+/datum/dropship_antiair
+	var/name = "antiair effect"
+	var/description = "This equipment has been affected by anti-air defenses."
+	var/duration = null // default: infinite duration unless set by effect type
+	var/list/repair_steps = list()
+	var/disable_fire = FALSE
+	var/disable_reload = FALSE
+	var/delete_on_timeout = FALSE
+	var/list/tools = list("welder", "screwdriver", "wrench", "wirecutters", "crowbar", "multitool", "cable coil")
+	var/repairing = FALSE
+	var/repair_step_index = 1
+	var/effect_id = null // Unique identifier for this effect instance
+	var/creation_time = null // For fallback uniqueness
+	var/repair_steps_count = 3 // Number of repair steps for this effect
+
+/datum/dropship_antiair/New()
+	..()
+	// Assign a unique effect_id on creation
+	creation_time = world.time
+	effect_id = "[src.type]-[creation_time]-[rand(1000,9999)]"
+	// Generate a random repair_steps list of length repair_steps_count
+	var/list/shuffled = tools.Copy()
+	randomize_list(shuffled)
+	repair_steps = list()
+	for(var/i = 1, i <= repair_steps_count, i++)
+		if(i > shuffled.len)
+			shuffled = tools.Copy()
+			randomize_list(shuffled)
+		repair_steps += shuffled[i]
+
+/datum/dropship_antiair/proc/apply(obj/structure/dropship_equipment/target)
+	target.damaged = TRUE
+	if(disable_fire)
+		target.antiair_block_fire = TRUE
+	if(disable_reload)
+		target.antiair_block_reload = TRUE
+	if(duration > 0)
+		spawn(duration)
+			src.on_timeout(target)
+
+/datum/dropship_antiair/proc/remove(obj/structure/dropship_equipment/target)
+	if(disable_fire)
+		target.antiair_block_fire = FALSE
+	if(disable_reload)
+		target.antiair_block_reload = FALSE
+	target.damaged = FALSE
+
+/datum/dropship_antiair/proc/on_timeout(obj/structure/dropship_equipment/target)
+	if(delete_on_timeout)
+		target.visible_message(SPAN_WARNING("[target] crumbles into itself and falls apart. It's been destroyed!"))
+		qdel(target)
+	else
+		src.remove(target)
+
+/datum/dropship_antiair/boiler_corrosion
+	name = "corrosive acid damage"
+	description = "Corrosive acid is eating through the equipment!"
+	duration = 1800
+	disable_reload = TRUE
+	delete_on_timeout = TRUE
+	tools = list("welder", "screwdriver", "wrench", "wirecutters", "crowbar")

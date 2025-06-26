@@ -20,16 +20,16 @@
 /obj/item/device/dropship_handheld/afterattack(atom/target, mob/user, proximity)
 	if(istype(target, /obj/structure/dropship_equipment/weapon))
 		var/obj/structure/dropship_equipment/weapon/W = target
-		if(!W.is_corroded())
-			to_chat(user, SPAN_NOTICE("[W] does not appear to be corroded."))
+		if(!length(W.antiair_effects))
+			to_chat(user, SPAN_NOTICE("[W] does not appear to be damaged."))
 			return
-		if(!length(W.corrosion_stacks))
-			to_chat(user, SPAN_NOTICE("No corrosion detected."))
+		var found = FALSE
+		for(var/datum/dropship_antiair/effect in W.antiair_effects)
+			if(effect && length(effect.repair_steps))
+				found = TRUE
+		if(!found)
+			to_chat(user, SPAN_NOTICE("No repairable malfunctions detected."))
 			return
-		if(!islist(W.repair_actions) || !length(W.repair_actions))
-			to_chat(user, SPAN_WARNING("No repair data found. Try damaging the weapon again."))
-			return
-		// Store a reference to the weapon for later use with the comp
 		if(!do_after(user, 10, INTERRUPT_NO_NEEDHAND | BEHAVIOR_IMMOBILE, BUSY_ICON_BUILD))
 			return
 		src.last_scanned_weapon = W
@@ -41,16 +41,15 @@
 		if(!in_range(user, comp, 1))
 			to_chat(user, SPAN_WARNING("You must be next to the maintenance computer to transfer the data."))
 			return
-		if(!src.last_scanned_weapon || !islist(src.last_scanned_weapon.repair_actions) || !length(src.last_scanned_weapon.repair_actions))
+		if(!src.last_scanned_weapon || !length(src.last_scanned_weapon.antiair_effects))
 			to_chat(user, SPAN_WARNING("No repair scan data found on the handheld device."))
 			return
 		playsound(src, 'sound/machines/terminal_success.ogg', 50, 1)
-		to_chat(user, SPAN_NOTICE("Repair steps required for each corrosion stack:"))
-		for(var/stack in src.last_scanned_weapon.corrosion_stacks)
-			var/stack_id = stack["stack_id"]
-			var/list/actions = src.last_scanned_weapon.repair_actions["[stack_id]"]
-			if(actions && length(actions))
-				to_chat(user, SPAN_NOTICE("Malfunction #[stack_id]: [actions.Join(", ")]."))
+		to_chat(user, SPAN_NOTICE("Repair steps required for each malfunction:"))
+		for(var/datum/dropship_antiair/effect in src.last_scanned_weapon.antiair_effects)
+			if(effect && length(effect.repair_steps))
+				var/effect_name = effect.name ? effect.name : "Unknown Effect"
+				to_chat(user, SPAN_NOTICE("[effect_name]: [islist(effect.repair_steps) ? effect.repair_steps.Join(", ") : "No steps"]."))
 		return
 
 /obj/item/device/dropship_computer
@@ -147,14 +146,17 @@
 	// Only allow linking, not repair transfer here
 
 /obj/item/device/dropship_handheld/proc/get_repair_data()
-	if(!src.last_scanned_weapon || !islist(src.last_scanned_weapon.repair_actions) || !length(src.last_scanned_weapon.repair_actions))
+	if(!src.last_scanned_weapon || !islist(src.last_scanned_weapon.antiair_effects) || !length(src.last_scanned_weapon.antiair_effects))
 		return null
 	var/list/repair_info = list()
-	for(var/stack in src.last_scanned_weapon.corrosion_stacks)
-		var/stack_id = stack["stack_id"]
-		var/list/actions = src.last_scanned_weapon.repair_actions["[stack_id]"]
-		if(actions && length(actions))
-			repair_info += list(list("Malfunction #[stack_id]", actions))
+	var/mount_point = src.last_scanned_weapon.ship_base?.attach_id
+	for(var/datum/dropship_antiair/effect as anything in src.last_scanned_weapon.antiair_effects)
+		if(!islist(effect.repair_steps) || !length(effect.repair_steps))
+			continue
+		// Use a unique id for each effect instance (should be set on the datum)
+		var/effect_id = effect.effect_id ? effect.effect_id : "[effect.type]-[effect.creation_time ? effect.creation_time : world.time]"
+		var/effect_name = effect.name ? effect.name : "Unknown Effect"
+		repair_info += list(list("id" = "[effect_name] #[effect_id]", "steps" = effect.repair_steps, "mount_point" = mount_point))
 	return repair_info
 
 /obj/item/device/dropship_computer/tgui_interact(mob/user, datum/tgui/ui)
@@ -210,7 +212,9 @@ var/global/list/dropship_repair_tool_types = list(
 	"screwdriver" = /obj/item/tool/screwdriver,
 	"wrench" = /obj/item/tool/wrench,
 	"wirecutters" = /obj/item/tool/wirecutters,
-	"crowbar" = /obj/item/tool/crowbar
+	"crowbar" = /obj/item/tool/crowbar,
+	"multitool" = /obj/item/device/multitool,
+	"cable coil" = /obj/item/stack/cable_coil,
 )
 
 /proc/get_dropship_repair_tool_type(action)

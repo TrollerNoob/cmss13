@@ -30,7 +30,6 @@
 	var/list/datum/cas_fire_mission_record/records = list()
 	var/obj/structure/dropship_equipment/weapon/error_weapon
 	var/name = "Unnamed Firemission"
-	var/corrosion_applied_this_firemission = FALSE // Track if corrosion was applied this firemission
 
 /datum/cas_fire_mission/ui_data(mob/user)
 	. = list()
@@ -252,7 +251,8 @@
 			sx = 0
 			sy = 1
 	var/step = 1
-	var/list/corroded_this_execution = list() // Track which weapons have been corroded this execution only
+	var/list/antiair_affected_this_execution = list() // Track weapons affected by anti-air this firemission
+	var/antiair_fx_played = FALSE // Only play shuttle shake/explosion once per firemission
 	for(step = 1; step<=steps; step++)
 		if(step > next_step)
 			current_turf = get_step(current_turf, direction)
@@ -260,7 +260,7 @@
 			if(envelope)
 				envelope.change_current_loc(current_turf)
 		var/datum/cas_fire_mission_record/item
-		var/list/just_corroded = list() // Track weapons corroded this step
+		var/list/just_affected = list() // Weapons affected this step
 		for(item in records)
 			if(length(item.offsets) < step || item.offsets[step] == null || item.offsets[step]=="-")
 				continue
@@ -270,63 +270,60 @@
 			var/turf/shootloc = locate(current_turf.x + sx*offset, current_turf.y + sy*offset, current_turf.z)
 			var/area/area = get_area(shootloc)
 			if(shootloc && (shootloc.turf_protection_flags & TURF_PROTECTION_ANTIAIR))
-				// Gather all eligible weapons (not destroyed, not already corroded this execution)
+				// Gather all eligible weapons (not already affected this execution)
 				var/list/eligible_weapons = list()
 				for(var/datum/cas_fire_mission_record/rec in records)
-					if(rec && istype(rec.weapon, /obj/structure/dropship_equipment/weapon) && !rec.weapon.corrosion_destroyed)
-						if(!(rec.weapon in corroded_this_execution))
+					if(rec && istype(rec.weapon, /obj/structure/dropship_equipment/weapon))
+						if(!rec.weapon.has_active_antiair_effect() && !(rec.weapon in antiair_affected_this_execution))
 							eligible_weapons += rec.weapon
-				// Randomly select 1 or 2 weapons to corrode
-				var/num_to_corrode = min(rand(1,2), eligible_weapons.len)
-				if(num_to_corrode > 0)
+				// Randomly select 1 or 2 weapons to affect
+				var/num_to_affect = min(rand(1,2), eligible_weapons.len)
+				if(num_to_affect > 0)
 					eligible_weapons = shuffle(eligible_weapons)
 					var/list/selected = list()
-					for(var/i = 1, i <= num_to_corrode, i++)
+					for(var/i = 1, i <= num_to_affect, i++)
 						selected += eligible_weapons[i]
 					for(var/obj/structure/dropship_equipment/weapon/w in selected)
-						var/applier = null
-						if(shootloc.skyspit_applier)
-							applier = shootloc.skyspit_applier
-						w.apply_corrosion_stack(applier)
-						corroded_this_execution += w
-						just_corroded += w
+						if(ispath(shootloc.antiair_effect_type))
+							w.apply_antiair_effect(new shootloc.antiair_effect_type())
+							antiair_affected_this_execution += w
+							just_affected += w
+				// Shuttle shake and explosion/sparks, only once per firemission if any weapon was affected this step
+				if(just_affected.len && !antiair_fx_played)
+					antiair_fx_played = TRUE
+					if(linked_console.shuttle_tag && envelope)
+						envelope.shuttle_shake_played = TRUE
+						var/obj/docking_port/mobile/marine_dropship/shuttle = SSshuttle.getShuttle(linked_console.shuttle_tag)
+						if(shuttle && shuttle.shuttle_areas)
+							var/list/all_turfs = list()
+							for(var/area/internal_area in shuttle.shuttle_areas)
+								for(var/turf/internal_turf in internal_area)
+									all_turfs += internal_turf
+									for(var/mob/M in internal_turf)
+										to_chat(M, SPAN_DANGER("The ship jostles violently as something rocks the vessel!"))
+										to_chat(M, SPAN_DANGER("You feel the ship turning sharply as it adjusts its course!"))
+										if(istype(M, /mob/living))
+											shake_camera(M, 20, 1)
+								playsound_area(internal_area, 'sound/effects/Explosion1.ogg')
+							// Spawn sparks on up to 17 unique random turfs in the shuttle interior
+							if(all_turfs.len)
+								var/list/used = list()
+								var/max_sparks = min(17, all_turfs.len)
+								for(var/i = 1, i <= max_sparks, i++)
+									var/turf/random_turf = pick(all_turfs - used)
+									if(random_turf)
+										new /obj/effect/particle_effect/sparks(random_turf)
+										used += random_turf
 			if(shootloc && !CEILING_IS_PROTECTED(area?.ceiling, CEILING_PROTECTION_TIER_3) && !protected_by_pylon(TURF_PROTECTION_CAS, shootloc))
 				if(item && item.weapon)
 					item.weapon.open_fire_firemission(shootloc)
 			// Audible warning for nearby humans
 			if(envelope && istype(envelope, /datum/cas_fire_envelope) && shootloc && (shootloc.turf_protection_flags & TURF_PROTECTION_ANTIAIR))
-				envelope.show_corrosion_audible(current_turf, 10)
-			// Planetside effects: sparks and sound (spam-protected)
-			if(just_corroded.len && !envelope?.corrosion_fx_played)
-				envelope.corrosion_fx_played = TRUE
-			// Shake the shuttle (only once per firemission, and only if a shot hit anti-air turf)
-			if(linked_console.shuttle_tag && envelope && !envelope.shuttle_shake_played && shootloc && (shootloc.turf_protection_flags & TURF_PROTECTION_ANTIAIR))
-				envelope.shuttle_shake_played = TRUE
-				var/obj/docking_port/mobile/marine_dropship/shuttle = SSshuttle.getShuttle(linked_console.shuttle_tag)
-				if(shuttle && shuttle.shuttle_areas)
-					var/list/all_turfs = list()
-					for(var/area/internal_area in shuttle.shuttle_areas)
-						for(var/turf/internal_turf in internal_area)
-							all_turfs += internal_turf
-							for(var/mob/M in internal_turf)
-								to_chat(M, SPAN_DANGER("The ship jostles violently as something rocks the vessel!"))
-								to_chat(M, SPAN_DANGER("You feel the ship turning sharply as it adjusts its course!"))
-								if(istype(M, /mob/living))
-									shake_camera(M, 20, 1)
-						playsound_area(internal_area, 'sound/effects/Explosion1.ogg')
-					// Spawn sparks on up to 9 unique random turfs in the shuttle interior
-					if(all_turfs.len)
-						var/list/used = list()
-						var/max_sparks = min(17, all_turfs.len)
-						for(var/i = 1, i <= max_sparks, i++)
-							var/turf/random_turf = pick(all_turfs - used)
-							if(random_turf)
-								new /obj/effect/particle_effect/sparks(random_turf)
-								used += random_turf
+				envelope.anti_air_success(current_turf, 10)
 		sleep(step_delay)
 	if(envelope)
 		envelope.change_current_loc(null)
-		envelope.corrosion_fx_played = FALSE
+		envelope.antiair_fx_played = FALSE
 		envelope.shuttle_shake_played = FALSE
 
 	// --- Impact reticle overlay: delete all at the end of the firemission ---

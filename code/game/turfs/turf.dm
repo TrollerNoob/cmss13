@@ -81,6 +81,8 @@
 
 	var/turf_protection_flags = TURF_PROTECTION_NONE
 
+	var/antiair_effect_type = null // Path of the anti-air effect datum to apply when this turf is targeted by a firemission
+
 /turf/Initialize(mapload)
 	SHOULD_CALL_PARENT(FALSE) // this doesn't parent call for optimisation reasons
 	if(flags_atom & INITIALIZED)

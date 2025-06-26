@@ -518,7 +518,7 @@
 #define TURF_PROTECTION_MORTAR 1
 #define TURF_PROTECTION_CAS 2
 #define TURF_PROTECTION_OB 3
-#define TURF_PROTECTION_ANTIAIR (1<<2) // Calls apply_corrosion_stack proc if a firemission fires in its turf
+#define TURF_PROTECTION_ANTIAIR (1<<2) // Used to apply anti-air effects from anti_air.dm if a firemission fires in its turf
 #define TURF_PROTECTION_CHAFF (1<<10) // Blocks CAS camera and direct fire like metal roofs
 
 /// Convert a turf protection level to a ceiling protection level

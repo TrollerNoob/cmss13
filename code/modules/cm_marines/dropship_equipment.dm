@@ -23,7 +23,11 @@
 	var/cavebreaker = FALSE //if TRUE, this equipment can be used to break through cave walls
 	var/stackable_ammo = FALSE 	/// Whether the ammo inside this equipment can be directly replenished without needing to uninstall the existing ammo
 
-	var/is_corroded = FALSE //for keeping track of equipment with active corrosion stacks
+	var/damaged = FALSE // TRUE if affected by any anti-air effect
+	var/antiair_block_fire = FALSE // TRUE if anti-air disables firing
+	var/antiair_block_reload = FALSE // TRUE if anti-air disables reloading
+
+	var/list/antiair_effects = list() // List of active anti-air effect datums
 
 /obj/structure/dropship_equipment/Destroy()
 	QDEL_NULL(ammo_equipped)
@@ -227,126 +231,107 @@
 				update_equipment()
 				return TRUE
 
-	//Handle corrosion repair logic
-	// Exclude dropship_handheld from repair logic
+	//Handle anti-air effect repair logic
 	if(istype(I, /obj/item/device/dropship_handheld))
 		return ..()
-	// Only allow people that have at least level 1 in Piloting or Engineering to repair corrosion
+	// Only allow people that have at least level 1 in Piloting or Engineering to repair damage
 	if(istype(user, /mob/living/carbon/human) && !skillcheck(user, SKILL_ENGINEER, SKILL_ENGINEER_TRAINED) && !skillcheck(user, SKILL_PILOT, SKILL_PILOT_TRAINED))
 		to_chat(user, SPAN_WARNING("You don't even understand how to begin fixing this equipment!"))
 		return TRUE
 	// Block all repair tools if installed
 	if(src.ship_base)
-		if(istype(I, /obj/item/tool/weldingtool) || istype(I, /obj/item/tool/screwdriver) || istype(I, /obj/item/tool/wrench) || istype(I, /obj/item/tool/crowbar) || istype(I, /obj/item/tool/wirecutters))
+		var/is_tool = FALSE
+		for(var/T in dropship_repair_tool_types)
+			if(istype(I, dropship_repair_tool_types[T]))
+				is_tool = TRUE
+				break
+		if(is_tool)
 			to_chat(user, SPAN_WARNING("You can't repair this while it's installed!"))
 			return TRUE
-	if(istype(src, /obj/structure/dropship_equipment/weapon))
-		var/obj/structure/dropship_equipment/weapon/W = src
-		// Block if already repairing
-		if(W.corrosion_repairing)
-			to_chat(user, SPAN_WARNING("Repair already in progress!"))
-			return TRUE
-		if(W.is_corroded() && islist(W.repair_actions) && length(W.repair_actions))
-			// Only allow one stack at a time
-			if(!W.corrosion_repairing_stack_id)
-				// Find the first stack with steps left
-				for(var/stack in W.corrosion_stacks)
-					var/stack_id = stack["stack_id"]
-					var/list/actions = W.repair_actions["[stack_id]"]
-					if(actions && length(actions))
-						W.corrosion_repairing_stack_id = stack_id
+	// Iterate over all active anti-air effects
+	for(var/datum/dropship_antiair/effect in antiair_effects)
+		if(!islist(effect.repair_steps) || !length(effect.repair_steps))
+			continue
+		if(!effect.repairing)
+			effect.repairing = TRUE
+			effect.repair_step_index = 1
+		// Only allow one repair at a time per effect
+		if(effect.repairing)
+			var/next_step = effect.repair_steps[effect.repair_step_index]
+			var/expected_type = get_dropship_repair_tool_type(next_step)
+			//wear your insulated gloves, shocks the user before any do_after if the next step is wirecutters
+			if(next_step == "wirecutters")
+				var/mob/living/L = user
+				if(L.electrocute_act(10, src))
+					effect.repairing = FALSE
+					to_chat(user, SPAN_DANGER("You are shocked by the exposed wiring!"))
+					return TRUE
+			//repair speed scales on engineering skill level, MTs and DCC repair faster than POs as a result
+			if(!do_after(user, (5 SECONDS) * user.get_skill_duration_multiplier(SKILL_ENGINEER), INTERRUPT_NO_NEEDHAND | BEHAVIOR_IMMOBILE, BUSY_ICON_BUILD, target = src))
+				effect.repairing = FALSE
+				to_chat(user, SPAN_WARNING("Repair interrupted!"))
+				return TRUE
+			//if the tool is not the expected type, warn the user
+			if(!expected_type || !istype(I, expected_type))
+				to_chat(user, SPAN_WARNING("Incorrect tool!"))
+				effect.repairing = FALSE
+				return TRUE
+			//need the welder to be active for welding repairs
+			if(next_step == "welder" && istype(I, /obj/item/tool/weldingtool))
+				var/obj/item/tool/weldingtool/WELD = I
+				if(!WELD.welding)
+					to_chat(user, SPAN_WARNING("The welder must be activated!"))
+					effect.repairing = FALSE
+					return TRUE
+				WELD.eyecheck(user)
+			// Play sounds and effects
+			if(next_step == "crowbar")
+				playsound(src, 'sound/items/Crowbar.ogg', 25, 1)
+			else if(next_step == "screwdriver")
+				playsound(src, 'sound/items/Screwdriver.ogg', 25, 1)
+			else if(next_step == "welder")
+				playsound(src, 'sound/items/Welder.ogg', 25, 1)
+			else if(next_step == "wirecutters")
+				playsound(src, 'sound/items/Wirecutter.ogg', 25, 1)
+				var/datum/effect_system/spark_spread/sparks = new /datum/effect_system/spark_spread
+				sparks.set_up(5, 1, src.loc)
+				sparks.start()
+			else if(next_step == "wrench")
+				playsound(src, 'sound/items/Ratchet.ogg', 25, 1)
+			else if(next_step == "multitool")
+				playsound(src, 'sound/items/tick.ogg', 35, 1)
+			else if(next_step == "cable coil")
+				playsound(src, 'sound/items/component_pickup.ogg', 35, 1)
+			// Advance repair step
+			effect.repair_step_index++
+			if(effect.repair_step_index > length(effect.repair_steps))
+				effect.repairing = FALSE
+				effect.repair_step_index = null
+				effect.repair_steps = list() // Mark as repaired
+				to_chat(user, SPAN_NOTICE("All repair steps complete for [effect.name]!"))
+				// Remove effect if needed
+				if(effect.delete_on_timeout)
+					qdel(effect)
+					antiair_effects -= effect
+				// Check if all effects are repaired
+				var/all_repaired = TRUE
+				for(var/datum/dropship_antiair/e in antiair_effects)
+					if(length(e.repair_steps))
+						all_repaired = FALSE
 						break
-			if(W.corrosion_repairing_stack_id)
-				var/stack_id = W.corrosion_repairing_stack_id
-				var/list/actions = W.repair_actions["[stack_id]"]
-				if(!actions || !length(actions))
-					// Stack finished, clear and allow next
-					W.repair_actions["[stack_id]"] = null
-					W.corrosion_repairing_stack_id = null
-					// Do not set corrosion_repairing here
-					// Check if all stacks are repaired
-					var/all_repaired = TRUE
-					for(var/stack in W.corrosion_stacks)
-						var/sid = stack["stack_id"]
-						if(W.repair_actions["[sid]"])
-							all_repaired = FALSE
-							break
-					if(all_repaired)
-						W.clear_corrosion()
-						to_chat(user, SPAN_NOTICE("All corrosion repaired! [W] is operational."))
-					return TRUE
-				var/next_step = actions[1]
-				var/expected_type = get_dropship_repair_tool_type(next_step)
-				// If the next step is wirecutters, check for electrocution
-				if(next_step == "wirecutters")
-					var/mob/living/L = user
-					if(L.electrocute_act(10, W))
-						W.corrosion_repairing = FALSE
-						to_chat(user, SPAN_DANGER("You are shocked by the exposed wiring!"))
-						return TRUE
-				// Set repairing flag only during do_after
-				W.corrosion_repairing = TRUE
-				if(!do_after(user, (5 SECONDS) * user.get_skill_duration_multiplier(SKILL_ENGINEER), INTERRUPT_NO_NEEDHAND | BEHAVIOR_IMMOBILE, BUSY_ICON_BUILD, target = W))
-					W.corrosion_repairing = FALSE
-					to_chat(user, SPAN_WARNING("Repair interrupted!"))
-					return TRUE
-				// After do_after completes, check if correct tool
-				if(!expected_type || !istype(I, expected_type))
-					to_chat(user, SPAN_WARNING("Incorrect tool!"))
-					W.corrosion_repairing = FALSE
-					return TRUE
-				if(next_step == "welder" && istype(I, /obj/item/tool/weldingtool))
-					var/obj/item/tool/weldingtool/WELD = I
-					if(!WELD.welding)
-						to_chat(user, SPAN_WARNING("The welder must be activated!"))
-						W.corrosion_repairing = FALSE
-						return TRUE
-					// Use eyecheck proc for eye protection and damage
-					WELD.eyecheck(user)
-				// Remove the completed step
-				actions.Cut(1,2)
-				if(next_step == "crowbar")
-					playsound(W, 'sound/items/Crowbar.ogg', 25, 1)
-				else if(next_step == "screwdriver")
-					playsound(W, 'sound/items/Screwdriver.ogg', 25, 1)
-				else if(next_step == "welder")
-					playsound(W, 'sound/items/Welder.ogg', 25, 1)
-				else if(next_step == "wirecutters")
-					playsound(W, 'sound/items/Wirecutter.ogg', 25, 1)
-					// --- Begin spark_spread effect for wirecutters ---
-					var/datum/effect_system/spark_spread/sparks = new /datum/effect_system/spark_spread
-					sparks.set_up(5, 1, W.loc)
-					sparks.start()
-					// --- End spark_spread effect ---
-				else if(next_step == "wrench")
-					playsound(W, 'sound/items/Ratchet.ogg', 25, 1)
-				W.corrosion_repairing = FALSE
-				if(length(actions))
-					to_chat(user, SPAN_NOTICE("Step complete. [length(actions)] steps remaining."))
-				else
-					to_chat(user, SPAN_NOTICE("All repair steps complete for malfunction #[stack_id]!"))
-					W.repair_actions["[stack_id]"] = null
-					W.corrosion_repairing_stack_id = null
-					// Check if all stacks are repaired
-					var/all_repaired = TRUE
-					for(var/stack in W.corrosion_stacks)
-						var/sid = stack["stack_id"]
-						if(W.repair_actions["[sid]"])
-							all_repaired = FALSE
-							break
-					if(all_repaired)
-						W.clear_corrosion()
-						to_chat(user, SPAN_NOTICE("All corrosion repaired! [W] is operational."))
+				if(all_repaired)
+					damaged = FALSE
+					to_chat(user, SPAN_NOTICE("All malfunctions have been repaired! [src] is operational."))
 				return TRUE
 			else
-				to_chat(user, SPAN_WARNING("No corrosion stack is available to repair."))
+				to_chat(user, SPAN_WARNING("No malfunctions are available to repair."))
 				return TRUE
 
 /obj/structure/dropship_equipment/proc/load_ammo(obj/item/powerloader_clamp/PC, mob/living/user)
 	if(istype(src, /obj/structure/dropship_equipment/weapon))
 		var/obj/structure/dropship_equipment/weapon/W = src
-		if(W.is_corroded() && W.corrosion_block_reload)
-			to_chat(user, SPAN_WARNING("[W] is corroded and cannot be reloaded!"))
+		if(W.antiair_block_reload)
+			to_chat(user, SPAN_WARNING("[W] is damaged and cannot be reloaded!"))
 			return
 	if(!ship_base || !uses_ammo || ammo_equipped || !istype(PC.loaded, /obj/structure/ship_ammo))
 		return
@@ -981,8 +966,6 @@
 	var/firing_delay = 20
 	/// True if this weapon can only be fired in Fire Missions (not Direct)
 	var/fire_mission_only = FALSE
-	var/list/repair_actions = null
-	var/corrosion_repairing_stack_id = null
 
 /obj/structure/dropship_equipment/weapon/update_equipment()
 	if(ship_base)
@@ -1023,6 +1006,10 @@
 
 	if(src.fire_mission_only)
 		to_chat(user, SPAN_WARNING("[src] can only be used in a fire mission!"))
+		return
+	//block firing if the weapon is damaged
+	if(src.antiair_block_fire)
+		to_chat(user, SPAN_WARNING("[src] is damaged and can not be fired!"))
 		return
 
 	var/offset_x = 0
@@ -1152,6 +1139,10 @@
 
 /obj/structure/dropship_equipment/weapon/proc/open_fire_firemission(obj/selected_target, mob/user = usr)
 	set waitfor = 0
+	//blocks firing if the weapon is damaged
+	if(src.antiair_block_fire)
+		return
+
 	var/turf/target_turf = get_turf(selected_target)
 	if(firing_sound)
 		playsound(loc, firing_sound, 70, 1)
@@ -2346,10 +2337,16 @@
 	SA.source_mob = user
 	SA.detonate_on(impact, src)
 
-// corrosion
+//anti-air backend
+/obj/structure/dropship_equipment/proc/apply_antiair_effect(datum/dropship_antiair/effect)
+	antiair_effects += effect
+	effect.apply(src)
 
-/obj/structure/dropship_equipment/weapon/proc/is_corroded()
-	return length(src.corrosion_stacks) > 0 && !src.corrosion_destroyed
+/obj/structure/dropship_equipment/proc/remove_antiair_effect(datum/dropship_antiair/effect)
+	effect.remove(src)
+
+/obj/structure/dropship_equipment/proc/has_active_antiair_effect()
+	return islist(src.antiair_effects) && src.antiair_effects.len > 0
 
 
 

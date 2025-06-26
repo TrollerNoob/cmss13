@@ -12,9 +12,9 @@ const equipment_ys = [120, 100, 100, 120, 100, 100, 260, 300, 340, 320, 320];
 const DrawWeapon = (props: {
   readonly x: number;
   readonly y: number;
-  readonly is_corroded?: boolean;
+  readonly damaged?: boolean;
 }) => {
-  const color = props.is_corroded ? '#e90000' : '#00e94e';
+  const color = props.damaged ? '#e90000' : '#00e94e';
   return (
     <>
       <path
@@ -23,7 +23,7 @@ const DrawWeapon = (props: {
         stroke={color}
         d={`M ${props.x + 5} ${props.y} l 0 20 l 10 0 l 0 -20 l -10 0`}
       />
-      {props.is_corroded && (
+      {props.damaged && (
         <text
           x={props.x + 10}
           y={props.y - 10}
@@ -87,7 +87,7 @@ const DrawWeaponEquipment = (props: DropshipEquipment) => {
         key={props.mount_point}
         x={equipment_xs[props.mount_point - 1]}
         y={equipment_ys[props.mount_point - 1]}
-        is_corroded={props.is_corroded}
+        damaged={props.damaged}
       />
       <DrawWeaponText
         x={equipment_text_xs[props.mount_point - 1]}
