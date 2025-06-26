@@ -284,12 +284,13 @@
 	for(var/turf/visible_turf in visible_things)
 		visible_turfs += visible_turf
 
-	// Only block camera vision if the true center tile (target) has chaff, Tier 1 ceiling, or is obstructed
+	// Only block camera vision for the CAS camera (dropship weapons console)
 	var/turf/center_turf = null
 	var/allow_render = FALSE
+	var/cas_camera = (parent && istype(parent, /obj/structure/machinery/computer/dropship_weapons))
 
 	// Check if this is a dropship weapons console with an active firemission in ON_TARGET or FIRING state
-	if(parent && istype(parent, /obj/structure/machinery/computer/dropship_weapons))
+	if(cas_camera)
 		var/obj/structure/machinery/computer/dropship_weapons/console = parent
 		if(console.firemission_envelope && (console.firemission_envelope.stat == FIRE_MISSION_STATE_ON_TARGET || console.firemission_envelope.stat == FIRE_MISSION_STATE_FIRING))
 			allow_render = TRUE
@@ -301,7 +302,7 @@
 	else
 		return
 
-	if(!allow_render)
+	if(cas_camera && !allow_render)
 		var/area/laser_area = get_area(center_turf)
 		if(center_turf.turf_protection_flags & TURF_PROTECTION_CHAFF)
 			show_camera_static()
@@ -314,7 +315,7 @@
 			return
 
 	// SPAWN DROPSHIP RETICLE AS CLIENT OVERLAY
-	if(parent && istype(parent, /obj/structure/machinery/computer/dropship_weapons))
+	if(cas_camera)
 		var/obj/structure/machinery/computer/dropship_weapons/console = parent
 		// Remove any previous reticle image overlays from all clients
 		if(console.direct_fire_reticle)
