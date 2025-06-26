@@ -3,8 +3,8 @@
 // Tools for Dropship Maintenance //
 
 /obj/item/device/dropship_handheld
-	name = "small handheld"
-	desc = "A small piece of electronic doodads"
+	name = "Aircraft Maintenance Tuner"
+	desc = "A small handheld used by technicians and pilots when repairing dropships. It can scan for both external and internal damage, allowing the data to be transferred to a maintenance computer for further analysis."
 	icon_state = "geiger_on"
 	item_state = "geiger_on"
 	pickup_sound = 'sound/handling/wrench_pickup.ogg'
@@ -66,6 +66,7 @@
 	var/cell_type = /obj/item/cell/super
 	var/obj/item/device/dropship_handheld/linked_handheld = null
 	var/screen_state = 0
+	var/is_linked = FALSE // True if a handheld is linked, False otherwise
 
 /obj/item/device/dropship_computer/Initialize(mapload)
 	. = ..()
@@ -90,6 +91,7 @@
 		on = TRUE
 		START_PROCESSING(SSobj, src)
 		playsound(src, 'sound/machines/terminal_on.ogg', 25, FALSE)
+	else
 		tgui_interact(user)
 
 /obj/item/device/dropship_computer/attackby(obj/item/object, mob/user)
@@ -99,6 +101,7 @@
 			to_chat(user, SPAN_NOTICE("Handheld already linked."))
 			return
 		linked_handheld = handheld
+		is_linked = TRUE
 		to_chat(user, SPAN_NOTICE("Handheld device linked to maintenance computer."))
 		playsound(src, 'sound/machines/terminal_success.ogg', 50, 1)
 	else
@@ -118,8 +121,10 @@
 
 /obj/item/device/dropship_computer/proc/unlink_handheld()
 	linked_handheld = null
+	is_linked = FALSE
 
 /obj/item/device/dropship_computer/teardown()
+	. = ..()
 	open = FALSE
 	on = FALSE
 	icon_state = "dropshipcomp_cl"
@@ -161,16 +166,32 @@
 /obj/item/device/dropship_computer/ui_data(mob/user)
 	. = list()
 	var/obj/item/device/dropship_handheld/handheld = linked_handheld
-	. ["handheld"] = list(
-		linked = !!handheld,
-		name = handheld ? handheld.name : null,
-		repair_list = handheld ? handheld.get_repair_data() : null
-	)
+	var/list/repair_list = handheld ? handheld.get_repair_data() : list()
+	. ["repair_list"] = is_linked ? repair_list : list()
 	. ["screen_state"] = screen_state
 
 /obj/item/device/dropship_computer/ui_static_data(mob/user)
 	. = list()
 	. ["screen_state"] = screen_state
+
+/obj/item/device/dropship_computer/ui_status(mob/user, datum/ui_state/state)
+	. = ..()
+	if(!on)
+		return UI_CLOSE
+	if(!skillcheck(user, SKILL_PILOT, SKILL_PILOT_TRAINED))
+		return UI_UPDATE
+
+/obj/item/device/dropship_computer/ui_close(mob/user)
+	SEND_SIGNAL(src, COMSIG_CAMERA_UNREGISTER_UI, user)
+
+/obj/item/device/dropship_computer/ui_act(action, list/params, datum/tgui/ui, datum/ui_state/state)
+	. = ..()
+	if(.)
+		return
+	switch(action)
+		if("screen-state")
+			screen_state = params["state"]
+			return FALSE
 
 // Utility: Fisher-Yates shuffle for lists
 /proc/randomize_list(list/L)
