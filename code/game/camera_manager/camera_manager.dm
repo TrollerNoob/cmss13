@@ -114,6 +114,10 @@
 	if(parent && istype(parent, /obj/structure/machinery/computer/dropship_weapons)) {
 		var/obj/structure/machinery/computer/dropship_weapons/console = parent
 		if(console.direct_fire_reticle) {
+			// Remove from plane master vis_contents if present
+			var/atom/movable/screen/plane_master/above_lighting = cam_plane_masters["[ABOVE_LIGHTING_PLANE]"]
+			if(above_lighting)
+				above_lighting.vis_contents -= console.direct_fire_reticle
 			console.direct_fire_reticle.remove_from_all_clients()
 			qdel(console.direct_fire_reticle)
 			console.direct_fire_reticle = null
@@ -151,6 +155,10 @@
 	if(parent && istype(parent, /obj/structure/machinery/computer/dropship_weapons))
 		var/obj/structure/machinery/computer/dropship_weapons/console = parent
 		if(console.direct_fire_reticle)
+			// Remove from plane master vis_contents if present
+			var/atom/movable/screen/plane_master/above_lighting = cam_plane_masters["[ABOVE_LIGHTING_PLANE]"]
+			if(above_lighting)
+				above_lighting.vis_contents -= console.direct_fire_reticle
 			console.direct_fire_reticle.remove_from_all_clients()
 			qdel(console.direct_fire_reticle)
 			console.direct_fire_reticle = null
@@ -319,6 +327,10 @@
 		var/obj/structure/machinery/computer/dropship_weapons/console = parent
 		// Remove any previous reticle image overlays from all clients
 		if(console.direct_fire_reticle)
+			// Remove from plane master vis_contents if present
+			var/atom/movable/screen/plane_master/above_lighting = cam_plane_masters["[ABOVE_LIGHTING_PLANE]"]
+			if(above_lighting)
+				above_lighting.vis_contents -= console.direct_fire_reticle
 			console.direct_fire_reticle.remove_from_all_clients()
 			qdel(console.direct_fire_reticle)
 			console.direct_fire_reticle = null
@@ -326,6 +338,13 @@
 		console.direct_fire_reticle = new /obj/effect/overlay/temp/dropship_reticle()
 		console.direct_fire_reticle.loc = null // Not in the world
 		console.direct_fire_reticle.update_target(center_turf.x, center_turf.y, center_turf.z)
+
+		// Add the reticle to the camera's plane master system so it appears above darkness
+		var/atom/movable/screen/plane_master/above_lighting = cam_plane_masters["[ABOVE_LIGHTING_PLANE]"]
+		if(above_lighting)
+			console.direct_fire_reticle.plane = ABOVE_LIGHTING_PLANE
+			above_lighting.vis_contents += console.direct_fire_reticle
+
 		// Add the reticle image to eligible clients only (marines and observers with CAS HUD)
 		var/datum/mob_hud/dropship/dropship_hud = GLOB.huds[MOB_HUD_DROPSHIP]
 		if(dropship_hud)

@@ -321,7 +321,7 @@
 	effect_duration = 10 SECONDS
 
 /obj/effect/overlay/temp/dropship_reticle
-	name = "Direct Fire Reticle"
+	name = "Targeting Reticle"
 	desc = "A targeting reticle for a dropship's HUD."
 	icon = 'icons/mob/hud/dropship_hud.dmi'
 	icon_state = "direct_fire_reticle"
@@ -356,6 +356,7 @@
 	if(!reticle_image)
 		var/turf/T = locate(target_x, target_y, target_z)
 		reticle_image = image(icon, T, icon_state, layer)
+		reticle_image.plane = ABOVE_LIGHTING_PLANE // Ensure reticle appears above darkness
 	return reticle_image
 
 /obj/effect/overlay/temp/dropship_reticle/proc/update_target(x, y, z)
