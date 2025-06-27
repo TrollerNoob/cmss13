@@ -19,6 +19,7 @@ interface Malfunction {
   effect_description?: string; // Description of the effect
   effect_duration?: number; // Duration of the effect (in deciseconds)
   time_applied?: number; // When the effect was applied (world.time)
+  time_applied_text?: string; // Formatted operation time when damage was recorded
   debuffs?: string[]; // List of debuffs caused by the effect
 }
 interface DropshipMaintenanceData {
@@ -425,7 +426,7 @@ const DynamicCountdown = ({
   return <span>{formatTimeFromDeciseconds(remainingDuration)}</span>;
 };
 
-// Helper to render repair steps with color and aligned bullet points (for per-scan detail view)
+// Helper to render repair steps with dotted separators (for per-scan detail view)
 const RepairStepsList = ({
   steps,
   completed,
@@ -435,18 +436,8 @@ const RepairStepsList = ({
 }) => (
   <Box>
     {steps.map((step, i) => (
-      <Box key={i} style={{ display: 'flex', alignItems: 'flex-start', marginBottom: '2px' }}>
-        <Box style={{ width: '12px', flexShrink: '0', textAlign: 'left' }}>
-          <span
-            style={{
-              color: i < completed ? '#00e94e' : '#ff8c00',
-              fontWeight: i < completed ? 'bold' : undefined,
-            }}
-          >
-            {i < completed ? '' : '•'}
-          </span>
-        </Box>
-        <Box style={{ flex: '1' }}>
+      <Box key={i}>
+        <Box style={{ marginBottom: '8px' }}>
           <span
             style={{
               color: i < completed ? '#00e94e' : '#ff8c00',
@@ -457,12 +448,21 @@ const RepairStepsList = ({
             {step}
           </span>
         </Box>
+        {i < steps.length - 1 && (
+          <Box
+            style={{
+              borderBottom: '3px dotted #00e94e',
+              marginBottom: '8px',
+              width: '100%',
+            }}
+          />
+        )}
       </Box>
     ))}
   </Box>
 );
 
-// Helper to render repair steps for "All" tab with center alignment
+// Helper to render repair steps for "All" tab with dotted separators
 const RepairStepsListAllTab = ({
   steps,
   completed,
@@ -470,22 +470,33 @@ const RepairStepsListAllTab = ({
   readonly steps: string[];
   readonly completed: number;
 }) => (
-  <Box style={{ display: 'flex', justifyContent: 'center' }}>
-    <Box style={{ textAlign: 'left' }}>
-      {steps.map((step, i) => (
-        <Box key={i} style={{ marginBottom: '2px' }}>
-          <span
-            style={{
-              color: i < completed ? '#00e94e' : '#ff8c00',
-              fontWeight: i < completed ? 'bold' : undefined,
-              textDecoration: i < completed ? 'line-through' : undefined,
-            }}
-          >
-            {i < completed ? '' : '• '}{step}
-          </span>
+  <Box>
+    {steps.map((step, i) => (
+      <Box key={i}>
+        <Box style={{ display: 'flex', justifyContent: 'center', marginBottom: '8px' }}>
+          <Box style={{ textAlign: 'left' }}>
+            <span
+              style={{
+                color: i < completed ? '#00e94e' : '#ff8c00',
+                fontWeight: i < completed ? 'bold' : undefined,
+                textDecoration: i < completed ? 'line-through' : undefined,
+              }}
+            >
+              {step}
+            </span>
+          </Box>
         </Box>
-      ))}
-    </Box>
+        {i < steps.length - 1 && (
+          <Box
+            style={{
+              borderBottom: '3px dotted #00e94e',
+              marginBottom: '8px',
+              width: '100%',
+            }}
+          />
+        )}
+      </Box>
+    ))}
   </Box>
 );
 
@@ -522,7 +533,7 @@ const MaintenanceDisplay = ({ repair_list }: { readonly repair_list: Malfunction
                      malf.mount_point !== malf.original_mount_point && 
                      ` (moved from ${getMountPointDescription(malf.original_mount_point)})`}
                     {!malf.mount_point && malf.original_mount_point && (
-                      <span style={{ color: '#ff8c00' }}> (uninstalled)</span>
+                      <> <span style={{ color: '#ff8c00' }}>(uninstalled)</span></>
                     )}
                   </span>
                 </Box>
@@ -544,6 +555,15 @@ const MaintenanceDisplay = ({ repair_list }: { readonly repair_list: Malfunction
                 <Flex direction="column" align="stretch">
                   <Flex.Item>
                     <span><b>Repair Steps:</b></span>
+                  </Flex.Item>
+                  <Flex.Item>
+                    <Box
+                      style={{
+                        borderBottom: '2px solid #00e94e',
+                        marginBottom: '12px',
+                        marginTop: '4px',
+                      }}
+                    />
                   </Flex.Item>
                   <Flex.Item>
                     <RepairStepsListAllTab steps={malf.steps} completed={completed} />
@@ -600,7 +620,7 @@ const ScanDetailView = ({
           <Flex.Item>
             <Box className="EngagedBox PerScanDetail">
               <span>
-                <b>Equipment Name:</b> {malfunction.equipment_name || malfunction.id}
+                <b>Equipment Name:</b> <span className="value">{malfunction.equipment_name || malfunction.id}</span>
               </span>
             </Box>
           </Flex.Item>
@@ -610,13 +630,15 @@ const ScanDetailView = ({
             <Flex.Item>
               <Box className="EngagedBox PerScanDetail">
                 <span>
-                  <b>Mount Point Location:</b> <i>{getMountPointDescription(malfunction.original_mount_point || malfunction.mount_point!)}</i>
-                  {malfunction.mount_point && malfunction.original_mount_point && 
-                   malfunction.mount_point !== malfunction.original_mount_point && 
-                   ` (moved from ${getMountPointDescription(malfunction.original_mount_point)})`}
-                  {!malfunction.mount_point && malfunction.original_mount_point && (
-                    <span style={{ color: '#ff8c00' }}> (uninstalled)</span>
-                  )}
+                  <b>Mount Point Location:</b> <span className="value">
+                    <i>{getMountPointDescription(malfunction.original_mount_point || malfunction.mount_point!)}</i>
+                    {malfunction.mount_point && malfunction.original_mount_point && 
+                     malfunction.mount_point !== malfunction.original_mount_point && 
+                     ` (moved from ${getMountPointDescription(malfunction.original_mount_point)})`}
+                    {!malfunction.mount_point && malfunction.original_mount_point && (
+                      <> <span style={{ color: '#ff8c00' }}>(uninstalled)</span></>
+                    )}
+                  </span>
                 </span>
               </Box>
             </Flex.Item>
@@ -627,7 +649,7 @@ const ScanDetailView = ({
             <Flex.Item>
               <Box className="EngagedBox PerScanDetail">
                 <span>
-                  <b>Damage Analysis:</b> {malfunction.effect_name}
+                  <b>Damage Analysis:</b> <span className="value">{malfunction.effect_name}</span>
                 </span>
               </Box>
             </Flex.Item>
@@ -667,11 +689,11 @@ const ScanDetailView = ({
           )}
           
           {/* Time AntiAir Effect was Applied */}
-          {malfunction.time_applied && (
+          {malfunction.time_applied_text && (
             <Flex.Item>
               <Box className="EngagedBox PerScanDetail">
                 <span>
-                  <b>Damage Recorded at:</b> {Math.floor(malfunction.time_applied / 600).toString().padStart(2, '0')}:{Math.floor((malfunction.time_applied % 600) / 10).toString().padStart(2, '0')}
+                  <b>Damage Recorded at:</b> {malfunction.time_applied_text}
                 </span>
               </Box>
             </Flex.Item>
@@ -683,6 +705,15 @@ const ScanDetailView = ({
               <Flex direction="column" align="stretch">
                 <Flex.Item>
                   <span><b>Repair Steps:</b></span>
+                </Flex.Item>
+                <Flex.Item>
+                  <Box
+                    style={{
+                      borderBottom: '2px solid #00e94e',
+                      marginBottom: '12px',
+                      marginTop: '4px',
+                    }}
+                  />
                 </Flex.Item>
                 <Flex.Item>
                   <RepairStepsList steps={malfunction.steps} completed={completed} />

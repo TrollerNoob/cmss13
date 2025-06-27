@@ -109,6 +109,9 @@ $large-text: 1.5rem;
     width: 100%;
     height: 100%;
     background-image: url('../assets/bg-westonyamada.svg');
+    background-size: 20%;
+    background-position: top;
+    background-repeat: repeat-x;
     .Stack {
       .Stack__item {
         width: 100%;
@@ -162,6 +165,12 @@ $large-text: 1.5rem;
       font-family: monospace;
       font-weight: bold;
       font-size: $large-text;
+      
+      // Override bold for specific value spans - make them thinner
+      &.value {
+        font-weight: 400 !important; // Lighter than normal (which is 400)
+        font-family: inherit !important; // Use default font family instead of monospace
+      }
     }
     
     // For per-scan detail view, align content to the left
@@ -211,5 +220,12 @@ $large-text: 1.5rem;
     100% {
       color: $dark;
     }
+  }
+
+  // Specific rule to make value spans thinner in per-scan detail view
+  .EngagedBox.PerScanDetail span.value {
+    font-weight: 300 !important;
+    font-family: inherit !important;
+    opacity: 0.9; // Slightly transparent to make it appear lighter
   }
 }

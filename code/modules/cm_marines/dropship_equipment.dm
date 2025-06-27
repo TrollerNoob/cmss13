@@ -261,7 +261,7 @@
 			var/next_step = effect.repair_steps[effect.repair_step_index]
 			var/expected_type = get_dropship_repair_tool_type(next_step)
 			//wear your insulated gloves, shocks the user before any do_after if the next step is wirecutters
-			if(next_step == "wirecutters")
+			if(next_step == "WIRECUTTERS")
 				var/mob/living/L = user
 				if(L.electrocute_act(10, src))
 					effect.repairing = FALSE
@@ -278,7 +278,7 @@
 				// Stay on the same step, do not advance or reset anything
 				return TRUE
 			//need the welder to be active for welding repairs
-			if(next_step == "welder" && istype(I, /obj/item/tool/weldingtool))
+			if(next_step == "WELDER" && istype(I, /obj/item/tool/weldingtool))
 				var/obj/item/tool/weldingtool/WELD = I
 				if(!WELD.welding)
 					to_chat(user, SPAN_WARNING("The welder must be activated!"))
@@ -286,22 +286,22 @@
 					return TRUE
 				WELD.eyecheck(user)
 			// Play sounds and effects
-			if(next_step == "crowbar")
+			if(next_step == "CROWBAR")
 				playsound(src, 'sound/items/Crowbar.ogg', 25, 1)
-			else if(next_step == "screwdriver")
+			else if(next_step == "SCREWDRIVER")
 				playsound(src, 'sound/items/Screwdriver.ogg', 25, 1)
-			else if(next_step == "welder")
+			else if(next_step == "WELDER")
 				playsound(src, 'sound/items/Welder.ogg', 25, 1)
-			else if(next_step == "wirecutters")
+			else if(next_step == "WIRECUTTERS")
 				playsound(src, 'sound/items/Wirecutter.ogg', 25, 1)
 				var/datum/effect_system/spark_spread/sparks = new /datum/effect_system/spark_spread
 				sparks.set_up(5, 1, src.loc)
 				sparks.start()
-			else if(next_step == "wrench")
+			else if(next_step == "WRENCH")
 				playsound(src, 'sound/items/Ratchet.ogg', 25, 1)
-			else if(next_step == "multitool")
+			else if(next_step == "MULTITOOL")
 				playsound(src, 'sound/items/tick.ogg', 35, 1)
-			else if(next_step == "cable coil")
+			else if(next_step == "CABLE COIL")
 				playsound(src, 'sound/items/component_pickup.ogg', 35, 1)
 			// Advance repair step
 			effect.repair_step_index++
@@ -321,9 +321,10 @@
 						all_repaired = FALSE
 						break
 				if(all_repaired)
+					// Reset all antiair flags by calling remove on each effect
+					for(var/datum/dropship_antiair/e in antiair_effects)
+						e.remove(src)
 					damaged = FALSE
-					antiair_block_reload = FALSE
-					antiair_block_fire = FALSE
 					to_chat(user, SPAN_NOTICE("All malfunctions have been repaired! [src] is operational."))
 				return TRUE
 			any_repairable = TRUE

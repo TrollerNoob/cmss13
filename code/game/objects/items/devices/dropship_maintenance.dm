@@ -166,15 +166,22 @@
 	if(!length(src.scanned_weapons))
 		return null
 	var/list/repair_info = list()
+	var/list/weapons_to_remove = list()
 	
 	for(var/obj/structure/dropship_equipment/weapon/weapon in src.scanned_weapons)
-		if(!weapon || !islist(weapon.antiair_effects) || !length(weapon.antiair_effects))
+		if(QDELETED(weapon) || !weapon || !islist(weapon.antiair_effects) || !length(weapon.antiair_effects))
+			// Remove weapons that are deleted, invalid, or have no antiair effects (fully repaired/destroyed)
+			weapons_to_remove += weapon
 			continue
+		
 		var/mount_point = weapon.ship_base?.attach_id
 		var/original_mount_point = src.original_mount_points[weapon]
+		var/has_repair_needed = FALSE
+		
 		for(var/datum/dropship_antiair/effect as anything in weapon.antiair_effects)
 			if(!islist(effect.repair_steps) || !length(effect.repair_steps))
 				continue
+			has_repair_needed = TRUE
 			// Use a unique id for each effect instance (should be set on the datum)
 			var/effect_id = effect.effect_id ? effect.effect_id : "[effect.type]-[effect.creation_time ? effect.creation_time : world.time]"
 			var/effect_name = effect.name ? effect.name : "Unknown Effect"
@@ -186,9 +193,7 @@
 			var/effect_description = effect.description ? effect.description : "No description available"
 			var/effect_duration = effect.duration ? effect.duration : null
 			var/time_applied = effect.creation_time ? effect.creation_time : null
-			// Convert time_applied to operation time instead of raw world time
-			if(time_applied && SSticker && SSticker.round_start_time)
-				time_applied = time_applied - SSticker.round_start_time
+			var/time_applied_text = time_applied ? worldtime2text("hh:mm", time_applied) : null
 			var/list/debuffs = list()
 			if(effect.disable_fire)
 				debuffs += "Cannot fire"
@@ -208,8 +213,19 @@
 				"effect_description" = effect_description,
 				"effect_duration" = effect_duration,
 				"time_applied" = time_applied,
+				"time_applied_text" = time_applied_text,
 				"debuffs" = debuffs
 			))
+		
+		// If this weapon has no effects that need repairs, mark it for removal
+		if(!has_repair_needed)
+			weapons_to_remove += weapon
+	
+	// Remove fully repaired weapons from the scanned list
+	for(var/weapon in weapons_to_remove)
+		src.scanned_weapons -= weapon
+		src.original_mount_points -= weapon
+	
 	return repair_info
 
 /obj/item/device/dropship_computer/tgui_interact(mob/user, datum/tgui/ui)
@@ -267,13 +283,13 @@
 
 // Tool mapping for dropship repairs
 var/global/list/dropship_repair_tool_types = list(
-	"welder" = /obj/item/tool/weldingtool,
-	"screwdriver" = /obj/item/tool/screwdriver,
-	"wrench" = /obj/item/tool/wrench,
-	"wirecutters" = /obj/item/tool/wirecutters,
-	"crowbar" = /obj/item/tool/crowbar,
-	"multitool" = /obj/item/device/multitool,
-	"cable coil" = /obj/item/stack/cable_coil,
+	"WELDER" = /obj/item/tool/weldingtool,
+	"SCREWDRIVER" = /obj/item/tool/screwdriver,
+	"WRENCH" = /obj/item/tool/wrench,
+	"WIRECUTTERS" = /obj/item/tool/wirecutters,
+	"CROWBAR" = /obj/item/tool/crowbar,
+	"MULTITOOL" = /obj/item/device/multitool,
+	"CABLE COIL" = /obj/item/stack/cable_coil,
 )
 
 /proc/get_dropship_repair_tool_type(action)

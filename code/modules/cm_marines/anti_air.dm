@@ -145,7 +145,7 @@ GLOBAL_DATUM(almayer_aa_cannon, /obj/structure/anti_air_cannon)
 	var/disable_fire = FALSE
 	var/disable_reload = FALSE
 	var/delete_on_timeout = FALSE
-	var/list/tools = list("welder", "screwdriver", "wrench", "wirecutters", "crowbar", "multitool", "cable coil")
+	var/list/tools = list("WELDER", "SCREWDRIVER", "WRENCH", "WIRECUTTERS", "CROWBAR", "MULTITOOL", "CABLE COIL")
 	var/repairing = FALSE
 	var/repair_step_index = 1
 	var/effect_id = null // Unique identifier for this effect instance
@@ -169,22 +169,38 @@ GLOBAL_DATUM(almayer_aa_cannon, /obj/structure/anti_air_cannon)
 
 /datum/dropship_antiair/proc/apply(obj/structure/dropship_equipment/target)
 	target.damaged = TRUE
-	if(disable_fire)
-		target.antiair_block_fire = TRUE
-	if(disable_reload)
-		target.antiair_block_reload = TRUE
+	
+	// Automatically apply all antiair block flags
+	for(var/varname in vars)
+		if(findtext(varname, "disable_") && vars[varname])
+			var/target_varname = replacetext(varname, "disable_", "antiair_block_")
+			if(target_varname in target.vars)
+				target.vars[target_varname] = TRUE
+	
 	if(duration > 0)
 		spawn(duration)
 			src.on_timeout(target)
 
 /datum/dropship_antiair/proc/remove(obj/structure/dropship_equipment/target)
-	if(disable_fire)
-		target.antiair_block_fire = FALSE
-	if(disable_reload)
-		target.antiair_block_reload = FALSE
+	// Automatically reset all antiair block flags, stick to disable/antiair_block_ naming convention to easily add effects
+	for(var/varname in vars)
+		if(findtext(varname, "disable_") && vars[varname])
+			var/target_varname = replacetext(varname, "disable_", "antiair_block_")
+			if(target_varname in target.vars)
+				target.vars[target_varname] = FALSE
+	
 	target.damaged = FALSE
+	
+	// Clean up the effect if it was set to delete on timeout
+	if(delete_on_timeout)
+		qdel(src)
 
 /datum/dropship_antiair/proc/on_timeout(obj/structure/dropship_equipment/target)
+	// Check if this effect is still active on the target (not removed by repairs)
+	if(!(src in target.antiair_effects))
+		// Effect was already removed/repaired, stop the timeout proc
+		return
+	
 	// Only destroy if not already repaired
 	if(delete_on_timeout)
 		if(length(src.repair_steps))
@@ -202,4 +218,4 @@ GLOBAL_DATUM(almayer_aa_cannon, /obj/structure/anti_air_cannon)
 	duration = 1800
 	disable_reload = TRUE
 	delete_on_timeout = TRUE
-	tools = list("welder", "screwdriver", "wrench", "wirecutters", "crowbar")
+	tools = list("WELDER", "SCREWDRIVER", "WRENCH", "WIRECUTTERS", "CROWBAR")
