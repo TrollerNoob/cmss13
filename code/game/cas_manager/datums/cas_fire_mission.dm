@@ -314,11 +314,13 @@
 									if(random_turf)
 										new /obj/effect/particle_effect/sparks(random_turf)
 										used += random_turf
-							
+
 							// Spawn spall (shrapnel) from cockpit area when anti-air hits
 							var/turf/cockpit_center = find_cockpit_center(shuttle)
 							if(cockpit_center)
-								create_shrapnel(cockpit_center, 12, 0, 360, /datum/ammo/bullet/shrapnel/spall, create_cause_data("anti-air spall", null), FALSE, 0.25)
+								create_shrapnel(cockpit_center, 16, SOUTH, 180, /datum/ammo/bullet/shrapnel/spall, create_cause_data("anti-air spall", null), FALSE, 0.25)
+								// Play internal damage alarm from the console
+								playsound(linked_console, 'sound/mecha/internaldmgalarm.ogg', 75, FALSE)
 			if(shootloc && !CEILING_IS_PROTECTED(area?.ceiling, CEILING_PROTECTION_TIER_3) && !protected_by_pylon(TURF_PROTECTION_CAS, shootloc))
 				if(item && item.weapon)
 					item.weapon.open_fire_firemission(shootloc)
@@ -405,14 +407,14 @@
 /proc/find_cockpit_center(obj/docking_port/mobile/marine_dropship/shuttle)
 	if(!shuttle || !shuttle.shuttle_areas)
 		return null
-		
+
 	// Look for pilot chairs in the shuttle areas to identify cockpit
 	for(var/area/shuttle_area in shuttle.shuttle_areas)
 		for(var/turf/turf in shuttle_area)
 			for(var/obj/structure/bed/chair/dropship/pilot/pilot_chair in turf)
 				// Found a pilot chair, return this turf as cockpit center
 				return turf
-	
+
 	// Fallback: if no pilot chair found, return approximate cockpit location
 	// Based on shuttle layout, cockpit is typically at the front center
 	if(shuttle.shuttle_areas.len > 0)
@@ -422,5 +424,5 @@
 			// Return a turf roughly in the front-center of the shuttle
 			var/turf/center = pick(area_turfs)
 			return center
-	
+
 	return null
