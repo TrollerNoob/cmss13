@@ -178,6 +178,10 @@
 		var/original_mount_point = src.original_mount_points[weapon]
 		var/has_repair_needed = FALSE
 		
+		// Get shuttle information
+		var/shuttle_name = weapon.linked_shuttle?.name
+		var/shuttle_id = weapon.linked_shuttle?.id
+		
 		for(var/datum/dropship_antiair/effect as anything in weapon.antiair_effects)
 			if(!islist(effect.repair_steps) || !length(effect.repair_steps))
 				continue
@@ -214,6 +218,8 @@
 				"effect_duration" = effect_duration,
 				"time_applied" = time_applied,
 				"time_applied_text" = time_applied_text,
+				"shuttle_name" = shuttle_name,
+				"shuttle_id" = shuttle_id,
 				"debuffs" = debuffs
 			))
 		

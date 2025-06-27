@@ -252,7 +252,7 @@
 			sy = 1
 	var/step = 1
 	var/list/antiair_affected_this_execution = list() // Track weapons affected by anti-air this firemission
-	var/antiair_fx_played = FALSE // Only play shuttle shake/explosion once per firemission
+	var/list/shuttles_with_antiair_fx = list() // Track which shuttles have already had anti-air FX played
 	for(step = 1; step<=steps; step++)
 		if(step > next_step)
 			current_turf = get_step(current_turf, direction)
@@ -288,10 +288,10 @@
 							w.apply_antiair_effect(new shootloc.antiair_effect_type())
 							antiair_affected_this_execution += w
 							just_affected += w
-				// Shuttle shake and explosion/sparks, only once per firemission if any weapon was affected this step
-				if(just_affected.len && !antiair_fx_played)
-					antiair_fx_played = TRUE
-					if(linked_console.shuttle_tag && envelope)
+				// Shuttle shake and explosion/sparks, only once per shuttle per firemission if any weapon was affected this step
+				if(just_affected.len && linked_console.shuttle_tag && !(linked_console.shuttle_tag in shuttles_with_antiair_fx))
+					shuttles_with_antiair_fx += linked_console.shuttle_tag
+					if(envelope)
 						envelope.shuttle_shake_played = TRUE
 						var/obj/docking_port/mobile/marine_dropship/shuttle = SSshuttle.getShuttle(linked_console.shuttle_tag)
 						if(shuttle && shuttle.shuttle_areas)
@@ -314,12 +314,19 @@
 									if(random_turf)
 										new /obj/effect/particle_effect/sparks(random_turf)
 										used += random_turf
+							
+							// Spawn spall (shrapnel) from cockpit area when anti-air hits
+							var/turf/cockpit_center = find_cockpit_center(shuttle)
+							if(cockpit_center)
+								create_shrapnel(cockpit_center, 12, 0, 360, /datum/ammo/bullet/shrapnel/spall, create_cause_data("anti-air spall", null), FALSE, 0.25)
 			if(shootloc && !CEILING_IS_PROTECTED(area?.ceiling, CEILING_PROTECTION_TIER_3) && !protected_by_pylon(TURF_PROTECTION_CAS, shootloc))
 				if(item && item.weapon)
 					item.weapon.open_fire_firemission(shootloc)
 			// Audible warning for nearby humans
 			if(envelope && istype(envelope, /datum/cas_fire_envelope) && shootloc && (shootloc.turf_protection_flags & TURF_PROTECTION_ANTIAIR))
-				envelope.anti_air_success(current_turf, 10)
+				envelope.anti_air_success(shootloc, 10)
+				// Reset the flag so the beep can play again on subsequent anti-air hits
+				envelope.antiair_fx_played = FALSE
 		sleep(step_delay)
 	if(envelope)
 		envelope.change_current_loc(null)
@@ -389,3 +396,31 @@
 			item.weapon.open_simulated_fire_firemission(shootloc)
 			guidance.forceMove(locate(initial_turf.x,initial_turf.y + step, initial_turf.z))
 		sleep(step_delay)
+
+/**
+ * Finds the center of the cockpit area for a dropship
+ * @param shuttle - The dropship mobile docking port
+ * @return turf - The center turf of the cockpit area, or null if not found
+ */
+/proc/find_cockpit_center(obj/docking_port/mobile/marine_dropship/shuttle)
+	if(!shuttle || !shuttle.shuttle_areas)
+		return null
+		
+	// Look for pilot chairs in the shuttle areas to identify cockpit
+	for(var/area/shuttle_area in shuttle.shuttle_areas)
+		for(var/turf/turf in shuttle_area)
+			for(var/obj/structure/bed/chair/dropship/pilot/pilot_chair in turf)
+				// Found a pilot chair, return this turf as cockpit center
+				return turf
+	
+	// Fallback: if no pilot chair found, return approximate cockpit location
+	// Based on shuttle layout, cockpit is typically at the front center
+	if(shuttle.shuttle_areas.len > 0)
+		var/area/main_area = shuttle.shuttle_areas[1]
+		var/list/area_turfs = get_area_turfs(main_area)
+		if(area_turfs.len > 0)
+			// Return a turf roughly in the front-center of the shuttle
+			var/turf/center = pick(area_turfs)
+			return center
+	
+	return null

@@ -20,6 +20,8 @@ interface Malfunction {
   effect_duration?: number; // Duration of the effect (in deciseconds)
   time_applied?: number; // When the effect was applied (world.time)
   time_applied_text?: string; // Formatted operation time when damage was recorded
+  shuttle_name?: string; // Name of the shuttle (e.g., "Alamo", "Normandy")
+  shuttle_id?: string; // ID of the shuttle (e.g., "dropship_alamo", "dropship_normandy")
   debuffs?: string[]; // List of debuffs caused by the effect
 }
 interface DropshipMaintenanceData {
@@ -296,13 +298,27 @@ const DrawEquipment = ({
     .map((malf) => malf.original_mount_point!)
     .filter((x) => typeof x === 'number');
   
-  // Create a mapping of mount points to scan numbers
+  // Create a mapping of mount points to scan numbers (per-shuttle numbering)
   const mountToScanNumber: { [key: number]: number } = {};
-  repair_list.forEach((malf, index) => {
-    const mountPoint = malf.original_mount_point || malf.mount_point;
-    if (mountPoint) {
-      mountToScanNumber[mountPoint] = index + 1;
+  
+  // Group by shuttle and assign per-shuttle scan numbers
+  const equipmentByShuttle: { [shuttleName: string]: Malfunction[] } = {};
+  repair_list.forEach((malf) => {
+    const shuttleName = malf.shuttle_name || "Unknown Shuttle";
+    if (!equipmentByShuttle[shuttleName]) {
+      equipmentByShuttle[shuttleName] = [];
     }
+    equipmentByShuttle[shuttleName].push(malf);
+  });
+  
+  // Assign per-shuttle scan numbers to mount points
+  Object.keys(equipmentByShuttle).forEach((shuttleName) => {
+    equipmentByShuttle[shuttleName].forEach((malf, index) => {
+      const mountPoint = malf.original_mount_point || malf.mount_point;
+      if (mountPoint) {
+        mountToScanNumber[mountPoint] = index + 1; // Per-shuttle scan number
+      }
+    });
   });
   
   return (
@@ -346,12 +362,20 @@ const DrawEquipment = ({
 const DropshipDiagram = ({
   damagedMounts,
   repair_list,
+  shuttleName,
 }: {
   readonly damagedMounts: number[];
   readonly repair_list: Malfunction[];
+  readonly shuttleName?: string;
 }) => {
   return (
     <Box className="DropshipDiagram" style={{ margin: 'auto', width: '500px' }}>
+      {/* Show shuttle name header if provided */}
+      {shuttleName && (
+        <Box style={{ textAlign: 'center', marginBottom: '10px', color: '#00e94e', fontSize: '1.2rem', fontWeight: 'bold' }}>
+          {shuttleName}
+        </Box>
+      )}
       <svg height="400" width="500">
         <DrawDropshipOutline />
         <DrawEquipment damagedMounts={damagedMounts} repair_list={repair_list} />
@@ -502,6 +526,18 @@ const RepairStepsListAllTab = ({
 
 // Maintenance display for all malfunctions
 const MaintenanceDisplay = ({ repair_list }: { readonly repair_list: Malfunction[] }) => {
+  // Group equipment by shuttle
+  const equipmentByShuttle: { [shuttleName: string]: Malfunction[] } = {};
+  repair_list.forEach((malf) => {
+    const shuttleName = malf.shuttle_name || "Unknown Shuttle";
+    if (!equipmentByShuttle[shuttleName]) {
+      equipmentByShuttle[shuttleName] = [];
+    }
+    equipmentByShuttle[shuttleName].push(malf);
+  });
+  
+  const shuttleNames = Object.keys(equipmentByShuttle);
+  
   return (
     <Flex
       direction="column"
@@ -509,68 +545,92 @@ const MaintenanceDisplay = ({ repair_list }: { readonly repair_list: Malfunction
       align="stretch"
       justify="center"
     >
-      {repair_list.map((malf, index) => {
-        const completed =
-          typeof malf.completed_steps === 'number' ? malf.completed_steps : 0;
+      {shuttleNames.map((shuttleName, shuttleIndex) => {
+        const shuttleEquipment = equipmentByShuttle[shuttleName];
         return (
-          <Fragment key={malf.id}>
-            {/* Equipment Name */}
-            <Flex.Item style={{ marginTop: index > 0 ? '20px' : '0' }}>
-              <Box className="EngagedBox" style={{ backgroundColor: 'rgba(0, 233, 78, 0.1)' }}>
-                <span>
-                  <b>{index + 1}. {malf.equipment_name || malf.id}</b>
-                </span>
-              </Box>
-            </Flex.Item>
-            
-            {/* Mount Point Location */}
-            {(malf.original_mount_point || malf.mount_point) && (
-              <Flex.Item>
-                <Box className="EngagedBox">
-                  <span>
-                    <i>{getMountPointDescription(malf.original_mount_point || malf.mount_point!)}</i>
-                    {malf.mount_point && malf.original_mount_point && 
-                     malf.mount_point !== malf.original_mount_point && 
-                     ` (moved from ${getMountPointDescription(malf.original_mount_point)})`}
-                    {!malf.mount_point && malf.original_mount_point && (
-                      <> <span style={{ color: '#ff8c00' }}>(uninstalled)</span></>
-                    )}
+          <Fragment key={shuttleName}>
+            {/* Shuttle Header (only show if multiple shuttles) */}
+            {shuttleNames.length > 1 && (
+              <Flex.Item style={{ marginTop: shuttleIndex > 0 ? '30px' : '0', marginBottom: '10px' }}>
+                <Box className="EngagedBox" style={{ backgroundColor: 'rgba(0, 233, 78, 0.2)', textAlign: 'center' }}>
+                  <span style={{ fontSize: '1.2rem', fontWeight: 'bold' }}>
+                    === {shuttleName} ===
                   </span>
                 </Box>
               </Flex.Item>
             )}
             
-            {/* Effect Name */}
-            {malf.effect_name && (
-              <Flex.Item>
-                <Box className="EngagedBox">
-                  <span>{malf.effect_name}</span>
-                </Box>
-              </Flex.Item>
-            )}
-            
-            {/* Repair Steps */}
-            <Flex.Item>
-              <Box className="EngagedBox">
-                <Flex direction="column" align="stretch">
-                  <Flex.Item>
-                    <span><b>Repair Steps:</b></span>
+            {shuttleEquipment.map((malf, equipmentIndex) => {
+              const completed =
+                typeof malf.completed_steps === 'number' ? malf.completed_steps : 0;
+              const scanNumber = equipmentIndex + 1; // Per-shuttle numbering
+              return (
+                <Fragment key={malf.id}>
+                  {/* Equipment Name */}
+                  <Flex.Item style={{ marginTop: equipmentIndex > 0 || shuttleIndex > 0 ? '20px' : '0' }}>
+                    <Box className="EngagedBox" style={{ backgroundColor: 'rgba(0, 233, 78, 0.1)' }}>
+                      <span>
+                        <b>{scanNumber}. {malf.equipment_name || malf.id}</b>
+                        {shuttleNames.length === 1 && malf.shuttle_name && (
+                          <span style={{ color: '#00e94e', marginLeft: '8px' }}>
+                            [{malf.shuttle_name}]
+                          </span>
+                        )}
+                      </span>
+                    </Box>
                   </Flex.Item>
+                  
+                  {/* Mount Point Location */}
+                  {(malf.original_mount_point || malf.mount_point) && (
+                    <Flex.Item>
+                      <Box className="EngagedBox">
+                        <span>
+                          <i>{getMountPointDescription(malf.original_mount_point || malf.mount_point!)}</i>
+                          {malf.mount_point && malf.original_mount_point && 
+                           malf.mount_point !== malf.original_mount_point && 
+                           ` (moved from ${getMountPointDescription(malf.original_mount_point)})`}
+                          {!malf.mount_point && malf.original_mount_point && (
+                            <> <span style={{ color: '#ff8c00' }}>(uninstalled)</span></>
+                          )}
+                        </span>
+                      </Box>
+                    </Flex.Item>
+                  )}
+                  
+                  {/* Effect Name */}
+                  {malf.effect_name && (
+                    <Flex.Item>
+                      <Box className="EngagedBox">
+                        <span>{malf.effect_name}</span>
+                      </Box>
+                    </Flex.Item>
+                  )}
+                  
+                  {/* Repair Steps */}
                   <Flex.Item>
-                    <Box
-                      style={{
-                        borderBottom: '2px solid #00e94e',
-                        marginBottom: '12px',
-                        marginTop: '4px',
-                      }}
-                    />
+                    <Box className="EngagedBox">
+                      <Flex direction="column" align="stretch">
+                        <Flex.Item>
+                          <span><b>Repair Steps:</b></span>
+                        </Flex.Item>
+                        <Flex.Item>
+                          <Box
+                            style={{
+                              borderBottom: '2px solid #00e94e',
+                              marginBottom: '12px',
+                              marginTop: '4px',
+                            }}
+                          />
+                        </Flex.Item>
+                        <Flex.Item>
+                          <RepairStepsListAllTab steps={malf.steps} completed={completed} />
+                        </Flex.Item>
+                      </Flex>
+                    </Box>
                   </Flex.Item>
-                  <Flex.Item>
-                    <RepairStepsListAllTab steps={malf.steps} completed={completed} />
-                  </Flex.Item>
-                </Flex>
-              </Box>
-            </Flex.Item>
+                </Fragment>
+              );
+            })}
           </Fragment>
         );
       })}
@@ -583,7 +643,7 @@ const ScanDetailView = ({
   scanTab, 
   currentWorldTime, 
 }: { 
-  readonly scanTab: {scanNumber: number, malfunction: Malfunction};
+  readonly scanTab: {scanNumber: number, malfunction: Malfunction, shuttleName: string};
   readonly currentWorldTime: number;
 }) => {
   const { malfunction } = scanTab;
@@ -596,7 +656,7 @@ const ScanDetailView = ({
         <Stack vertical className="TitleContainer">
           <Stack.Item className="TitleText">
             <span style={{ fontSize: '1.8rem', fontWeight: 'bold' }}>
-              Scan #{scanTab.scanNumber}: {malfunction.equipment_name || malfunction.id}
+              {scanTab.shuttleName} Scan #{scanTab.scanNumber}: {malfunction.equipment_name || malfunction.id}
             </span>
           </Stack.Item>
           <Stack.Item className="TitleText">
@@ -625,6 +685,17 @@ const ScanDetailView = ({
             </Box>
           </Flex.Item>
           
+          {/* Shuttle Name */}
+          {malfunction.shuttle_name && (
+            <Flex.Item>
+              <Box className="EngagedBox PerScanDetail">
+                <span>
+                  <b>Dropship:</b> <span className="value">{malfunction.shuttle_name}</span>
+                </span>
+              </Box>
+            </Flex.Item>
+          )}
+          
           {/* Mount Point Location */}
           {(malfunction.original_mount_point || malfunction.mount_point) && (
             <Flex.Item>
@@ -638,7 +709,7 @@ const ScanDetailView = ({
                     {!malfunction.mount_point && malfunction.original_mount_point && (
                       <> <span style={{ color: '#ff8c00' }}>(uninstalled)</span></>
                     )}
-                  </span>
+                                               </span>
                 </span>
               </Box>
             </Flex.Item>
@@ -727,17 +798,35 @@ const ScanDetailView = ({
   );
 };
 
-// Each malfunction gets its own tab, numbered by scan order
-const getMalfunctionTabs = (repair_list: Malfunction[]): Array<{scanNumber: number, malfunction: Malfunction}> => {
-  return repair_list.map((malfunction, index) => ({
-    scanNumber: index + 1,
-    malfunction,
-  }));
+// Each malfunction gets its own tab, numbered by scan order per shuttle
+const getMalfunctionTabs = (repair_list: Malfunction[]): Array<{scanNumber: number, malfunction: Malfunction, shuttleName: string}> => {
+  // Group by shuttle and assign per-shuttle scan numbers
+  const equipmentByShuttle: { [shuttleName: string]: Malfunction[] } = {};
+  repair_list.forEach((malf) => {
+    const shuttleName = malf.shuttle_name || "Unknown Shuttle";
+    if (!equipmentByShuttle[shuttleName]) {
+      equipmentByShuttle[shuttleName] = [];
+    }
+    equipmentByShuttle[shuttleName].push(malf);
+  });
+  
+  const tabs: Array<{scanNumber: number, malfunction: Malfunction, shuttleName: string}> = [];
+  Object.keys(equipmentByShuttle).forEach((shuttleName) => {
+    equipmentByShuttle[shuttleName].forEach((malfunction, index) => {
+      tabs.push({
+        scanNumber: index + 1, // Per-shuttle numbering
+        malfunction,
+        shuttleName,
+      });
+    });
+  });
+  
+  return tabs;
 };
 
 // Tab menu for individual scan selection
 const ScanTabMenu = (props: {
-  readonly scanTabs: Array<{scanNumber: number, malfunction: Malfunction}>;
+  readonly scanTabs: Array<{scanNumber: number, malfunction: Malfunction, shuttleName: string}>;
   readonly selected?: number;
   readonly setSelected: (d: number | undefined) => void;
 }) => {
@@ -751,7 +840,7 @@ const ScanTabMenu = (props: {
             props.setSelected(index);
           }}
         >
-          {scanTab.scanNumber}
+          {scanTab.shuttleName.charAt(0)}{scanTab.scanNumber}
         </Tabs.Tab>
       ))}
       <Tabs.Tab
@@ -842,6 +931,18 @@ export const DropshipMaintenanceUI = () => {
     .map((malf) => malf.original_mount_point || malf.mount_point)
     .filter((x) => typeof x === 'number');
 
+  // Group equipment by shuttle
+  const equipmentByShuttle: { [shuttleName: string]: Malfunction[] } = {};
+  (repair_list || []).forEach((malf) => {
+    const shuttleName = malf.shuttle_name || "Unknown Shuttle";
+    if (!equipmentByShuttle[shuttleName]) {
+      equipmentByShuttle[shuttleName] = [];
+    }
+    equipmentByShuttle[shuttleName].push(malf);
+  });
+  
+  const shuttleNames = Object.keys(equipmentByShuttle);
+
   return (
     <Window theme="crtgreen" height={700} width={700}>
       <Window.Content className="DropshipMaintenance">
@@ -896,9 +997,35 @@ export const DropshipMaintenanceUI = () => {
                         />
                       </Flex.Item>
                       
-                      {/* Right side: Dropship diagram */}
+                      {/* Right side: Dropship diagram(s) */}
                       <Flex.Item basis="53%">
-                        <DropshipDiagram damagedMounts={damagedMounts} repair_list={repair_list} />
+                        {shuttleNames.length === 1 ? (
+                          // Single shuttle - show one diagram
+                          <DropshipDiagram 
+                            damagedMounts={damagedMounts} 
+                            repair_list={repair_list} 
+                            shuttleName={shuttleNames[0]}
+                          />
+                        ) : (
+                          // Multiple shuttles - show stacked diagrams
+                          <Stack vertical>
+                            {shuttleNames.map((shuttleName) => {
+                              const shuttleEquipment = equipmentByShuttle[shuttleName];
+                              const shuttleDamagedMounts = shuttleEquipment
+                                .map((malf) => malf.original_mount_point || malf.mount_point)
+                                .filter((x) => typeof x === 'number');
+                              return (
+                                <Stack.Item key={shuttleName} style={{ marginBottom: '20px' }}>
+                                  <DropshipDiagram 
+                                    damagedMounts={shuttleDamagedMounts} 
+                                    repair_list={shuttleEquipment} 
+                                    shuttleName={shuttleName}
+                                  />
+                                </Stack.Item>
+                              );
+                            })}
+                          </Stack>
+                        )}
                       </Flex.Item>
                     </Flex>
                   </Section>
