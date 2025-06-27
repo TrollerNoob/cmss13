@@ -14,7 +14,8 @@
 	w_class = SIZE_SMALL
 	var/list/repair_actions = null
 	var/current_repair_step = null
-	var/obj/structure/dropship_equipment/weapon/last_scanned_weapon = null
+	var/list/scanned_weapons = list() // Store multiple scanned weapons
+	var/list/original_mount_points = list() // Track original mount points for each weapon
 	flags_item = NOBLUDGEON
 
 /obj/item/device/dropship_handheld/afterattack(atom/target, mob/user, proximity)
@@ -32,28 +33,43 @@
 			return
 		if(!do_after(user, 10, INTERRUPT_NO_NEEDHAND | BEHAVIOR_IMMOBILE, BUSY_ICON_BUILD))
 			return
-		src.last_scanned_weapon = W
+		
+		// Check if weapon is already scanned
+		if(W in src.scanned_weapons)
+			to_chat(user, SPAN_NOTICE("[W] has already been scanned."))
+			return
+			
+		// Store original mount point when first scanned
+		var/original_mount_point = W.ship_base?.attach_id
+		src.original_mount_points[W] = original_mount_point
+			
+		// Add weapon to scanned list
+		src.scanned_weapons += W
 		playsound(src, 'sound/mecha/lowpower.ogg', 50, 1)
-		to_chat(user, SPAN_NOTICE("Repair scan complete. Use the maintenance computer to continue repairs."))
+		to_chat(user, SPAN_NOTICE("Repair scan complete. [length(src.scanned_weapons)] weapon[length(src.scanned_weapons) == 1 ? "" : "s"] scanned. Use the maintenance computer to continue repairs."))
 		return
 	if(istype(target, /obj/item/device/dropship_computer))
 		var/obj/item/device/dropship_computer/comp = target
 		if(!in_range(user, comp, 1))
 			to_chat(user, SPAN_WARNING("You must be next to the maintenance computer to transfer the data."))
 			return
-		if(!src.last_scanned_weapon || !length(src.last_scanned_weapon.antiair_effects))
+		if(!length(src.scanned_weapons))
 			to_chat(user, SPAN_WARNING("No repair scan data found on the handheld device."))
 			return
 		playsound(src, 'sound/machines/terminal_success.ogg', 50, 1)
 		to_chat(user, SPAN_NOTICE("Repair steps required for each malfunction:"))
-		for(var/datum/dropship_antiair/effect in src.last_scanned_weapon.antiair_effects)
-			if(effect && length(effect.repair_steps))
-				var/effect_name = effect.name ? effect.name : "Unknown Effect"
-				to_chat(user, SPAN_NOTICE("[effect_name]: [islist(effect.repair_steps) ? effect.repair_steps.Join(", ") : "No steps"]."))
+		for(var/obj/structure/dropship_equipment/weapon/weapon in src.scanned_weapons)
+			if(!weapon || !length(weapon.antiair_effects))
+				continue
+			to_chat(user, SPAN_NOTICE("=== [weapon.name] ==="))
+			for(var/datum/dropship_antiair/effect in weapon.antiair_effects)
+				if(effect && length(effect.repair_steps))
+					var/effect_name = effect.name ? effect.name : "Unknown Effect"
+					to_chat(user, SPAN_NOTICE("[effect_name]: [islist(effect.repair_steps) ? effect.repair_steps.Join(", ") : "No steps"]."))
 		return
 
 /obj/item/device/dropship_computer
-	name = "dropship maintenance computer"
+	name = "Dropship Maintenance Computer"
 	desc = "A dropship maintenance computer that technicians and pilots use to find out what's wrong with a dropship. It has various outlets for different systems."
 	icon_state = "dropshipcomp_cl"
 	icon = 'icons/obj/structures/props/dropshipcomp.dmi'
@@ -91,6 +107,7 @@
 		START_PROCESSING(SSobj, src)
 		playsound(src, 'sound/machines/terminal_on.ogg', 25, FALSE)
 	else
+		playsound(src, get_sfx("terminal_button"), 25, FALSE)
 		tgui_interact(user)
 
 /obj/item/device/dropship_computer/attackby(obj/item/object, mob/user)
@@ -146,17 +163,53 @@
 	// Only allow linking, not repair transfer here
 
 /obj/item/device/dropship_handheld/proc/get_repair_data()
-	if(!src.last_scanned_weapon || !islist(src.last_scanned_weapon.antiair_effects) || !length(src.last_scanned_weapon.antiair_effects))
+	if(!length(src.scanned_weapons))
 		return null
 	var/list/repair_info = list()
-	var/mount_point = src.last_scanned_weapon.ship_base?.attach_id
-	for(var/datum/dropship_antiair/effect as anything in src.last_scanned_weapon.antiair_effects)
-		if(!islist(effect.repair_steps) || !length(effect.repair_steps))
+	
+	for(var/obj/structure/dropship_equipment/weapon/weapon in src.scanned_weapons)
+		if(!weapon || !islist(weapon.antiair_effects) || !length(weapon.antiair_effects))
 			continue
-		// Use a unique id for each effect instance (should be set on the datum)
-		var/effect_id = effect.effect_id ? effect.effect_id : "[effect.type]-[effect.creation_time ? effect.creation_time : world.time]"
-		var/effect_name = effect.name ? effect.name : "Unknown Effect"
-		repair_info += list(list("id" = "[effect_name] #[effect_id]", "steps" = effect.repair_steps, "mount_point" = mount_point))
+		var/mount_point = weapon.ship_base?.attach_id
+		var/original_mount_point = src.original_mount_points[weapon]
+		for(var/datum/dropship_antiair/effect as anything in weapon.antiair_effects)
+			if(!islist(effect.repair_steps) || !length(effect.repair_steps))
+				continue
+			// Use a unique id for each effect instance (should be set on the datum)
+			var/effect_id = effect.effect_id ? effect.effect_id : "[effect.type]-[effect.creation_time ? effect.creation_time : world.time]"
+			var/effect_name = effect.name ? effect.name : "Unknown Effect"
+			var/equipment_name = weapon.name ? weapon.name : null
+			// Calculate completed steps: repair_step_index is 1-based, so clamp to steps length
+			var/completed_steps = (isnum(effect.repair_step_index) && effect.repair_step_index > 1) ? min(effect.repair_step_index - 1, length(effect.repair_steps)) : 0
+			
+			// Additional effect information
+			var/effect_description = effect.description ? effect.description : "No description available"
+			var/effect_duration = effect.duration ? effect.duration : null
+			var/time_applied = effect.creation_time ? effect.creation_time : null
+			// Convert time_applied to operation time instead of raw world time
+			if(time_applied && SSticker && SSticker.round_start_time)
+				time_applied = time_applied - SSticker.round_start_time
+			var/list/debuffs = list()
+			if(effect.disable_fire)
+				debuffs += "Cannot fire"
+			if(effect.disable_reload)
+				debuffs += "Cannot reload"
+			if(effect.delete_on_timeout)
+				debuffs += "Will be destroyed if not repaired"
+			
+			repair_info += list(list(
+				"id" = "[effect_name] #[effect_id]",
+				"steps" = effect.repair_steps,
+				"mount_point" = mount_point,
+				"original_mount_point" = original_mount_point,
+				"effect_name" = effect_name,
+				"equipment_name" = equipment_name,
+				"completed_steps" = completed_steps,
+				"effect_description" = effect_description,
+				"effect_duration" = effect_duration,
+				"time_applied" = time_applied,
+				"debuffs" = debuffs
+			))
 	return repair_info
 
 /obj/item/device/dropship_computer/tgui_interact(mob/user, datum/tgui/ui)
@@ -171,6 +224,11 @@
 	var/list/repair_list = handheld ? handheld.get_repair_data() : list()
 	. ["repair_list"] = is_linked ? repair_list : list()
 	. ["screen_state"] = screen_state
+	. ["current_time"] = world.time // Add current world time for countdown calculations
+	. ["electrical"] = list("charge" = 0, "max_charge" = 0)
+	if(cell)
+		. ["electrical"]["charge"] = cell.charge
+		. ["electrical"]["max_charge"] = cell.maxcharge
 
 /obj/item/device/dropship_computer/ui_static_data(mob/user)
 	. = list()
@@ -193,6 +251,7 @@
 	switch(action)
 		if("screen-state")
 			screen_state = params["state"]
+			playsound(src, get_sfx("terminal_button"), 25, FALSE)
 			return FALSE
 
 // Utility: Fisher-Yates shuffle for lists
@@ -219,3 +278,17 @@ var/global/list/dropship_repair_tool_types = list(
 
 /proc/get_dropship_repair_tool_type(action)
 	return dropship_repair_tool_types[action]
+
+/obj/item/device/dropship_handheld/proc/clear_scanned_data()
+	scanned_weapons.Cut()
+	original_mount_points.Cut()
+	
+/obj/item/device/dropship_handheld/attackby(obj/item/I, mob/user)
+	if(istype(I, /obj/item/tool/screwdriver))
+		if(!length(scanned_weapons))
+			to_chat(user, SPAN_NOTICE("No scan data to clear."))
+			return
+		to_chat(user, SPAN_NOTICE("You clear the scan data from [src]."))
+		clear_scanned_data()
+		return
+	. = ..()

@@ -185,14 +185,19 @@ GLOBAL_DATUM(almayer_aa_cannon, /obj/structure/anti_air_cannon)
 	target.damaged = FALSE
 
 /datum/dropship_antiair/proc/on_timeout(obj/structure/dropship_equipment/target)
+	// Only destroy if not already repaired
 	if(delete_on_timeout)
-		target.visible_message(SPAN_WARNING("[target] crumbles into itself and falls apart. It's been destroyed!"))
-		qdel(target)
+		if(length(src.repair_steps))
+			target.visible_message(SPAN_WARNING("[target] crumbles into itself and falls apart. It's been destroyed!"))
+			qdel(target)
+		else
+			// Effect was already repaired, do nothing
+			return
 	else
 		src.remove(target)
 
 /datum/dropship_antiair/boiler_corrosion
-	name = "corrosive acid damage"
+	name = "Corrosive Acid Damage"
 	description = "Corrosive acid is eating through the equipment!"
 	duration = 1800
 	disable_reload = TRUE

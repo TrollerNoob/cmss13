@@ -249,6 +249,7 @@
 			to_chat(user, SPAN_WARNING("You can't repair this while it's installed!"))
 			return TRUE
 	// Iterate over all active anti-air effects
+	var/any_repairable = FALSE
 	for(var/datum/dropship_antiair/effect in antiair_effects)
 		if(!islist(effect.repair_steps) || !length(effect.repair_steps))
 			continue
@@ -274,7 +275,7 @@
 			//if the tool is not the expected type, warn the user
 			if(!expected_type || !istype(I, expected_type))
 				to_chat(user, SPAN_WARNING("Incorrect tool!"))
-				effect.repairing = FALSE
+				// Stay on the same step, do not advance or reset anything
 				return TRUE
 			//need the welder to be active for welding repairs
 			if(next_step == "welder" && istype(I, /obj/item/tool/weldingtool))
@@ -321,11 +322,15 @@
 						break
 				if(all_repaired)
 					damaged = FALSE
+					antiair_block_reload = FALSE
+					antiair_block_fire = FALSE
 					to_chat(user, SPAN_NOTICE("All malfunctions have been repaired! [src] is operational."))
 				return TRUE
-			else
-				to_chat(user, SPAN_WARNING("No malfunctions are available to repair."))
-				return TRUE
+			any_repairable = TRUE
+			return TRUE
+	if(!any_repairable)
+		to_chat(user, SPAN_WARNING("No malfunctions are available to repair."))
+	return TRUE
 
 /obj/structure/dropship_equipment/proc/load_ammo(obj/item/powerloader_clamp/PC, mob/living/user)
 	if(istype(src, /obj/structure/dropship_equipment/weapon))

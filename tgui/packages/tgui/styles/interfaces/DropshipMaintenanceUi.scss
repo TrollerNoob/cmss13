@@ -3,9 +3,9 @@
 @use '../functions.scss' as *;
 
 $light: hsl(140, 100%, 46%);
-$dark: hsl(60, 100%, 3%);
+$dark: hsl(120, 100%, 3%);
 
-$loading_color: hsl(140, 100%, 46%);
+$loading_color: hsl(140, 100%, 36%);
 $animation_load_duration: 1s;
 
 $small-text: 1rem;
@@ -15,6 +15,7 @@ $large-text: 1.5rem;
   span {
     font-size: $small-text;
   }
+  
   .TopPanelSlide {
     position: absolute;
     top: 0;
@@ -29,6 +30,7 @@ $large-text: 1.5rem;
     background-color: $dark;
     border-bottom: 0.5rem solid $light;
   }
+  
   .BottomPanelSlide {
     position: absolute;
     bottom: 0;
@@ -49,7 +51,6 @@ $large-text: 1.5rem;
       width: 100%;
       margin-top: 0;
     }
-
     to {
       margin-top: -50%;
       visibility: hidden;
@@ -61,24 +62,46 @@ $large-text: 1.5rem;
       width: 100%;
       margin-bottom: 0%;
     }
-
     to {
       margin-bottom: -50%;
       visibility: hidden;
     }
   }
 
+  .RepairBox {
+    border: 2px solid $light;
+  }
+
   .TitleBox {
-    @extend .SentryBox;
+    @extend .RepairBox;
     padding: 3px;
   }
-
-  .Button {
-    font-size: $small-text;
+  
+  .TitleContainer {
+    align-content: center;
+    align-items: center;
+  }
+  
+  .TitleText {
+    font-size: $large-text;
+    color: $light;
   }
 
-  .ProgressBar__content {
-    color: $dark;
+  .RepairCard {
+    height: 100%;
+    width: 270px;
+    margin-left: 2px;
+    margin-right: 2px;
+    span {
+      font-size: $large-text;
+      display: block;
+      width: 100%;
+      white-space: normal;
+      word-wrap: break-word;
+    }
+    .GunFlex {
+      width: 270px;
+    }
   }
 
   .EmptyDisplay {
@@ -100,17 +123,34 @@ $large-text: 1.5rem;
     }
   }
 
-  .TitleContainer {
-    align-content: center;
-    align-items: center;
+  .DropshipDiagram {
+    position: relative;
+    box-sizing: border-box;
+    padding: 4px;
+    border: 1px solid $light;
+    border-radius: 4px;
+    
+    text {
+      -webkit-user-select: none;
+      -moz-user-select: none;
+      -ms-user-select: none;
+      user-select: none;
+      font-weight: bold;
+      font-size: 1rem;
+    }
   }
 
-  .Tab {
-    height: 2.5rem;
-  }
-
-  .Tab__text {
-    font-size: $large-text;
+  .GunFlex {
+    gap: 5px;
+    max-width: 25rem;
+    margin-right: auto;
+    margin-left: auto;
+    
+    // For per-scan detail view, expand to match title box width
+    &.PerScanDetail {
+      max-width: none;
+      width: 100%;
+    }
   }
 
   .EngagedBox {
@@ -122,6 +162,16 @@ $large-text: 1.5rem;
       font-family: monospace;
       font-weight: bold;
       font-size: $large-text;
+    }
+    
+    // For per-scan detail view, align content to the left
+    &.PerScanDetail {
+      text-align: left;
+      
+      // Also align flex containers to the left
+      .Flex {
+        align-items: flex-start;
+      }
     }
   }
 
@@ -147,11 +197,11 @@ $large-text: 1.5rem;
       background-color: rgba($color: $light, $alpha: 1);
     }
   }
+  
   @keyframes warningTextAnimation {
     0% {
       color: $light;
     }
-
     49% {
       color: $light;
     }
@@ -162,48 +212,4 @@ $large-text: 1.5rem;
       color: $dark;
     }
   }
-
-  .TitleText {
-    text-align: center;
-    span {
-      font-size: 1.5rem;
-    }
-  }
-
-  .SelectionFlexItem {
-    margin-left: 2px;
-    margin-right: 2px;
-    margin-top: 1px;
-    margin-bottom: 1px;
-    min-width: 23%;
-    flex-grow: 1;
-  }
-
-  .SelectionMenu {
-    align-content: space-between;
-    .Title {
-      text-align: center;
-    }
-    .Option {
-      margin-top: 1px;
-      margin-bottom: 1px;
-    }
-
-    .Button {
-      background-color: $dark;
-      width: 100%;
-      color: $light;
-    }
-    .Button__content {
-      text-align: center;
-    }
-    .Selected {
-      background-color: $light;
-      color: $dark;
-    }
-  }
-}
-
-.Test {
-  border: 1px solid red;
 }
