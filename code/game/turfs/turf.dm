@@ -74,8 +74,8 @@
 	var/skyspit_active = FALSE
 	var/skyspit_expire_timer = null
 	var/skyspit_overlay = null
-	var/skyspit_applier = null // Boiler mob who created the skyspit
-	var/chaff_active = FALSE // Boiler chaff marker
+	var/skyspit_applier = null // Xeno mob who created the skyspit
+	var/chaff_active = FALSE // Xeno chaff marker
 	var/chaff_expire_timer = null // Timer for chaff marker
 	var/chaff_overlay = null // Overlay for chaff telegraph
 

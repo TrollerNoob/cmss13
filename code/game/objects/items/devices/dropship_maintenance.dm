@@ -33,16 +33,16 @@
 			return
 		if(!do_after(user, 10, INTERRUPT_NO_NEEDHAND | BEHAVIOR_IMMOBILE, BUSY_ICON_BUILD))
 			return
-		
+
 		// Check if weapon is already scanned
 		if(W in src.scanned_weapons)
 			to_chat(user, SPAN_NOTICE("[W] has already been scanned."))
 			return
-			
+
 		// Store original mount point when first scanned
 		var/original_mount_point = W.ship_base?.attach_id
 		src.original_mount_points[W] = original_mount_point
-			
+
 		// Add weapon to scanned list
 		src.scanned_weapons += W
 		playsound(src, 'sound/mecha/lowpower.ogg', 50, 1)
@@ -57,15 +57,6 @@
 			to_chat(user, SPAN_WARNING("No repair scan data found on the handheld device."))
 			return
 		playsound(src, 'sound/machines/terminal_success.ogg', 50, 1)
-		to_chat(user, SPAN_NOTICE("Repair steps required for each malfunction:"))
-		for(var/obj/structure/dropship_equipment/weapon/weapon in src.scanned_weapons)
-			if(!weapon || !length(weapon.antiair_effects))
-				continue
-			to_chat(user, SPAN_NOTICE("=== [weapon.name] ==="))
-			for(var/datum/dropship_antiair/effect in weapon.antiair_effects)
-				if(effect && length(effect.repair_steps))
-					var/effect_name = effect.name ? effect.name : "Unknown Effect"
-					to_chat(user, SPAN_NOTICE("[effect_name]: [islist(effect.repair_steps) ? effect.repair_steps.Join(", ") : "No steps"]."))
 		return
 
 /obj/item/device/dropship_computer
@@ -167,21 +158,21 @@
 		return null
 	var/list/repair_info = list()
 	var/list/weapons_to_remove = list()
-	
+
 	for(var/obj/structure/dropship_equipment/weapon/weapon in src.scanned_weapons)
 		if(QDELETED(weapon) || !weapon || !islist(weapon.antiair_effects) || !length(weapon.antiair_effects))
 			// Remove weapons that are deleted, invalid, or have no antiair effects (fully repaired/destroyed)
 			weapons_to_remove += weapon
 			continue
-		
+
 		var/mount_point = weapon.ship_base?.attach_id
 		var/original_mount_point = src.original_mount_points[weapon]
 		var/has_repair_needed = FALSE
-		
+
 		// Get shuttle information
 		var/shuttle_name = weapon.linked_shuttle?.name
 		var/shuttle_id = weapon.linked_shuttle?.id
-		
+
 		for(var/datum/dropship_antiair/effect as anything in weapon.antiair_effects)
 			if(!islist(effect.repair_steps) || !length(effect.repair_steps))
 				continue
@@ -192,7 +183,7 @@
 			var/equipment_name = weapon.name ? weapon.name : null
 			// Calculate completed steps: repair_step_index is 1-based, so clamp to steps length
 			var/completed_steps = (isnum(effect.repair_step_index) && effect.repair_step_index > 1) ? min(effect.repair_step_index - 1, length(effect.repair_steps)) : 0
-			
+
 			// Additional effect information
 			var/effect_description = effect.description ? effect.description : "No description available"
 			var/effect_duration = effect.duration ? effect.duration : null
@@ -205,7 +196,7 @@
 				debuffs += "Cannot reload"
 			if(effect.delete_on_timeout)
 				debuffs += "Will be destroyed if not repaired"
-			
+
 			repair_info += list(list(
 				"id" = "[effect_name] #[effect_id]",
 				"steps" = effect.repair_steps,
@@ -222,16 +213,16 @@
 				"shuttle_id" = shuttle_id,
 				"debuffs" = debuffs
 			))
-		
+
 		// If this weapon has no effects that need repairs, mark it for removal
 		if(!has_repair_needed)
 			weapons_to_remove += weapon
-	
+
 	// Remove fully repaired weapons from the scanned list
 	for(var/weapon in weapons_to_remove)
 		src.scanned_weapons -= weapon
 		src.original_mount_points -= weapon
-	
+
 	return repair_info
 
 /obj/item/device/dropship_computer/tgui_interact(mob/user, datum/tgui/ui)
@@ -304,7 +295,7 @@ var/global/list/dropship_repair_tool_types = list(
 /obj/item/device/dropship_handheld/proc/clear_scanned_data()
 	scanned_weapons.Cut()
 	original_mount_points.Cut()
-	
+
 /obj/item/device/dropship_handheld/attackby(obj/item/I, mob/user)
 	if(istype(I, /obj/item/tool/screwdriver))
 		if(!length(scanned_weapons))

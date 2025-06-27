@@ -334,6 +334,7 @@
 		envelope.change_current_loc(null)
 		envelope.antiair_fx_played = FALSE
 		envelope.shuttle_shake_played = FALSE
+		envelope.xeno_announcement_played = FALSE
 
 	// --- Impact reticle overlay: delete all at the end of the firemission ---
 	for(var/obj/effect/overlay/temp/dropship_reticle/firemission/ret in all_firemission_reticles)

@@ -28,6 +28,8 @@
 
 	var/shuttle_shake_played = FALSE // Track if shuttle shake effect has played this firemission
 
+	var/xeno_announcement_played = FALSE // Track if xeno announcement has played this firemission
+
 /datum/cas_fire_envelope/New()
 	..()
 	missions = list()
@@ -464,6 +466,13 @@
 	if(!src.antiair_fx_played)
 		src.antiair_fx_played = TRUE
 		playsound(target_turf, 'sound/effects/supercapacitors_charging.ogg', vol = 80, vary = TRUE, sound_range = 75, falloff = 8)
+		// Announce to xenos only if the anti-air was created by a xeno and announcement hasn't been played yet
+		if(!src.xeno_announcement_played)
+			var/turf/turf_loc = get_turf(target_turf)
+			if(turf_loc && turf_loc.skyspit_applier && istype(turf_loc.skyspit_applier, /mob/living/carbon/xenomorph))
+				var/mob/living/carbon/xenomorph/applier_xeno = turf_loc.skyspit_applier
+				xeno_announcement("The metal bird's cries can be heard from the sky. It's been injured!", applier_xeno.hivenumber, XENO_GENERAL_ANNOUNCE)
+				src.xeno_announcement_played = TRUE
 		// Play sparks on up to 9 unique tiles in a 3-tile radius
 		var/list/nearby = list()
 		for(var/turf/T in range(3, target_turf)) if(T != target_turf) nearby += T
