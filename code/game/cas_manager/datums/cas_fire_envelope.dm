@@ -2,6 +2,7 @@
 	var/obj/structure/machinery/computer/dropship_weapons/linked_console
 	var/list/datum/cas_fire_mission/missions
 	var/fire_length
+	var/base_fire_length // Base fire length before equipment bonuses
 	var/grace_period //how much time you have after initiating fire mission and before you can't change firemissions
 	var/first_warning
 	var/second_warning
@@ -63,11 +64,8 @@
 	var/shuttle_tag = linked_console.shuttle_tag
 	var/obj/docking_port/mobile/marine_dropship/dropship = SSshuttle.getShuttle(shuttle_tag)
 
-	// Set fire_length to 16 if ram_rocket is present, else 12
-	if(istype(dropship))
-		for(var/obj/structure/dropship_equipment/fuel/ram_rocket/rocket in dropship.equipments)
-			fire_length = 16
-			break
+	// Update fire_length based on equipment
+	update_fire_length_from_equipment()
 
 	// Exclude heavygun/bay from firemission weapons unless this is a belly_gun console
 	var/is_belly_gun_console = istype(linked_console, /obj/structure/machinery/computer/dropship_weapons/belly_gun)
@@ -96,6 +94,12 @@
 		return FIRE_MISSION_NOT_EXECUTABLE
 	var/datum/cas_fire_mission/mission = missions[mission_id]
 	if(!mission)
+		return FIRE_MISSION_NOT_EXECUTABLE
+
+	// Update fire_length and check if mission exceeds current capability
+	update_fire_length_from_equipment()
+	if(mission.mission_length > fire_length)
+		mission_error = "Fire Mission length ([mission.mission_length]) exceeds current vehicle capability ([fire_length]). Check equipment configuration."
 		return FIRE_MISSION_NOT_EXECUTABLE
 
 	var/datum/cas_fire_mission_record/fmr = mission.record_for_weapon(weapon_id)
@@ -135,6 +139,13 @@
 		return FIRE_MISSION_BAD_DIRECTION
 	mission_error = null
 	var/datum/cas_fire_mission/mission = missions[mission_id]
+
+	// Update fire_length and check if mission exceeds current capability
+	update_fire_length_from_equipment()
+	if(mission.mission_length > fire_length)
+		mission_error = "Fire Mission length ([mission.mission_length]) exceeds current vehicle capability ([fire_length]). Check equipment configuration."
+		return FIRE_MISSION_CODE_ERROR
+
 	var/check_result = mission.check(linked_console)
 	if(check_result == FIRE_MISSION_CODE_ERROR)
 		return FIRE_MISSION_CODE_ERROR
@@ -400,6 +411,7 @@
 
 /datum/cas_fire_envelope/uscm_dropship
 	fire_length = 12
+	base_fire_length = 12
 	grace_period = 5 SECONDS
 	first_warning = 6 SECONDS
 	second_warning = 8 SECONDS
@@ -443,13 +455,19 @@
 	return "OK"
 
 /datum/cas_fire_envelope/proc/update_fire_length_from_equipment()
-	fire_length = 12
+	// Reset to base fire length to prevent stacking bonuses
+	// If base_fire_length is not set, use current fire_length as base
+	if(!base_fire_length)
+		base_fire_length = fire_length
+	fire_length = base_fire_length
+
 	if(linked_console)
 		var/shuttle_tag = linked_console.shuttle_tag
 		var/obj/docking_port/mobile/marine_dropship/dropship = SSshuttle.getShuttle(shuttle_tag)
 		if(istype(dropship))
+			// Check for ram rocket equipment (adds +4 fire length, not stackable)
 			for(var/obj/structure/dropship_equipment/fuel/ram_rocket/rocket in dropship.equipments)
-				fire_length = 16
+				fire_length += 4
 				break
 
 /datum/cas_fire_envelope/proc/anti_air_success(atom/target_turf, range = 10)

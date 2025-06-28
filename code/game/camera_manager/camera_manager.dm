@@ -339,12 +339,6 @@
 		console.direct_fire_reticle.loc = null // Not in the world
 		console.direct_fire_reticle.update_target(center_turf.x, center_turf.y, center_turf.z)
 
-		// Add the reticle to the camera's plane master system so it appears above darkness
-		var/atom/movable/screen/plane_master/above_lighting = cam_plane_masters["[ABOVE_LIGHTING_PLANE]"]
-		if(above_lighting)
-			console.direct_fire_reticle.plane = ABOVE_LIGHTING_PLANE
-			above_lighting.vis_contents += console.direct_fire_reticle
-
 		// Add the reticle image to eligible clients only (marines and observers with CAS HUD)
 		var/datum/mob_hud/dropship/dropship_hud = GLOB.huds[MOB_HUD_DROPSHIP]
 		if(dropship_hud)
