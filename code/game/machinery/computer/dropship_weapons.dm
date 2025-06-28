@@ -420,6 +420,13 @@
 			if(!sig)
 				return FALSE
 
+			// Clean up rappel ropes when firing weapons (combat operation)
+			for(var/obj/structure/dropship_equipment/rappel_system/rappel in shuttle.equipments)
+				rappel.cleanup_ropes(TRUE)
+				rappel.icon_state = "rappel_hatch_closed"
+				rappel.last_deployed_target = null
+				rappel.manual_deploy_cooldown = world.time + 5 SECONDS
+
 			// Do NOT set selected_equipment here; just use DEW for this fire action
 			if(ui_open_fire(user, shuttle, camera_target_id, DEW))
 				if(firemission_envelope)
@@ -455,11 +462,13 @@
 		if("firemission-dual-offset-camera")
 			var/target_id = params["target_id"]
 
-			for(var/obj/structure/dropship_equipment/rappel_system/rappel in shuttle.equipments)
-				rappel.cleanup_ropes(TRUE)
-				rappel.icon_state = "rappel_hatch_closed"
-				rappel.last_deployed_target = null
-				rappel.manual_deploy_cooldown = world.time + 5 SECONDS
+			// Only cleanup ropes if we're changing to a different target
+			if(camera_target_id != target_id)
+				for(var/obj/structure/dropship_equipment/rappel_system/rappel in shuttle.equipments)
+					rappel.cleanup_ropes(TRUE)
+					rappel.icon_state = "rappel_hatch_closed"
+					rappel.last_deployed_target = null
+					rappel.manual_deploy_cooldown = world.time + 5 SECONDS
 
 			var/x_offset_value = params["x_offset_value"]
 			var/y_offset_value = params["y_offset_value"]
@@ -551,6 +560,13 @@
 			if(!ui_select_laser_firemission(user, shuttle, target_id))
 				playsound(src, 'sound/machines/terminal_error.ogg', 5, 1)
 				return FALSE
+
+			// Clean up rappel ropes when executing a firemission (immediate effect)
+			for(var/obj/structure/dropship_equipment/rappel_system/rappel in shuttle.equipments)
+				rappel.cleanup_ropes(TRUE)
+				rappel.icon_state = "rappel_hatch_closed"
+				rappel.last_deployed_target = null
+				rappel.manual_deploy_cooldown = world.time + 5 SECONDS
 
 			initiate_firemission(user, fm_tag, direction, text2num(offset_x_value), text2num(offset_y_value))
 			return TRUE
