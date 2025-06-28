@@ -611,8 +611,7 @@
 				return FALSE
 			rappel.system_cooldown = world.time + 5 SECONDS
 
-			var/target_id = params["target_id"]
-			var/datum/cas_signal/sig = get_cas_signal(target_id)
+			var/datum/cas_signal/sig = get_cas_signal(camera_target_id)
 			if(!sig)
 				to_chat(user, SPAN_WARNING("No signal chosen."))
 				return FALSE
@@ -623,8 +622,9 @@
 
 			// Store the target in the rappel system for later use
 			rappel.locked_target = sig
-			set_camera_target(target_id) // Focus camera on the selected signal
 			to_chat(user, SPAN_NOTICE("Rappel target locked: [sig.name]"))
+
+			// Register signal handling for rappel cleanup
 
 			UnregisterSignal(linked_shuttle, COMSIG_SHUTTLE_SETMODE, PROC_REF(clear_rope_landed))
 			RegisterSignal(linked_shuttle, COMSIG_SHUTTLE_SETMODE, PROC_REF(clear_rope_landed))

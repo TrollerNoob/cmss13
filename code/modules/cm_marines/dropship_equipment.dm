@@ -2189,6 +2189,20 @@
 	if(animated)
 		icon_state = "rappel_hatch_closed"
 
+/obj/structure/dropship_equipment/rappel_system/ui_data(mob/user)
+	var/list/data = list()
+	if(locked_target && istype(locked_target, /datum/cas_signal))
+		var/datum/cas_signal/signal = locked_target
+		var/area/target_area = get_area(signal.signal_loc)
+		data["locked_target"] = list(
+			"target_name" = signal.name,
+			"target_tag" = signal.target_id,
+			"area_name" = target_area ? target_area.name : "Unknown Area"
+		)
+	else
+		data["locked_target"] = null
+	return data
+
 /obj/structure/dropship_equipment/rappel_system/on_arrival()
 	..()
 	cleanup_ropes()
