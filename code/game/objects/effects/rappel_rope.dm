@@ -62,15 +62,21 @@
 			target_rope.icon_state = "rope"
 		if(success)
 			if(target_rope)
+				var/old_area = get_area(user)
 				user.pixel_z = 32
 				animate(user, time = 10, pixel_z = 0, flags = ANIMATION_PARALLEL)
 				user.forceMove(target_rope.loc)
+				var/new_area = get_area(user)
+				update_dropship_hud_on_move(user, old_area, new_area)
 				playsound(user, 'sound/items/rappel.ogg', 30, 1)
 				target_rope.icon_state = "rope"
 				user.visible_message(SPAN_NOTICE("[user] rappels down the rope!"))
 			else
 				if(linked_rappel.hatch_rope && linked_rappel.hatch_rope.loc)
+					var/old_area = get_area(user)
 					user.forceMove(linked_rappel.hatch_rope.loc)
+					var/new_area = get_area(user)
+					update_dropship_hud_on_move(user, old_area, new_area)
 					user.visible_message(SPAN_NOTICE("[user] tried to climb down, but there was no rope!"))
 		else
 			to_chat(user, SPAN_WARNING("You were interrupted and let go of the rope!"))
@@ -94,7 +100,10 @@
 		var/success = do_after(user, do_after_time, INTERRUPT_ALL | BEHAVIOR_IMMOBILE, BUSY_ICON_GENERIC, target = src)
 		if(success)
 			if(linked_rappel.hatch_rope && linked_rappel.hatch_rope.loc)
+				var/old_area = get_area(user)
 				user.forceMove(linked_rappel.hatch_rope.loc)
+				var/new_area = get_area(user)
+				update_dropship_hud_on_move(user, old_area, new_area)
 				user.visible_message(SPAN_NOTICE("[user] climbs up the rope!"))
 		else
 			to_chat(user, SPAN_WARNING("You were interrupted and let go of the rope!"))
@@ -162,15 +171,21 @@
 			target_rope.icon_state = "rope"
 		if(success)
 			if(target_rope)
+				var/old_area = get_area(user)
 				user.pixel_z = 32
 				animate(user, time = 10, pixel_z = 0, flags = ANIMATION_PARALLEL)
 				user.forceMove(target_rope.loc)
+				var/new_area = get_area(user)
+				update_dropship_hud_on_move(user, old_area, new_area)
 				playsound(user, 'sound/items/rappel.ogg', 30, 1)
 				target_rope.icon_state = "rope"
 				user.visible_message(SPAN_NOTICE("[user] swiftly scales down the rope!"))
 			else
 				if(linked_rappel.hatch_rope && linked_rappel.hatch_rope.loc)
+					var/old_area = get_area(user)
 					user.forceMove(linked_rappel.hatch_rope.loc)
+					var/new_area = get_area(user)
+					update_dropship_hud_on_move(user, old_area, new_area)
 					user.visible_message(SPAN_NOTICE("[user] tried to crawl down, but there was no rope!"))
 		else
 			to_chat(user, SPAN_WARNING("You were interrupted and let go of the rope!"))
@@ -194,7 +209,10 @@
 		var/success = do_after(user, do_after_time, INTERRUPT_ALL | BEHAVIOR_IMMOBILE, BUSY_ICON_GENERIC, target = src)
 		if(success)
 			if(linked_rappel.hatch_rope && linked_rappel.hatch_rope.loc)
+				var/old_area = get_area(user)
 				user.forceMove(linked_rappel.hatch_rope.loc)
+				var/new_area = get_area(user)
+				update_dropship_hud_on_move(user, old_area, new_area)
 				user.visible_message(SPAN_NOTICE("[user] quickly crawls up the rope!"))
 		else
 			to_chat(user, SPAN_WARNING("You were interrupted and let go of the rope!"))

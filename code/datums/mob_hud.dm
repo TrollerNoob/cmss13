@@ -1002,54 +1002,19 @@ GLOBAL_DATUM_INIT(hud_icon_new_player_3, /image, image('icons/mob/hud/hud.dmi', 
 	var/old_area = get_area(src)
 	. = ..(NewLoc, Dir, step_x, step_y, step_z)
 	var/new_area = get_area(src)
-	var/was_dropship = istype(old_area, /area/shuttle/drop1) || istype(old_area, /area/shuttle/drop2)
-	var/is_dropship = istype(new_area, /area/shuttle/drop1) || istype(new_area, /area/shuttle/drop2)
-	if(was_dropship != is_dropship && GLOB.huds[MOB_HUD_DROPSHIP])
-		var/datum/mob_hud/dropship/dropship_hud = GLOB.huds[MOB_HUD_DROPSHIP]
-		if(src in dropship_hud.hudusers)
-			if(is_dropship)
-				dropship_hud.refresh_hud(src, dropship_hud.hudusers[src])
-			else
-				// Pilot left dropship: forcibly remove all overlays
-				for(var/mob/target in dropship_hud.hudmobs)
-					dropship_hud.remove_from_single_hud(src, target)
-		for(var/mob/user in dropship_hud.hudusers)
-			if(user != src)
-				if(is_dropship)
-					dropship_hud.add_to_single_hud(user, src)
-				else
-					dropship_hud.remove_from_single_hud(user, src)
-		// Keep hudmobs in sync: remove from hudmobs if entering shuttle, add if leaving
-		if(is_dropship)
-			dropship_hud.remove_from_hud(src)
-		else
-			dropship_hud.add_to_hud(src)
+
+	// Update dropship HUD visibility if moving between dropship and ground areas
+	if(GLOB.huds[MOB_HUD_DROPSHIP])
+		update_dropship_hud_on_move(src, old_area, new_area)
 
 /mob/Entered(atom/movable/O)
 	var/old_area = get_area(src)
 	..(O)
 	var/new_area = get_area(src)
-	var/was_dropship = istype(old_area, /area/shuttle/drop1) || istype(old_area, /area/shuttle/drop2)
-	var/is_dropship = istype(new_area, /area/shuttle/drop1) || istype(new_area, /area/shuttle/drop2)
-	if(was_dropship != is_dropship && GLOB.huds[MOB_HUD_DROPSHIP])
-		var/datum/mob_hud/dropship/dropship_hud = GLOB.huds[MOB_HUD_DROPSHIP]
-		if(src in dropship_hud.hudusers)
-			if(is_dropship)
-				dropship_hud.refresh_hud(src, dropship_hud.hudusers[src])
-			else
-				for(var/mob/target in dropship_hud.hudmobs)
-					dropship_hud.remove_from_single_hud(src, target)
-		for(var/mob/user in dropship_hud.hudusers)
-			if(user != src)
-				if(is_dropship)
-					dropship_hud.add_to_single_hud(user, src)
-				else
-					dropship_hud.remove_from_single_hud(user, src)
-		// Keep hudmobs in sync: remove from hudmobs if entering shuttle, add if leaving
-		if(is_dropship)
-			dropship_hud.remove_from_hud(src)
-		else
-			dropship_hud.add_to_hud(src)
+
+	// Update dropship HUD visibility if moving between dropship and ground areas
+	if(GLOB.huds[MOB_HUD_DROPSHIP])
+		update_dropship_hud_on_move(src, old_area, new_area)
 
 /datum/mob_hud/dropship/proc/add_cas_reticles_to_observer(mob/dead/observer/ghost)
 	if(!ghost)
@@ -1066,3 +1031,41 @@ GLOBAL_DATUM_INIT(hud_icon_new_player_3, /image, image('icons/mob/hud/hud.dmi', 
 	for(var/obj/effect/overlay/temp/dropship_reticle/R in world)
 		if(QDELETED(R)) continue
 		R.update_visibility_for_mob(ghost)
+
+/// Helper proc to update dropship HUD visibility when someone teleports between areas
+/proc/update_dropship_hud_on_move(mob/M, area/old_area, area/new_area)
+	if(!M || !GLOB.huds[MOB_HUD_DROPSHIP])
+		return
+	var/datum/mob_hud/dropship/dropship_hud = GLOB.huds[MOB_HUD_DROPSHIP]
+	var/was_dropship = istype(old_area, /area/shuttle/drop1) || istype(old_area, /area/shuttle/drop2)
+	var/is_dropship = istype(new_area, /area/shuttle/drop1) || istype(new_area, /area/shuttle/drop2)
+
+	if(was_dropship != is_dropship)
+		// Handle the person who moved (if they're a pilot)
+		if(M in dropship_hud.hudusers)
+			if(is_dropship)
+				// Person entered dropship and became a pilot: refresh their view
+				dropship_hud.refresh_hud(M, dropship_hud.hudusers[M])
+			else
+				// Person left dropship and is no longer a pilot: remove all overlays
+				for(var/mob/target in dropship_hud.hudmobs)
+					dropship_hud.remove_from_single_hud(M, target)
+
+		// Handle how other pilots see this person
+		if(!is_dropship)
+			// Person left dropship and went to ground: make sure all pilots can see them
+			// Force re-enrollment to ensure they're properly visible
+			dropship_hud.add_to_hud(M)
+		else
+			// Person entered dropship: hide them from all pilots
+			for(var/mob/user in dropship_hud.hudusers)
+				if(user != M)
+					dropship_hud.remove_from_single_hud(user, M)
+
+		// Keep hudmobs enrollment in sync
+		if(is_dropship)
+			// Person entered dropship: remove from hudmobs so they won't be visible
+			dropship_hud.remove_from_hud(M)
+		else
+			// Person left dropship: add to hudmobs so they can be visible
+			dropship_hud.add_to_hud(M)

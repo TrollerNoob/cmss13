@@ -2064,8 +2064,11 @@
 	rope_in_use = TRUE
 	rope.icon_state = "rope_inuse"
 	to_chat(user, SPAN_NOTICE("You begin rappelling down the rope..."))
+	var/old_area = get_area(user)
 	sleep(40)
 	user.forceMove(rope.loc)
+	var/new_area = get_area(user)
+	update_dropship_hud_on_move(user, old_area, new_area)
 	rope.release_rope()
 	rope_in_use = FALSE
 
@@ -2079,8 +2082,11 @@
 	rope_in_use = TRUE
 	rope.icon_state = "rope_inuse"
 	to_chat(user, SPAN_NOTICE("You begin climbing up the rope..."))
+	var/old_area = get_area(user)
 	sleep(40)
 	user.forceMove(hatch_rope.loc)
+	var/new_area = get_area(user)
+	update_dropship_hud_on_move(user, old_area, new_area)
 	rope.release_rope()
 	rope_in_use = FALSE
 
