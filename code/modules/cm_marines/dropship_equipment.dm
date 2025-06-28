@@ -1979,6 +1979,10 @@
 	var/manual_deploy_cooldown = 0
 	var/datum/cas_signal/last_deployed_target = null
 
+/obj/structure/dropship_equipment/rappel_system/Destroy()
+	cleanup_ropes(FALSE) // Clean up all deployed ropes without animation when system is destroyed
+	. = ..()
+
 /obj/structure/dropship_equipment/rappel_system/update_equipment()
 	if(ship_base)
 		icon_state = "rappel_hatch_closed"
