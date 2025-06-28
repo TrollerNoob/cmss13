@@ -922,7 +922,7 @@
 /obj/structure/dropship_equipment/electronics/vertical_exhaust_nozzle
 	name = "\improper TF-107/B-01 Vertical Exhaust Nozzle"
 	shorthand = "TF-107"
-	icon_state = "targeting_system"
+	icon_state = "vertical_nozzle"
 	desc = "A dynamic exhaust nozzle for VTOL capable dropships. This one fits near the cockpit, ducting air forward through the nozzle for aid in hovering operations. During high speed flight, vertical lift from the TF-107 and stern nozzles are bled in to prevent stall, allowing higher top speeds during firemissions. You need a powerloader to lift this."
 	point_cost = 800
 	is_interactable = FALSE

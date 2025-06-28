@@ -212,7 +212,7 @@
 			has_nozzle = TRUE
 			break
 	if(has_nozzle)
-		step_delay = step_delay - 1 // 33% faster
+		step_delay = round(step_delay * 0.67) // 33% faster, rounds to whole number
 
 	// Firemission reticle overlay. Spawns on ALL shootlocs at the start of the firemission
 	var/list/all_firemission_reticles = list()
