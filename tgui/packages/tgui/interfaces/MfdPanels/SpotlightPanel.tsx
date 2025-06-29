@@ -9,12 +9,29 @@ import { mfdState, useEquipmentState } from './stateManagers';
 import { lazeMapper, useTargetOffset } from './TargetAquisition';
 import type { EquipmentContext, SpotlightSpec } from './types';
 
-const SpotPanel = (props: DropshipEquipment) => {
+const SpotPanel = (
+  props: DropshipEquipment & { readonly color?: 'green' | 'yellow' | 'blue' },
+) => {
   const spotData = props.data as SpotlightSpec;
+
+  // Color mapping function
+  const getThemeColor = (color?: 'green' | 'yellow' | 'blue') => {
+    switch (color) {
+      case 'blue':
+        return '#0080ff'; // hsl(200, 100%, 50%)
+      case 'yellow':
+        return '#ffcc00';
+      case 'green':
+      default:
+        return '#00e94e';
+    }
+  };
+
+  const themeColor = getThemeColor(props.color);
 
   let statusText: React.ReactNode = null;
   if (spotData.deployed) {
-    statusText = <h3 style={{ color: '#00e94e' }}>Spotlight Active</h3>;
+    statusText = <h3 style={{ color: themeColor }}>Spotlight Active</h3>;
   } else {
     statusText = <h3 style={{ color: '#808080' }}>Spotlight Offline</h3>;
   }
@@ -60,6 +77,7 @@ export const SpotlightMfdPanel = (props: MfdProps) => {
   return (
     <MfdPanel
       panelStateId={props.panelStateId}
+      color={props.color}
       topButtons={[
         { children: 'EQUIP', onClick: () => setPanelState('equipment') },
         {},
@@ -102,7 +120,7 @@ export const SpotlightMfdPanel = (props: MfdProps) => {
       ]}
     >
       <Box className="NavigationMenu">
-        {spotlight && <SpotPanel {...spotlight} />}
+        {spotlight && <SpotPanel {...spotlight} color={props.color} />}
       </Box>
     </MfdPanel>
   );

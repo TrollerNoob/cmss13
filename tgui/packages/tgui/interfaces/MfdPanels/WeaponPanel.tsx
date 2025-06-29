@@ -24,6 +24,7 @@ interface EquipmentContext {
 const WeaponPanel = (props: {
   readonly panelId: string;
   readonly equipment: DropshipEquipment;
+  readonly color?: string;
 }) => {
   const { data } = useBackend<EquipmentContext>();
 
@@ -31,27 +32,32 @@ const WeaponPanel = (props: {
     <Stack>
       <Stack.Item>
         <svg height="501" width="100">
-          <text stroke="#00e94e" x={60} y={230} textAnchor="start">
+          <text
+            stroke={props.color || '#00e94e'}
+            x={60}
+            y={230}
+            textAnchor="start"
+          >
             ACTIONS
           </text>
           {true && (
             <path
               fillOpacity="0"
-              stroke="#00e94e"
+              stroke={props.color || '#00e94e'}
               d="M 50 210 l -20 0 l -20 -180 l -40 0"
             />
           )}
           {false && (
             <path
               fillOpacity="0"
-              stroke="#00e94e"
+              stroke={props.color || '#00e94e'}
               d="M 50 220 l -25 0 l -15 -90 l -40 0"
             />
           )}
           {false && (
             <path
               fillOpacity="0"
-              stroke="#00e94e"
+              stroke={props.color || '#00e94e'}
               d="M 50 230 l -20 0 l -20 0 l -40 0"
             />
           )}
@@ -59,14 +65,14 @@ const WeaponPanel = (props: {
           {false && (
             <path
               fillOpacity="0"
-              stroke="#00e94e"
+              stroke={props.color || '#00e94e'}
               d="M 50 240 l -25 0 l -15 90 l -40 0"
             />
           )}
           {false && (
             <path
               fillOpacity="0"
-              stroke="#00e94e"
+              stroke={props.color || '#00e94e'}
               d="M 50 250 l -20 0 l -20 180 l -40 0"
             />
           )}
@@ -94,7 +100,7 @@ const WeaponPanel = (props: {
           <g transform="translate(-10)">
             {data.targets_data.length === 0 && (
               <text
-                stroke="#00e94e"
+                stroke={props.color || '#00e94e'}
                 x={-20}
                 y={210}
                 textAnchor="end"
@@ -107,7 +113,12 @@ const WeaponPanel = (props: {
               </text>
             )}
             {data.targets_data.length > 0 && (
-              <text stroke="#00e94e" x={20} y={190} textAnchor="end">
+              <text
+                stroke={props.color || '#00e94e'}
+                x={20}
+                y={190}
+                textAnchor="end"
+              >
                 <tspan x={40} dy="1.2em">
                   SELECT
                 </tspan>
@@ -130,7 +141,7 @@ const WeaponPanel = (props: {
                 )}
               </text>
             )}
-            <TargetLines panelId={props.panelId} />
+            <TargetLines panelId={props.panelId} color={props.color} />
           </g>
         </svg>
       </Stack.Item>
@@ -151,6 +162,7 @@ export const WeaponMfdPanel = (props: MfdProps) => {
   return (
     <MfdPanel
       panelStateId={props.panelStateId}
+      color={props.color}
       leftButtons={[
         {
           children: 'FIRE',
@@ -195,7 +207,11 @@ export const WeaponMfdPanel = (props: MfdProps) => {
     >
       <Box className="NavigationMenu">
         {weap ? (
-          <WeaponPanel equipment={weap} panelId={props.panelStateId} />
+          <WeaponPanel
+            equipment={weap}
+            panelId={props.panelStateId}
+            color={props.color}
+          />
         ) : (
           <EmptyWeaponPanel />
         )}

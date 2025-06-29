@@ -77,6 +77,7 @@ export const SentryMfdPanel = (props: MfdProps) => {
   return (
     <MfdPanel
       panelStateId={props.panelStateId}
+      color={props.color}
       topButtons={[
         { children: 'EQUIP', onClick: () => setPanelState('equipment') },
       ]}

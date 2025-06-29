@@ -86,7 +86,7 @@ const useTargetSubmenu = (panelId: string) => {
   };
 };
 
-export const TargetLines = (props: { readonly panelId: string }) => {
+export const TargetLines = (props: { readonly panelId: string; readonly color?: string }) => {
   const { data } = useBackend<
     EquipmentContext & FiremissionContext & TargetContext
   >();
@@ -96,21 +96,21 @@ export const TargetLines = (props: { readonly panelId: string }) => {
       {data.targets_data.length > targetOffset && (
         <path
           fillOpacity="0"
-          stroke="#00e94e"
+          stroke={props.color || "#00e94e"}
           d="M 50 210 l 20 0 l 20 -180 l 40 0"
         />
       )}
       {data.targets_data.length > targetOffset + 1 && (
         <path
           fillOpacity="0"
-          stroke="#00e94e"
+          stroke={props.color || "#00e94e"}
           d="M 50 220 l 25 0 l 15 -90 l 40 0"
         />
       )}
       {data.targets_data.length > targetOffset + 2 && (
         <path
           fillOpacity="0"
-          stroke="#00e94e"
+          stroke={props.color || "#00e94e"}
           d="M 50 230 l 20 0 l 20 0 l 40 0"
         />
       )}
@@ -118,14 +118,14 @@ export const TargetLines = (props: { readonly panelId: string }) => {
       {data.targets_data.length > targetOffset + 3 && (
         <path
           fillOpacity="0"
-          stroke="#00e94e"
+          stroke={props.color || "#00e94e"}
           d="M 50 240 l 25 0 l 15 90 l 40 0"
         />
       )}
       {data.targets_data.length > targetOffset + 4 && (
         <path
           fillOpacity="0"
-          stroke="#00e94e"
+          stroke={props.color || "#00e94e"}
           d="M 50 250 l 20 0 l 20 180 l 40 0"
         />
       )}
@@ -607,7 +607,7 @@ export const TargetAquisitionMfdPanel = (props: MfdProps) => {
                     )}
                   </text>
                 )}
-                <TargetLines panelId={props.panelStateId} />
+                <TargetLines panelId={props.panelStateId} color={props.color} />
               </g>
             </svg>
           </Stack.Item>

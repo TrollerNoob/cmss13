@@ -48,6 +48,7 @@ export const FultonMfdPanel = (props: MfdProps) => {
   return (
     <MfdPanel
       panelStateId={props.panelStateId}
+      color={props.color}
       leftButtons={left_targets}
       rightButtons={[
         {
@@ -85,35 +86,35 @@ export const FultonMfdPanel = (props: MfdProps) => {
               {all_targets.length > 0 && (
                 <path
                   fillOpacity="0"
-                  stroke="#00e94e"
+                  stroke={props.color || "#00e94e"}
                   d="M 100 45 l -50 0 l -20 -15 l -150 0"
                 />
               )}
               {all_targets.length > 1 && (
                 <path
                   fillOpacity="0"
-                  stroke="#00e94e"
+                  stroke={props.color || "#00e94e"}
                   d="M 100 75 l -50 0 l -20 55 l -150 0"
                 />
               )}
               {all_targets.length > 2 && (
                 <path
                   fillOpacity="0"
-                  stroke="#00e94e"
+                  stroke={props.color || "#00e94e"}
                   d="M 100 110 l -50 0 l -20 120 l -150 0"
                 />
               )}
               {all_targets.length > 3 && (
                 <path
                   fillOpacity="0"
-                  stroke="#00e94e"
+                  stroke={props.color || "#00e94e"}
                   d="M 100 140 l -50 0 l -20 190 l -150 0"
                 />
               )}
               {all_targets.length > 4 && (
                 <path
                   fillOpacity="0"
-                  stroke="#00e94e"
+                  stroke={props.color || "#00e94e"}
                   d="M 100 175 l -50 0 l -20 255 l -150 0"
                 />
               )}
@@ -136,21 +137,21 @@ export const FultonMfdPanel = (props: MfdProps) => {
               {all_targets.length > 5 && (
                 <path
                   fillOpacity="0"
-                  stroke="#00e94e"
+                  stroke={props.color || "#00e94e"}
                   d="M -40 205 l 50 0 l 20 -75 l 150 0"
                 />
               )}
               {all_targets.length > 6 && (
                 <path
                   fillOpacity="0"
-                  stroke="#00e94e"
+                  stroke={props.color || "#00e94e"}
                   d="M -40 235 l 50 0 l 150 0"
                 />
               )}
               {all_targets.length > 7 && (
                 <path
                   fillOpacity="0"
-                  stroke="#00e94e"
+                  stroke={props.color || "#00e94e"}
                   d="M -40 265 l 50 0 l 20 65 l 150 0"
                 />
               )}

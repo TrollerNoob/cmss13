@@ -363,6 +363,7 @@ export const DropshipWeaponsConsole = () => {
               <PrimaryPanel
                 panelStateId="left-screen"
                 otherPanelStateId="right-screen"
+                consoleType="weapons"
               />
             </Stack.Item>
             <Stack.Item>
@@ -385,6 +386,7 @@ export const DropshipWeaponsConsole = () => {
               <PrimaryPanel
                 panelStateId="right-screen"
                 otherPanelStateId="left-screen"
+                consoleType="weapons"
               />
             </Stack.Item>
           </Stack>

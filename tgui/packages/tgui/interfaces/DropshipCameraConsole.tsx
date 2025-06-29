@@ -8,6 +8,7 @@ import { MapMfdPanel } from './MfdPanels/MapPanel';
 import { MfdPanel, type MfdProps } from './MfdPanels/MultifunctionDisplay';
 import { mfdState } from './MfdPanels/stateManagers';
 import { otherMfdState } from './MfdPanels/stateManagers';
+import { SupportMfdPanel } from './MfdPanels/SupportPanel';
 
 export interface DropshipCameraProps {
   equipment_data: Array<DropshipEquipment>;
@@ -54,6 +55,7 @@ const BaseMfdPanel = (props: MfdProps) => {
   return (
     <MfdPanel
       panelStateId={props.panelStateId}
+      color={props.color}
       topButtons={[
         { children: 'EQUIP', onClick: () => setPanelState('equipment') },
         {},
@@ -93,6 +95,8 @@ const PrimaryPanel = (props: MfdProps) => {
       return <EquipmentMfdPanel {...props} />;
     case 'map':
       return <MapMfdPanel {...props} />;
+    case 'support':
+      return <SupportMfdPanel {...props} />;
     default:
       return <BaseMfdPanel {...props} />;
   }
@@ -108,6 +112,8 @@ export const DropshipCameraConsole = () => {
               <PrimaryPanel
                 panelStateId="left-screen"
                 otherPanelStateId="right-screen"
+                color="blue"
+                consoleType="camera"
               />
             </Stack.Item>
             <Stack.Item>
@@ -130,6 +136,8 @@ export const DropshipCameraConsole = () => {
               <PrimaryPanel
                 panelStateId="right-screen"
                 otherPanelStateId="left-screen"
+                color="blue"
+                consoleType="camera"
               />
             </Stack.Item>
           </Stack>

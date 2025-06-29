@@ -15,6 +15,8 @@ export interface MfdProps {
   readonly bottomButtons?: Array<ButtonProps>;
   readonly children?: ReactNode;
   readonly otherPanelStateId?: string; // eslint-disable-line
+  readonly color?: 'green' | 'yellow' | 'blue'; // Add color prop for CrtPanel
+  readonly consoleType?: 'weapons' | 'camera'; // Add console type to distinguish functionality
 }
 
 export const MfdButton = (props: ButtonProps) => {
@@ -131,7 +133,7 @@ export const MfdPanel = (props: MfdProps) => {
           <VerticalPanel buttons={leftButtons} />
         </TableCell>
         <TableCell>
-          <CrtPanel color="green" className="displaypanel">
+          <CrtPanel color={props.color || 'green'} className="displaypanel">
             {props.children}
           </CrtPanel>
         </TableCell>
