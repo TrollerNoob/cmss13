@@ -36,6 +36,8 @@
 	var/mob/source_mob
 	var/combat_equipment = TRUE
 	var/faction_exclusive //if this ammo is obtainable only by certain faction
+	//if TRUE, this ammo can be used to break through cave roofs
+	var/cavebreaker = FALSE
 	//delay in how fast to loop the simulation, mainly for GAU/Laser currently
 	var/sleep_per_shot = 1
 	//if this ammo doesn't require a powerloader to be moved
@@ -525,6 +527,7 @@
 	ammo_count = 4
 	max_ammo_count = 4
 	fire_mission_delay = 4 // high cooldown
+	cavebreaker = TRUE // Designed for bunker busting
 
 /obj/structure/ship_ammo/missile/hellhound/detonate_on(turf/impact, obj/structure/dropship_equipment/weapon/fired_from)
 	impact.ceiling_debris_check(2)
@@ -533,6 +536,144 @@
 	addtimer(CALLBACK(GLOBAL_PROC, GLOBAL_PROC_REF(smoke_spread), impact, 3, /obj/effect/particle_effect/smoke, null, 2), 1 SECONDS)
 	addtimer(CALLBACK(GLOBAL_PROC, GLOBAL_PROC_REF(create_shrapnel), impact, 75, 0, 360, /datum/ammo/bullet/shrapnel/breaching, create_cause_data(initial(name), source_mob), FALSE, 100), 0.5 SECONDS)
 	QDEL_IN(src, 0.5 SECONDS)
+
+//bombs
+
+/obj/structure/ship_ammo/bomb
+	name = "abstract bomb"
+	icon_state = "double"
+	icon = 'icons/obj/structures/props/dropship/dropship_ammo64.dmi'
+	equipment_type = /obj/structure/dropship_equipment/weapon/bomb_bay
+	ammo_count = 1
+	max_ammo_count = 1
+	ammo_name = "bomb"
+	travelling_time = 60 // can't be fired on direct so this won't come into play
+	transferable_ammo = TRUE
+	point_cost = 300
+	fire_mission_delay = 3 //moderate cooldown
+	ammo_id = ""
+	bound_width = 64
+	bound_height = 32
+	accuracy_range = 3 // bombs are a bit inaccurate
+	max_inaccuracy = 5
+	point_cost = 0
+	ammo_used_per_firing = 1
+	travelling_time = 60 // bombs are slow, but they hit hard
+
+/obj/structure/ship_ammo/bomb/detonate_on(turf/impact, obj/structure/dropship_equipment/weapon/fired_from)
+	qdel(src)
+
+/obj/structure/ship_ammo/bomb/show_loaded_desc(mob/user)
+	if(ammo_count)
+		return "It's loaded with \a [src] containing [ammo_count] bomb\s."
+
+/obj/structure/ship_ammo/bomb/get_examine_text(mob/user)
+	. = ..()
+	. += "It has [ammo_count] bomb\s."
+
+/obj/structure/ship_ammo/bomb/cluster
+	name = "\improper SM-21 'Chubby'"
+	desc = "The SM-21 'Chubby' is a cluster-bomb type ordnance that only requires laser-guidance when first launched. Derived from the popular SM-17 'Fatty', this is a smaller and more compact version of its predecessor, primarily used against target rich environments. It is capable of being dropped from the LAB-107 Bomb Bay."
+	icon_state = "double"
+	ammo_id = ""
+	travelling_time = 70 //slow but accurate
+	accuracy_range = 2
+	max_inaccuracy = 3
+	point_cost = 400
+
+/obj/structure/ship_ammo/bomb/cluster/detonate_on(turf/impact, obj/structure/dropship_equipment/weapon/fired_from)
+	impact.ceiling_debris_check(3)
+	// Initial small explosion
+	addtimer(CALLBACK(GLOBAL_PROC, GLOBAL_PROC_REF(cell_explosion), impact, 150, 25, EXPLOSION_FALLOFF_SHAPE_LINEAR, null, create_cause_data(initial(name), source_mob)), 0.5 SECONDS)
+
+	// Diamond-shaped cluster explosions - center plus 4 cardinal directions
+	var/list/diamond_coords = list(
+		list(0, 0),   // Center
+		list(0, 3),   // North
+		list(3, 0),   // East
+		list(0, -3),  // South
+		list(-3, 0)   // West
+	)
+
+	// Schedule cluster explosions with rapid delays
+	for(var/i = 1 to diamond_coords.len)
+		var/list/coords = diamond_coords[i]
+		var/turf/target_turf = locate(impact.x + coords[1], impact.y + coords[2], impact.z)
+		if(target_turf)
+			addtimer(CALLBACK(GLOBAL_PROC, GLOBAL_PROC_REF(cell_explosion), target_turf, 200, 50, EXPLOSION_FALLOFF_SHAPE_LINEAR, null, create_cause_data(initial(name), source_mob)), (0.7 + i * 0.3) SECONDS)
+
+	QDEL_IN(src, 0.5 SECONDS)
+
+/obj/structure/ship_ammo/bomb/incendiary
+	name = "\improper AGM-81 'Firecracker'"
+	desc = "The AGM-81 'Firecracker' is a cluster incendiary bomb designed for area denial and anti-personnel use. A more streamlined version of the AGM-99 'Napalm', it earned its nickname 'Firecracker' due to the crackling of its incendiary reaction upon detonation."
+	icon_state = "double"
+	ammo_id = ""
+	travelling_time = 70 // slow but powerful
+	accuracy_range = 3
+	max_inaccuracy = 5
+	point_cost = 400
+
+/obj/structure/ship_ammo/bomb/incendiary/detonate_on(turf/impact, obj/structure/dropship_equipment/weapon/fired_from)
+	impact.ceiling_debris_check(3)
+	// Get all turfs in a 9x9 area around the impact
+	var/list/target_turfs = RANGE_TURFS(3, impact) // 3 range = 7x7 area
+
+	// Create 5 random explosions with napalm fire spread
+	for(var/i = 1 to 5)
+		var/turf/target_turf = pick(target_turfs)
+		if(target_turf)
+			// Schedule explosion with staggered timing
+			addtimer(CALLBACK(GLOBAL_PROC, GLOBAL_PROC_REF(cell_explosion), target_turf, 150, 50, EXPLOSION_FALLOFF_SHAPE_LINEAR, null, create_cause_data(initial(name), source_mob)), (0.5 + i * 0.2) SECONDS)
+			// Add napalm fire spread at the same location
+			addtimer(CALLBACK(GLOBAL_PROC, GLOBAL_PROC_REF(fire_spread), target_turf, create_cause_data(initial(name), source_mob), 3, 30, 25, "#EE6515"), (0.7 + i * 0.2) SECONDS)
+
+	QDEL_IN(src, 0.5 SECONDS)
+
+/obj/structure/ship_ammo/bomb/bunkerbuster
+	name = "\improper AGM-98 'MOP'"
+	desc = "The latest cutting edge installment of heavy duty missiles, the AGM-98 'Massive Ordinance Penetrator' is a heavy duty bunker busting bomb designed to penetrate hardened structures and deliver a devastating payload. It is intentionally set to a delayed fuse to further maximize penetration before detonation. It is capable of being dropped from the LAB-107 Bomb Bay."
+	icon_state = "double"
+	ammo_id = ""
+	travelling_time = 80 // very slow but powerful and accurate
+	accuracy_range = 1
+	max_inaccuracy = 2
+	point_cost = 500
+	cavebreaker = TRUE // Designed for bunker busting
+
+/obj/structure/ship_ammo/bomb/bunkerbuster/detonate_on(turf/impact, obj/structure/dropship_equipment/weapon/fired_from)
+	impact.ceiling_debris_check(3)
+	// Create the physical bomb object that lands first
+	var/obj/item/explosive/bomb_payload/bunker_buster/bomb_obj = new(impact)
+	bomb_obj.source_mob = source_mob
+	bomb_obj.fired_from_name = initial(name)
+
+	// Schedule the delayed explosion
+	addtimer(CALLBACK(bomb_obj, TYPE_PROC_REF(/obj/item/explosive/bomb_payload/bunker_buster, detonate)), 0.5 SECONDS)
+
+	QDEL_IN(src, 0.1 SECONDS)
+
+// Physical bomb object that appears on the ground with a 0.5 second delayed fuse, giving xenos even MORE time to run away
+/obj/item/explosive/bomb_payload/bunker_buster
+	name = "AGM-98 'MOP' bomb"
+	desc = "A massive ordnance penetrator bomb that has embedded itself halfway into the ground. It looks like it's about to explode, run!"
+	icon = 'icons/obj/structures/props/dropship/dropship_ammo.dmi'
+	icon_state = "minirocket"
+	w_class = SIZE_HUGE
+	density = TRUE
+	anchored = TRUE
+	unacidable = TRUE
+	var/mob/source_mob
+	var/fired_from_name
+
+/obj/item/explosive/bomb_payload/bunker_buster/proc/detonate()
+	// One massive explosion with high power and wide range
+	addtimer(CALLBACK(GLOBAL_PROC, GLOBAL_PROC_REF(cell_explosion), get_turf(src), 500, 100, EXPLOSION_FALLOFF_SHAPE_LINEAR, null, create_cause_data(fired_from_name, source_mob)), 0.1 SECONDS)
+	// Add some dramatic effects
+	addtimer(CALLBACK(GLOBAL_PROC, GLOBAL_PROC_REF(explosion_particles), get_turf(src), 8), 0.1 SECONDS)
+	addtimer(CALLBACK(GLOBAL_PROC, GLOBAL_PROC_REF(smoke_spread), get_turf(src), 4, /obj/effect/particle_effect/smoke, null, 3), 0.5 SECONDS)
+
+	QDEL_IN(src, 0.1 SECONDS)
 
 //utility
 

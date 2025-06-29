@@ -12,7 +12,6 @@
 	var/shuttle_tag  // Used to know which shuttle we're linked to.
 	var/obj/structure/dropship_equipment/selected_equipment //the currently selected equipment installed on the shuttle this console controls.
 	var/obj/structure/dropship_equipment/installed_equipment //all the equipment installed on the shuttle
-	var/cavebreaker = FALSE //ignore caves and other restrictions?
 	var/datum/cas_fire_envelope/firemission_envelope
 	var/datum/cas_fire_mission/selected_firemission
 	var/datum/cas_fire_mission/editing_firemission
@@ -966,7 +965,7 @@
 					is_outside = TRUE
 				if(CEILING_GLASS)
 					is_outside = TRUE
-		if(!is_outside && !DEW.cavebreaker) // Use DEW's cavebreaker property
+		if(!is_outside && (!DEW.ammo_equipped || !DEW.ammo_equipped.cavebreaker)) // Use ammo's cavebreaker property
 			to_chat(weapon_operator, SPAN_WARNING("INVALID TARGET: target must be visible from high altitude."))
 			return FALSE
 		if (protected_by_pylon(TURF_PROTECTION_CAS, TU))

@@ -20,7 +20,6 @@
 	var/skill_required = SKILL_PILOT_TRAINED
 	var/combat_equipment = TRUE
 	var/faction_exclusive //if null all factions can print it
-	var/cavebreaker = FALSE //if TRUE, this equipment can be used to break through cave walls
 	var/stackable_ammo = FALSE 	/// Whether the ammo inside this equipment can be directly replenished without needing to uninstall the existing ammo
 
 	var/damaged = FALSE // TRUE if affected by any anti-air effect
@@ -129,7 +128,7 @@
 					to_chat(user, SPAN_NOTICE("You top off [src] with the ammo."))
 					update_equipment()
 					return TRUE
-				to_chat(user, SPAN_WARNING("You need to unload \\the [ammo_equipped] from \\the [src] first!"))
+				to_chat(user, SPAN_WARNING("You need to unload \the [ammo_equipped] from \the [src] first!"))
 				return TRUE
 			if(uses_ammo)
 				load_ammo(PC, user)
@@ -1459,7 +1458,6 @@
 	point_cost = 500
 	fire_mission_only = FALSE
 	shorthand = "BMB"
-	cavebreaker = TRUE // Can fire at caves
 	uses_ammo = TRUE
 	is_weapon = TRUE
 	density = TRUE
