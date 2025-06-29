@@ -76,6 +76,7 @@ export type SentrySpec = {
 
 export type SpotlightSpec = {
   name: string;
+  deployed: 0 | 1;
 };
 
 export type ParadropSpec = {

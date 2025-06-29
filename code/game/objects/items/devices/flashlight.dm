@@ -713,3 +713,32 @@
 	signal.linked_cam = new(loc, name)
 	GLOB.cas_groups[FACTION_MARINE].add_signal(signal)
 	anchored = TRUE
+
+//Dropship spotlight beam - creates light at target location
+/obj/item/device/flashlight/spotlight_beam
+	name = "Spotlight Beam"
+	desc = "A bright beam of light shining down from the sky."
+	icon_state = "" // No visible sprite
+	mouse_opacity = MOUSE_OPACITY_TRANSPARENT
+	anchored = TRUE
+	light_range = 14
+	light_power = 3
+	on = TRUE
+	toggleable = FALSE
+	raillight_compatible = FALSE
+	can_be_broken = FALSE
+	w_class = SIZE_TINY
+
+/obj/item/device/flashlight/spotlight_beam/Initialize()
+	. = ..()
+	set_light_range(light_range)
+	set_light_power(light_power)
+	set_light_on(TRUE)
+
+/obj/item/device/flashlight/spotlight_beam/attack_hand(mob/user)
+	to_chat(user, SPAN_WARNING("You cannot pick up a beam of light."))
+	return
+
+/obj/item/device/flashlight/spotlight_beam/attack_self(mob/user)
+	to_chat(user, SPAN_WARNING("This is a beam of light, not a physical object."))
+	return

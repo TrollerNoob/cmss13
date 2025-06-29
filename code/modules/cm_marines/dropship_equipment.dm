@@ -819,23 +819,66 @@
 	point_cost = 50
 	var/spotlights_cooldown
 	var/brightness = 14
+	var/obj/item/device/flashlight/spotlight_beam/signal_light // Track the spotlight beam object
 
 /obj/structure/dropship_equipment/electronics/spotlights/equipment_interact(mob/user)
 	if(spotlights_cooldown > world.time)
 		to_chat(user, SPAN_WARNING("[src] is busy."))
 		return //prevents spamming deployment/undeployment
+
 	if(!light_on)
-		set_light(brightness)
-		icon_state = "spotlights_on"
+		turn_on_spotlight(user)
 		to_chat(user, SPAN_NOTICE("You turn on [src]."))
 	else
-		set_light(0)
-		icon_state = "spotlights_off"
+		turn_off_spotlight(user)
 		to_chat(user, SPAN_NOTICE("You turn off [src]."))
-		spotlights_cooldown = world.time + 50
+	spotlights_cooldown = world.time + 50
+
+/obj/structure/dropship_equipment/electronics/spotlights/proc/turn_on_spotlight(mob/user)
+	set_light(brightness)
+	icon_state = "spotlights_on"
+
+	// If we're in flight and have a console with a camera target, also illuminate that target
+	if(linked_shuttle && linked_shuttle.mode == SHUTTLE_CALL && linked_console && linked_console.camera_target_id)
+		var/datum/cas_signal/target_signal = linked_console.get_cas_signal(linked_console.camera_target_id)
+		if(target_signal && target_signal.valid_signal())
+			create_signal_light(target_signal)
+
+/obj/structure/dropship_equipment/electronics/spotlights/proc/turn_off_spotlight(mob/user)
+	set_light(0)
+	icon_state = "spotlights_off"
+	clear_signal_light()
+
+/obj/structure/dropship_equipment/electronics/spotlights/proc/create_signal_light(datum/cas_signal/signal)
+	clear_signal_light() // Remove any existing light
+
+	var/turf/target_turf = get_turf(signal.signal_loc)
+	if(target_turf)
+		signal_light = new /obj/item/device/flashlight/spotlight_beam(target_turf)
+		signal_light.light_range = brightness
+		signal_light.set_light_range(brightness)
+		signal_light.set_light_on(TRUE)
+
+/obj/structure/dropship_equipment/electronics/spotlights/proc/clear_signal_light()
+	// Remove any existing spotlight light we created
+	if(signal_light)
+		qdel(signal_light)
+		signal_light = null
 
 /obj/structure/dropship_equipment/electronics/spotlights/update_equipment()
 	..()
+
+	// Update signal targeting when camera target changes or shuttle state changes
+	if(light_on)
+		if(linked_shuttle && linked_shuttle.mode == SHUTTLE_CALL && linked_console && linked_console.camera_target_id)
+			var/datum/cas_signal/target_signal = linked_console.get_cas_signal(linked_console.camera_target_id)
+			if(target_signal && target_signal.valid_signal())
+				create_signal_light(target_signal)
+			else
+				clear_signal_light()
+		else
+			clear_signal_light()
+
 	if(ship_base)
 		if(!light_on)
 			icon_state = "spotlights_off"
@@ -845,14 +888,17 @@
 		icon_state = "spotlights"
 		if(light_on)
 			set_light(0)
+		clear_signal_light()
 
 /obj/structure/dropship_equipment/electronics/spotlights/ui_data(mob/user)
 	. = list()
 	var/is_deployed = light_on
 	.["name"] = name
-	.["health"] = health
-	.["health_max"] = initial(health)
 	.["deployed"] = is_deployed
+
+/obj/structure/dropship_equipment/electronics/spotlights/Destroy()
+	clear_signal_light()
+	return ..()
 
 /obj/structure/dropship_equipment/electronics/targeting_system
 	name = "\improper AN/AAQ-178 Weapon Targeting System"

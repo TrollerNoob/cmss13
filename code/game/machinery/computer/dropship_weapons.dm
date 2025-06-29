@@ -522,6 +522,12 @@
 
 			camera_area_equipment = null
 			firemission_envelope.change_current_loc(new_target, cas_sig)
+			
+			// Update all equipment to respond to camera target change
+			if(shuttle)
+				for(var/obj/structure/dropship_equipment/equipment in shuttle.equipments)
+					equipment.update_equipment()
+			
 			return TRUE
 
 		if("nvg-enable")
