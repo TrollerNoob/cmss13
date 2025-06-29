@@ -1,0 +1,55 @@
+.CameraConsoleBackground {
+  background-color: hsl(0, 0%, 2%);
+  width: 100%;
+  height: 100%;
+  position: absolute;
+  top: 0;
+  left: 0;
+}
+
+.CameraConsole {
+  padding: 8px;
+}
+
+.CameraConsole .primarypanel {
+  width: 512px;
+  height: 512px;
+  background-color: hsl(0, 0%, 7%);
+  border-collapse: separate;
+  border-radius: 16px;
+  border: 4px solid hsl(0, 0%, 3%);
+  padding: 4px;
+}
+
+.CameraConsole .DLabel {
+  background-color: hsl(0, 0%, 38%);
+  border: 1px solid white;
+  font-family: monospace;
+  text-align: center;
+  font-weight: bold;
+}
+
+.CameraConsole .displaypanel {
+  background-color: hsl(0, 0%, 0%);
+}
+
+.CameraConsole .NavigationMenu {
+  height: 512px;
+  width: 512px;
+  border: 2px solid hsl(200, 100%, 50%);
+  border-style: outset;
+  border-radius: 5px;
+  overflow: hidden;
+  font-family: monospace;
+  padding: 2px;
+}
+
+.CameraConsole .Input {
+  border: 1px solid hsl(200, 100%, 50%);
+  color: hsl(200, 100%, 50%);
+}
+
+.CameraConsole .NumberInput {
+  border: 1px solid hsl(200, 100%, 50%);
+  color: hsl(200, 100%, 50%);
+}

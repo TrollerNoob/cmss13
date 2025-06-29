@@ -416,18 +416,163 @@
 	unacidable = TRUE
 	explo_proof = TRUE
 
+	// TGUI variables similar to weapons console
+	var/shuttle_tag
+	var/datum/tacmap/tacmap
+	var/minimap_type = MINIMAP_FLAG_USCM
+	var/camera_target_id
+	var/camera_width = 11
+	var/camera_height = 11
+	var/registered = FALSE
+
+/obj/structure/machinery/computer/cameras/dropship/Initialize(mapload)
+	. = ..()
+
+	// Initialize tacmap like weapons console
+	tacmap = new(src, minimap_type)
+
+	// Add camera management component
+	AddComponent(/datum/component/camera_manager)
+	SEND_SIGNAL(src, COMSIG_CAMERA_CLEAR)
+
+/obj/structure/machinery/computer/cameras/dropship/Destroy()
+	QDEL_NULL(tacmap)
+	return ..()
+
+/obj/structure/machinery/computer/cameras/dropship/attack_hand(mob/user)
+	if(inoperable())
+		return
+	if(!isRemoteControlling(user))
+		user.set_interaction(src)
+	tgui_interact(user)
+
+/obj/structure/machinery/computer/cameras/dropship/tgui_interact(mob/user, datum/tgui/ui)
+	if(!registered)
+		var/obj/docking_port/mobile/marine_dropship/dropship = SSshuttle.getShuttle(shuttle_tag)
+		if(dropship)
+			RegisterSignal(dropship, COMSIG_DROPSHIP_ADD_EQUIPMENT, PROC_REF(equipment_update))
+			RegisterSignal(dropship, COMSIG_DROPSHIP_REMOVE_EQUIPMENT, PROC_REF(equipment_update))
+		registered = TRUE
+
+	if(!tacmap.map_holder)
+		var/level = SSmapping.levels_by_trait(tacmap.targeted_ztrait)
+		if(level && length(level))
+			tacmap.map_holder = SSminimaps.fetch_tacmap_datum(level[1], tacmap.allowed_flags)
+
+	ui = SStgui.try_update_ui(user, src, ui)
+	if(!ui)
+		if(tacmap.map_holder)
+			user.client.register_map_obj(tacmap.map_holder.map)
+		SEND_SIGNAL(src, COMSIG_CAMERA_REGISTER_UI, user)
+		ui = new(user, src, "DropshipCameraConsole", "Camera Console")
+		ui.open()
+
+/obj/structure/machinery/computer/cameras/dropship/ui_close(mob/user)
+	. = ..()
+	SEND_SIGNAL(src, COMSIG_CAMERA_UNREGISTER_UI, user)
+
+/obj/structure/machinery/computer/cameras/dropship/ui_status(mob/user, datum/ui_state/state)
+	. = ..()
+	if(inoperable())
+		return UI_CLOSE
+
+/obj/structure/machinery/computer/cameras/dropship/ui_state(mob/user)
+	return GLOB.not_incapacitated_and_adjacent_strict_state
+
+/obj/structure/machinery/computer/cameras/dropship/ui_static_data(mob/user)
+	. = list()
+	if(tacmap.map_holder)
+		.["tactical_map_ref"] = tacmap.map_holder.map_ref
+	.["camera_map_ref"] = camera_map_name
+
+/obj/structure/machinery/computer/cameras/dropship/ui_data(mob/user)
+	. = list()
+	var/obj/docking_port/mobile/marine_dropship/dropship = SSshuttle.getShuttle(shuttle_tag)
+	if(!istype(dropship))
+		return
+
+	// Get equipment data
+	.["equipment_data"] = list()
+	for(var/obj/structure/dropship_equipment/equipment in dropship.equipments)
+		var/list/eqp_data = list(
+			"name" = equipment.name,
+			"shorthand" = equipment.shorthand,
+			"eqp_tag" = equipment.name,
+			"is_missile" = 0,
+			"is_weapon" = equipment.is_weapon,
+			"is_interactable" = equipment.is_interactable,
+			"mount_point" = equipment.ship_base ? equipment.ship_base.attach_id : 0,
+			"ammo_name" = "",
+			"data" = equipment.ui_data(user)
+		)
+		.["equipment_data"] += list(eqp_data)
+
+	// Camera target
+	.["camera_target_id"] = camera_target_id
+
+	// Targets data for camera targeting
+	.["targets_data"] = list()
+	var/datum/cas_iff_group/cas_group = GLOB.cas_groups[FACTION_MARINE]
+	if(cas_group)
+		for(var/datum/cas_signal/LT in cas_group.cas_signals)
+			if(!LT.valid_signal())
+				continue
+			var/area/target_area = get_area(LT.signal_loc)
+			var/list/target_data = list(
+				"target_name" = LT.get_name(),
+				"target_tag" = LT.target_id,
+				"ceiling_protection_tier" = target_area?.ceiling
+			)
+			.["targets_data"] += list(target_data)
+
+/obj/structure/machinery/computer/cameras/dropship/ui_act(action, params)
+	. = ..()
+	if(.)
+		return
+
+	switch(action)
+		if("firemission-dual-offset-camera")
+			var/target_id = params["target_id"]
+			camera_target_id = target_id
+
+			// Update all equipment to respond to camera target change
+			var/obj/docking_port/mobile/marine_dropship/dropship = SSshuttle.getShuttle(shuttle_tag)
+			if(dropship)
+				for(var/obj/structure/dropship_equipment/equipment in dropship.equipments)
+					equipment.update_equipment()
+			return TRUE
+
+		if("deploy-equipment")
+			var/equipment_id = params["equipment_id"]
+			var/obj/docking_port/mobile/marine_dropship/dropship = SSshuttle.getShuttle(shuttle_tag)
+			if(!dropship)
+				return TRUE
+
+			for(var/obj/structure/dropship_equipment/equipment in dropship.equipments)
+				if(equipment.ship_base && equipment.ship_base.attach_id == equipment_id)
+					if(equipment.is_interactable)
+						equipment.equipment_interact(usr)
+					return TRUE
+			return TRUE
+
+/obj/structure/machinery/computer/cameras/dropship/proc/equipment_update()
+	// Called when equipment is added/removed
+	return
 
 /obj/structure/machinery/computer/cameras/dropship/one
 	name = "\improper 'Alamo' camera controls"
 	network = list(CAMERA_NET_ALAMO, CAMERA_NET_LASER_TARGETS)
+	shuttle_tag = DROPSHIP_ALAMO
 
 /obj/structure/machinery/computer/cameras/dropship/two
 	name = "\improper 'Normandy' camera controls"
 	network = list(CAMERA_NET_NORMANDY, CAMERA_NET_LASER_TARGETS)
+	shuttle_tag = DROPSHIP_NORMANDY
 
 /obj/structure/machinery/computer/cameras/dropship/three
 	name = "\improper 'Saipan' camera controls"
 	network = list(CAMERA_NET_RESEARCH, CAMERA_NET_LASER_TARGETS)
+	shuttle_tag = DROPSHIP_SAIPAN
 
 /obj/structure/machinery/computer/cameras/yautja
 	name = "Hellhound Observation Interface"
