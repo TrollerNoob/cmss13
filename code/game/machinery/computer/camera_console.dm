@@ -428,6 +428,13 @@
 	var/upgraded = MATRIX_DEFAULT // we transport upgrade var from matrixdm
 	var/matrix_color = NV_COLOR_GREEN //color of matrix, only used when we upgrade to nv
 
+	// Direct Fire offset - needed for weapon firing compatibility
+	var/direct_x_offset_value = 0
+	var/direct_y_offset_value = 0
+
+	// Equipment selection - needed for equipment uninstall compatibility
+	var/obj/structure/dropship_equipment/selected_equipment
+
 /obj/structure/machinery/computer/cameras/dropship/Initialize(mapload)
 	. = ..()
 
@@ -513,6 +520,10 @@
 
 	// Camera target
 	.["camera_target_id"] = camera_target_id
+
+	// Selected equipment (for UI compatibility)
+	if(selected_equipment)
+		.["selected_eqp"] = selected_equipment.ship_base.attach_id
 
 	// Available cameras for camera acquisition
 	.["available_cameras"] = list()
@@ -799,6 +810,26 @@
 				for(var/obj/structure/dropship_equipment/equipment in dropship.equipments)
 					equipment.update_equipment()
 			return TRUE
+
+		if("fire-weapon")
+			var/equipment_tag = params["eqp_tag"]
+			var/obj/docking_port/mobile/marine_dropship/dropship = SSshuttle.getShuttle(shuttle_tag)
+			if(!dropship)
+				return TRUE
+
+			for(var/obj/structure/dropship_equipment/equipment as anything in dropship.equipments)
+				if(ref(equipment) != equipment_tag)
+					continue
+				if(equipment.is_weapon)
+					var/obj/structure/dropship_equipment/weapon/WEAP = equipment
+					WEAP.linked_console = src
+					if(WEAP.is_interactable)
+						var/datum/cas_signal/target = get_cas_signal(camera_target_id)
+						if(target)
+							WEAP.open_fire(target.signal_loc, usr)
+						else
+							to_chat(usr, SPAN_WARNING("No target selected."))
+				return TRUE
 
 		if("deploy-equipment")
 			var/equipment_id = params["equipment_id"]

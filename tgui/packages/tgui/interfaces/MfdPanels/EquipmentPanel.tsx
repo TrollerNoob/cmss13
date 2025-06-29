@@ -378,6 +378,15 @@ export const EquipmentMfdPanel = (props: MfdProps) => {
   };
 
   const generateButton = (equip: DropshipEquipment) => {
+    // Hide weapon mount point equipment in camera console (blue theme)
+    if (
+      props.color === 'blue' &&
+      equip.mount_point >= 1 &&
+      equip.mount_point <= 4
+    ) {
+      return {}; // Return empty button (won't be rendered)
+    }
+
     return equip.is_weapon
       ? generateWeaponButton(equip)
       : generateEquipmentButton(equip);

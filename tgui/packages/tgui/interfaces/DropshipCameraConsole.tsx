@@ -9,6 +9,7 @@ import { MfdPanel, type MfdProps } from './MfdPanels/MultifunctionDisplay';
 import { mfdState } from './MfdPanels/stateManagers';
 import { otherMfdState } from './MfdPanels/stateManagers';
 import { SupportMfdPanel } from './MfdPanels/SupportPanel';
+import { WeaponMfdPanel } from './MfdPanels/WeaponPanel';
 
 export interface DropshipCameraProps {
   equipment_data: Array<DropshipEquipment>;
@@ -16,6 +17,7 @@ export interface DropshipCameraProps {
   camera_map_ref?: string;
   camera_target_id?: string;
   targets_data: Array<LazeTarget>;
+  selected_eqp?: number;
 }
 
 type LazeTarget = {
@@ -95,6 +97,8 @@ const PrimaryPanel = (props: MfdProps) => {
       return <EquipmentMfdPanel {...props} />;
     case 'map':
       return <MapMfdPanel {...props} />;
+    case 'weapon':
+      return <WeaponMfdPanel {...props} />;
     case 'support':
       return <SupportMfdPanel {...props} />;
     default:
