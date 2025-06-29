@@ -58,75 +58,63 @@
 	// Handle powerloader clamp logic
 	if(istype(I, /obj/item/powerloader_clamp))
 		var/obj/item/powerloader_clamp/PC = I
-		if(istype(src, /obj/structure/dropship_equipment/autoreloader)) {
+		if(istype(src, /obj/structure/dropship_equipment/autoreloader))
 			var/obj/structure/dropship_equipment/autoreloader/A = src
 			// Loading ammo into autoreloader
-			if(PC.loaded) {
+			if(PC.loaded)
 				// Prevent loading if shuttle is not idle
-				if(!(A.linked_shuttle.mode in list(SHUTTLE_IDLE, SHUTTLE_IGNITING, SHUTTLE_RECHARGING))) {
+				if(!(A.linked_shuttle.mode in list(SHUTTLE_IDLE, SHUTTLE_IGNITING, SHUTTLE_RECHARGING)))
 					to_chat(user, SPAN_WARNING("You cannot load ammo while the dropship is in flight or busy!"))
 					return TRUE
-				}
 				// Only allow rockets and missiles
-				if(!istype(PC.loaded, /obj/structure/ship_ammo/rocket) && !istype(PC.loaded, /obj/structure/ship_ammo/missile)) {
+				if(!istype(PC.loaded, /obj/structure/ship_ammo/rocket) && !istype(PC.loaded, /obj/structure/ship_ammo/missile))
 					to_chat(user, SPAN_WARNING("Only rockets and missiles can be loaded into the autoreloader!"))
 					return TRUE
-				}
-				if(!istype(PC.loaded, /obj/structure/ship_ammo)) {
+				if(!istype(PC.loaded, /obj/structure/ship_ammo))
 					to_chat(user, SPAN_WARNING("You need to use a powerloader holding dropship ammo to load [src]."))
 					return TRUE
-				}
 				var/obj/structure/ship_ammo/ammo = PC.loaded
-				if(ammo in A.stored_ammo) {
+				if(ammo in A.stored_ammo)
 					to_chat(user, SPAN_WARNING("[ammo] is already stored in [src]."))
 					return TRUE
-				}
-				if(length(A.stored_ammo) >= A.max_ammo_slots) {
+				if(length(A.stored_ammo) >= A.max_ammo_slots)
 					to_chat(user, SPAN_WARNING("[src] cannot store more ammo. Maximum capacity reached."))
 					return TRUE
-				}
 				to_chat(user, SPAN_NOTICE("You begin loading [ammo] into [src]."))
 				playsound(src, 'sound/machines/hydraulics_1.ogg', 40, 1)
-				if(!do_after(user, 20, INTERRUPT_NO_NEEDHAND | BEHAVIOR_IMMOBILE, BUSY_ICON_BUILD, target = src)) {
+				if(!do_after(user, 20, INTERRUPT_NO_NEEDHAND | BEHAVIOR_IMMOBILE, BUSY_ICON_BUILD, target = src))
 					to_chat(user, SPAN_WARNING("You stop loading [ammo] into [src]."))
 					return TRUE
-				}
-				if(A.add_ammo(ammo)) {
+				if(A.add_ammo(ammo))
 					ammo.forceMove(src)
 					PC.loaded = null
 					playsound(src, 'sound/machines/hydraulics_2.ogg', 40, 1)
 					PC.update_icon()
 					to_chat(user, SPAN_NOTICE("You successfully load [ammo] into [src]."))
-				} else {
+				else
 					to_chat(user, SPAN_WARNING("[src] cannot store more ammo. Maximum capacity reached."))
-				}
 				return TRUE
-			}
 			// Unloading ammo from autoreloader
-			else if(!PC.loaded && length(A.stored_ammo) > 0) {
+			else if(!PC.loaded && length(A.stored_ammo) > 0)
 				var/obj/structure/ship_ammo/ammo = A.stored_ammo[A.stored_ammo.len]
 				to_chat(user, SPAN_NOTICE("You begin unloading [ammo] from [src]."))
-				if(!do_after(user, 20, INTERRUPT_NO_NEEDHAND | BEHAVIOR_IMMOBILE, BUSY_ICON_BUILD, target = src)) {
+				if(!do_after(user, 20, INTERRUPT_NO_NEEDHAND | BEHAVIOR_IMMOBILE, BUSY_ICON_BUILD, target = src))
 					to_chat(user, SPAN_WARNING("You stop unloading [ammo] from [src]."))
 					return TRUE
-				}
-				if(A.remove_ammo(ammo)) {
+				if(A.remove_ammo(ammo))
 					ammo.forceMove(PC)
 					PC.loaded = ammo
 					PC.update_icon()
 					to_chat(user, SPAN_NOTICE("You unload [ammo] from [src] into the powerloader clamp."))
 					A.selected_ammo = null
-				} else {
+				else
 					to_chat(user, SPAN_WARNING("Failed to unload ammo from [src]."))
-				}
 				return TRUE
-			}
-		}
 		// Default behavior for other equipment
-		if(PC.loaded) {
-			if(ammo_equipped) {
+		if(PC.loaded)
+			if(ammo_equipped)
 				// Allow stacking if stackable_ammo is TRUE, types match, and not full
-				if(stackable_ammo && istype(PC.loaded, /obj/structure/ship_ammo) && ammo_equipped.type == PC.loaded.type && ammo_equipped.ammo_count < ammo_equipped.max_ammo_count) {
+				if(stackable_ammo && istype(PC.loaded, /obj/structure/ship_ammo) && ammo_equipped.type == PC.loaded.type && ammo_equipped.ammo_count < ammo_equipped.max_ammo_count)
 					// Add do_after before stacking
 					if(!do_after(user, 1 * user.get_skill_duration_multiplier(SKILL_ENGINEER), INTERRUPT_NO_NEEDHAND | BEHAVIOR_IMMOBILE, BUSY_ICON_BUILD))
 						to_chat(user, SPAN_WARNING("You stop topping off [src] with the ammo."))
@@ -141,21 +129,16 @@
 					to_chat(user, SPAN_NOTICE("You top off [src] with the ammo."))
 					update_equipment()
 					return TRUE
-				}
 				to_chat(user, SPAN_WARNING("You need to unload \\the [ammo_equipped] from \\the [src] first!"))
 				return TRUE
-			}
-			if(uses_ammo) {
+			if(uses_ammo)
 				load_ammo(PC, user)
 				return TRUE
-			}
-		} else {
-			if(uses_ammo && ammo_equipped) {
+		else
+			if(uses_ammo && ammo_equipped)
 				unload_ammo(PC, user)
-			} else {
+			else
 				grab_equipment(PC, user)
-			}
-		}
 		return TRUE
 	// Support for loading handheld ship_ammo by hand
 	if(istype(I, /obj/structure/ship_ammo) || istype(I, /obj/item/ship_ammo_handheld))
