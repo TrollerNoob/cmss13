@@ -86,7 +86,10 @@ const useTargetSubmenu = (panelId: string) => {
   };
 };
 
-export const TargetLines = (props: { readonly panelId: string; readonly color?: string }) => {
+export const TargetLines = (props: {
+  readonly panelId: string;
+  readonly color?: string;
+}) => {
   const { data } = useBackend<
     EquipmentContext & FiremissionContext & TargetContext
   >();
@@ -96,21 +99,21 @@ export const TargetLines = (props: { readonly panelId: string; readonly color?: 
       {data.targets_data.length > targetOffset && (
         <path
           fillOpacity="0"
-          stroke={props.color || "#00e94e"}
+          stroke={props.color || '#00e94e'}
           d="M 50 210 l 20 0 l 20 -180 l 40 0"
         />
       )}
       {data.targets_data.length > targetOffset + 1 && (
         <path
           fillOpacity="0"
-          stroke={props.color || "#00e94e"}
+          stroke={props.color || '#00e94e'}
           d="M 50 220 l 25 0 l 15 -90 l 40 0"
         />
       )}
       {data.targets_data.length > targetOffset + 2 && (
         <path
           fillOpacity="0"
-          stroke={props.color || "#00e94e"}
+          stroke={props.color || '#00e94e'}
           d="M 50 230 l 20 0 l 20 0 l 40 0"
         />
       )}
@@ -118,14 +121,14 @@ export const TargetLines = (props: { readonly panelId: string; readonly color?: 
       {data.targets_data.length > targetOffset + 3 && (
         <path
           fillOpacity="0"
-          stroke={props.color || "#00e94e"}
+          stroke={props.color || '#00e94e'}
           d="M 50 240 l 25 0 l 15 90 l 40 0"
         />
       )}
       {data.targets_data.length > targetOffset + 4 && (
         <path
           fillOpacity="0"
-          stroke={props.color || "#00e94e"}
+          stroke={props.color || '#00e94e'}
           d="M 50 250 l 20 0 l 20 180 l 40 0"
         />
       )}
@@ -524,7 +527,7 @@ export const TargetAquisitionMfdPanel = (props: MfdProps) => {
                 </h3>
               </Stack.Item>
               <Stack.Item>
-                <h2>
+                <h3>
                   Target Durability Reading:{' '}
                   <span
                     style={{
@@ -536,22 +539,33 @@ export const TargetAquisitionMfdPanel = (props: MfdProps) => {
                             : data.offset_ceiling_protection_tier >= 2 &&
                                 data.offset_ceiling_protection_tier < 4
                               ? '#FF0000'
-                              : undefined
+                              : '#00FF00'
                           : undefined,
                       fontWeight: 'bold',
-                      fontSize: '1.25em',
+                      fontSize: '1em',
                     }}
                   >
-                    {data.offset_ceiling_protection_tier !== undefined &&
-                    data.offset_ceiling_protection_tier !== null
-                      ? String(
-                          Math.floor(
-                            Number(data.offset_ceiling_protection_tier),
-                          ),
-                        )
-                      : 'N/A'}
+                    {(() => {
+                      if (
+                        data.offset_ceiling_protection_tier === undefined ||
+                        data.offset_ceiling_protection_tier === null
+                      ) {
+                        return 'N/A';
+                      }
+                      const tier = Math.floor(
+                        Number(data.offset_ceiling_protection_tier),
+                      );
+                      if (tier < 1) {
+                        return 'All Weapons Clear';
+                      } else if (tier >= 1 && tier < 2) {
+                        return 'Firemission Required';
+                      } else if (tier >= 2) {
+                        return 'Bunker Buster Required';
+                      }
+                      return 'N/A';
+                    })()}
                   </span>
-                </h2>
+                </h3>
               </Stack.Item>
               <Stack.Item>
                 <h3>
