@@ -547,7 +547,7 @@
 	ammo_count = 1
 	max_ammo_count = 1
 	ammo_name = "bomb"
-	travelling_time = 60 // can't be fired on direct so this won't come into play
+	travelling_time = 80 //bombs are slow, but they hit hard
 	transferable_ammo = TRUE
 	point_cost = 300
 	fire_mission_delay = 3 //moderate cooldown
@@ -558,7 +558,6 @@
 	max_inaccuracy = 5
 	point_cost = 0
 	ammo_used_per_firing = 1
-	travelling_time = 60 // bombs are slow, but they hit hard
 
 /obj/structure/ship_ammo/bomb/detonate_on(turf/impact, obj/structure/dropship_equipment/weapon/fired_from)
 	qdel(src)
