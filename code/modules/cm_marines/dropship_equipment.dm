@@ -1129,7 +1129,9 @@
 				ammo_accuracy_range = min(ammo_accuracy_range, ammo_max_inaccuracy)
 				// Repick impact turf and update overlay
 				if(impact_overlay)
+					impact_overlay.remove_from_all_clients()
 					qdel(impact_overlay)
+					impact_overlay = null
 				possible_turfs = RANGE_TURFS(ammo_accuracy_range, target_turf)
 				impact = pick(possible_turfs)
 				if(impact)
@@ -1138,6 +1140,11 @@
 					impact_overlay.target_y = impact.y
 					impact_overlay.target_z = impact.z
 					impact_overlay.reticle_image = null
+					// Show the new overlay to CAS HUD users
+					if(GLOB.huds[MOB_HUD_DROPSHIP])
+						for(var/mob/M in GLOB.huds[MOB_HUD_DROPSHIP].hudusers)
+							if(M)
+								impact_overlay.update_visibility_for_mob(M)
 	// clamp back to maximum inaccuracy
 	ammo_accuracy_range = min(ammo_accuracy_range, ammo_max_inaccuracy)
 
