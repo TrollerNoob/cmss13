@@ -822,6 +822,12 @@
 					continue
 				if(equipment.is_weapon)
 					var/obj/structure/dropship_equipment/weapon/WEAP = equipment
+
+					// Check weapon cooldown (same as weapon console)
+					if(WEAP.last_fired > world.time - WEAP.firing_delay)
+						to_chat(usr, SPAN_WARNING("[WEAP] just fired, wait for it to cool down."))
+						return TRUE
+
 					WEAP.linked_console = src
 					if(WEAP.is_interactable)
 						var/datum/cas_signal/target = get_cas_signal(camera_target_id)
@@ -930,6 +936,12 @@
 			"damaged" = equipment.damaged,
 			"data" = equipment.ui_data(user)
 		)
+
+		// Add weapon firing timing data for cooldown display (same as weapon console)
+		if(istype(equipment, /obj/structure/dropship_equipment/weapon))
+			var/obj/structure/dropship_equipment/weapon/weapon = equipment
+			data["last_fired"] = weapon.last_fired
+			data["firing_delay"] = weapon.firing_delay
 		// If this is an autoreloader, add stored ammo info as a list
 		if(istype(equipment, /obj/structure/dropship_equipment/autoreloader))
 			var/obj/structure/dropship_equipment/autoreloader/auto = equipment
