@@ -972,8 +972,15 @@
 				if(CEILING_GLASS)
 					is_outside = TRUE
 		if(!is_outside && (!DEW.ammo_equipped || !DEW.ammo_equipped.cavebreaker)) // Use ammo's cavebreaker property
-			to_chat(weapon_operator, SPAN_WARNING("INVALID TARGET: target must be visible from high altitude."))
-			return FALSE
+			// Check if metalbreaker ammo can pierce this ceiling type
+			if(DEW.ammo_equipped?.metalbreaker && CEILING_IS_PROTECTED(targ_area.ceiling, CEILING_PROTECTION_TIER_2))
+				// Metalbreaker can pierce metal ceilings (like mortars) but not underground areas
+				to_chat(weapon_operator, SPAN_WARNING("INVALID TARGET: target must be visible from high altitude."))
+				return FALSE
+			else if(!DEW.ammo_equipped?.metalbreaker)
+				// Regular ammo needs open sky
+				to_chat(weapon_operator, SPAN_WARNING("INVALID TARGET: target must be visible from high altitude."))
+				return FALSE
 		if (protected_by_pylon(TURF_PROTECTION_CAS, TU))
 			to_chat(weapon_operator, SPAN_WARNING("INVALID TARGET: biological-pattern interference with signal."))
 			return FALSE

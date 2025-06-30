@@ -38,6 +38,8 @@
 	var/faction_exclusive //if this ammo is obtainable only by certain faction
 	//if TRUE, this ammo can be used to break through cave roofs
 	var/cavebreaker = FALSE
+	//if TRUE, this ammo can pierce metal roofs in direct fire
+	var/metalbreaker = FALSE
 	//delay in how fast to loop the simulation, mainly for GAU/Laser currently
 	var/sleep_per_shot = 1
 	//if this ammo doesn't require a powerloader to be moved
@@ -224,6 +226,7 @@
 	directhit_damage = 80 //how much damage is to be inflicted to a mob, this is here so that we can hit resting mobs.
 	penetration = 40 //AP value pretty much
 	sleep_per_shot = 0.75 // fires volleys more frequently than standard ammo
+	metalbreaker = TRUE // Can pierce metal roofs like mortars
 
 //laser battery
 
@@ -330,6 +333,7 @@
 	accuracy_range = 2
 	max_inaccuracy = 3
 	point_cost = 300
+	metalbreaker = TRUE // Can pierce metal roofs like mortars
 
 /obj/structure/ship_ammo/rocket/keeper/detonate_on(turf/impact, obj/structure/dropship_equipment/weapon/fired_from)
 	impact.ceiling_debris_check(3)
@@ -558,6 +562,7 @@
 	max_inaccuracy = 5
 	point_cost = 0
 	ammo_used_per_firing = 1
+	metalbreaker = TRUE // Can pierce metal roofs like mortars
 
 /obj/structure/ship_ammo/bomb/detonate_on(turf/impact, obj/structure/dropship_equipment/weapon/fired_from)
 	qdel(src)
