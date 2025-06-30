@@ -303,7 +303,6 @@
 	travelling_time = 40 //not powerful, but reaches target fast
 	ammo_id = ""
 	point_cost = 300
-	equipment_type = list(/obj/structure/dropship_equipment/weapon/rocket_pod, /obj/structure/dropship_equipment/weapon/bomb_bay)
 
 /obj/structure/ship_ammo/rocket/widowmaker/detonate_on(turf/impact, obj/structure/dropship_equipment/weapon/fired_from)
 	impact.ceiling_debris_check(3)
@@ -316,7 +315,6 @@
 	icon_state = "banshee"
 	ammo_id = "b"
 	point_cost = 300
-	equipment_type = list(/obj/structure/dropship_equipment/weapon/rocket_pod, /obj/structure/dropship_equipment/weapon/bomb_bay)
 
 /obj/structure/ship_ammo/rocket/banshee/detonate_on(turf/impact, obj/structure/dropship_equipment/weapon/fired_from)
 	impact.ceiling_debris_check(3)
@@ -360,7 +358,7 @@
 	desc = "The AGM-99 'Napalm' is an incendiary missile used to turn specific targeted areas into giant balls of fire for a long time. Can be loaded into the LAU-444 Guided Missile Launcher and LAB-107 Bomb Bay."
 	icon_state = "napalm"
 	ammo_id = "n"
-	equipment_type = list(/obj/structure/dropship_equipment/weapon/rocket_pod, /obj/structure/dropship_equipment/weapon/bomb_bay)
+	equipment_type = list(/obj/structure/dropship_equipment/weapon/rocket_pod, /obj/structure/dropship_equipment/weapon/bomb_bay, /obj/structure/dropship_equipment/autoreloader)
 	point_cost = 500
 	fire_mission_delay = 0 //0 means unusable
 
@@ -541,14 +539,14 @@
 	name = "abstract bomb"
 	icon_state = "double"
 	icon = 'icons/obj/structures/props/dropship/dropship_ammo64.dmi'
-	equipment_type = /obj/structure/dropship_equipment/weapon/bomb_bay
+	equipment_type = list(/obj/structure/dropship_equipment/weapon/bomb_bay, /obj/structure/dropship_equipment/autoreloader)
 	ammo_count = 1
 	max_ammo_count = 1
 	ammo_name = "bomb"
 	travelling_time = 80 //bombs are slow, but they hit hard
 	transferable_ammo = TRUE
 	point_cost = 0
-	fire_mission_delay = 3 //moderate cooldown
+	fire_mission_delay = 0 //unusable in firemissions
 	ammo_id = ""
 	bound_width = 64
 	bound_height = 32

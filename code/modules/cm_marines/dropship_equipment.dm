@@ -321,6 +321,13 @@
 		if(W.antiair_block_reload)
 			to_chat(user, SPAN_WARNING("[W] is damaged and cannot be reloaded!"))
 			return
+
+	// Prevent loading bomb bay ammo while shuttle is in flight
+	if(istype(src, /obj/structure/dropship_equipment/weapon/bomb_bay))
+		if(linked_shuttle && !(linked_shuttle.mode in list(SHUTTLE_IDLE, SHUTTLE_IGNITING, SHUTTLE_RECHARGING)))
+			to_chat(user, SPAN_WARNING("You cannot load ammo while the dropship is in flight or busy!"))
+			return
+
 	if(!ship_base || !uses_ammo || ammo_equipped || !istype(PC.loaded, /obj/structure/ship_ammo))
 		return
 	var/obj/structure/ship_ammo/SA = PC.loaded
@@ -1473,6 +1480,31 @@
 		icon = 'icons/obj/structures/props/dropship/dropship_equipment.dmi' // base state uses base dmi
 		icon_state = "bomb_bay"
 		density = TRUE // Dense when not installed
+	update_icon()
+
+/obj/structure/dropship_equipment/weapon/bomb_bay/update_icon()
+	if(!ship_base)
+		return // Don't update icon when not installed
+
+	if(!ammo_equipped)
+		// No ammo equipped - use installed state
+		icon_state = "bomb_bay_installed"
+		return
+
+	// Check if bomb has 0 ammo count first, regardless of lock status
+	if(ammo_equipped.ammo_count <= 0)
+		icon_state = "bomb_bay_loaded0"
+		return
+
+	if(locked_ammo)
+		// Locked ammo - use locked state based on ammo_id
+		var/ammo_id = ammo_equipped.ammo_id
+		icon_state = "bomb_bay_locked[ammo_id]"
+		return
+
+	// Use the ammo_id to determine the loaded icon state
+	var/ammo_id = ammo_equipped.ammo_id
+	icon_state = "bomb_bay_loaded[ammo_id]"
 
 	// Use attack_hand to lock the ammo
 /obj/structure/dropship_equipment/weapon/bomb_bay/attack_hand(mob/user)
@@ -1497,6 +1529,7 @@
 	playsound(user, 'sound/machines/lockenable.ogg', 50, 1)
 	locked_ammo = TRUE
 	to_chat(user, SPAN_NOTICE("You successfully lock the ammo in place for [src]."))
+	update_icon()
 
 // Override the open_fire proc to check if ammo is locked
 /obj/structure/dropship_equipment/weapon/bomb_bay/open_fire(obj/selected_target, mob/user = usr)
@@ -1505,10 +1538,18 @@
 		return
 	..() // Call the parent open_fire logic
 
+// Reset locked_ammo when ammo is loaded
+/obj/structure/dropship_equipment/weapon/bomb_bay/load_ammo(obj/item/powerloader_clamp/PC, mob/living/user)
+	..() // Call the parent load_ammo logic
+	if(ammo_equipped) // If ammo was successfully loaded
+		locked_ammo = FALSE // Reset the locked state
+		update_icon()
+
 // Reset locked_ammo when ammo is unloaded
 /obj/structure/dropship_equipment/weapon/bomb_bay/unload_ammo(obj/item/powerloader_clamp/PC, mob/living/user)
 	locked_ammo = FALSE // Reset the locked state
 	..() // Call the parent unload_ammo logic
+	update_icon()
 
 //================= OTHER EQUIPMENT =================//
 
