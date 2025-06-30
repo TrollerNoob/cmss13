@@ -519,7 +519,7 @@
 
 /obj/structure/ship_ammo/missile/hellhound
 	name = "\improper ATM-230D 'HELLHOUND IV'"
-	desc = "The ATM-230D 'HELLHOUND IV' is the latest installment of multi-role tactical missiles employed by gunship pilots. Designed specifically for use against high priority targets such as vehicles, buildings and bunkers, it houses a complicated three stage motor. It is capable of being fired from the Mk.14 Missile Silo."
+	desc = "The ATM-230D 'HELLHOUND IV' is the latest installment of multi-role tactical missiles employed by gunship pilots. Designed specifically for use against high priority targets such as vehicles, buildings and bunkers, it houses a complicated three stage motor. It is capable of piercing through caves. It is capable of being fired from the Mk.14 Missile Silo."
 	icon_state = "hellhound"
 	ammo_id = "h"
 	travelling_time = 40
@@ -549,7 +549,7 @@
 	ammo_name = "bomb"
 	travelling_time = 80 //bombs are slow, but they hit hard
 	transferable_ammo = TRUE
-	point_cost = 300
+	point_cost = 0
 	fire_mission_delay = 3 //moderate cooldown
 	ammo_id = ""
 	bound_width = 64
@@ -594,12 +594,17 @@
 		list(-3, 0)   // West
 	)
 
-	// Schedule cluster explosions with rapid delays
+	// Cache the data we need before the object gets deleted
+	var/cached_name = initial(name)
+	var/mob/cached_source_mob = source_mob
+
+	// Schedule cluster explosions with rapid delays and warning dots
 	for(var/i = 1 to diamond_coords.len)
 		var/list/coords = diamond_coords[i]
 		var/turf/target_turf = locate(impact.x + coords[1], impact.y + coords[2], impact.z)
 		if(target_turf)
-			addtimer(CALLBACK(GLOBAL_PROC, GLOBAL_PROC_REF(cell_explosion), target_turf, 200, 50, EXPLOSION_FALLOFF_SHAPE_LINEAR, null, create_cause_data(initial(name), source_mob)), (0.7 + i * 0.3) SECONDS)
+			// Schedule warning dot and explosion (using global procs to avoid src dependency)
+			addtimer(CALLBACK(GLOBAL_PROC, GLOBAL_PROC_REF(fire_in_a_hole_cluster), target_turf, 200, 50, cached_name, cached_source_mob), (0.5 + i * 0.1) SECONDS)
 
 	QDEL_IN(src, 0.5 SECONDS)
 
@@ -615,23 +620,27 @@
 
 /obj/structure/ship_ammo/bomb/incendiary/detonate_on(turf/impact, obj/structure/dropship_equipment/weapon/fired_from)
 	impact.ceiling_debris_check(3)
-	// Get all turfs in a 9x9 area around the impact
+	// Get all turfs in a 7x7 area around the impact
 	var/list/target_turfs = RANGE_TURFS(3, impact) // 3 range = 7x7 area
 
-	// Create 5 random explosions with napalm fire spread
+	// Cache the data we need before the object gets deleted
+	var/cached_name = initial(name)
+	var/mob/cached_source_mob = source_mob
+
+	// Create 5 random explosions with napalm fire spread and warning dots
+	var/list/selected_turfs = list() // Store the selected turfs to ensure consistency
 	for(var/i = 1 to 5)
 		var/turf/target_turf = pick(target_turfs)
+		selected_turfs += target_turf
 		if(target_turf)
-			// Schedule explosion with staggered timing
-			addtimer(CALLBACK(GLOBAL_PROC, GLOBAL_PROC_REF(cell_explosion), target_turf, 150, 50, EXPLOSION_FALLOFF_SHAPE_LINEAR, null, create_cause_data(initial(name), source_mob)), (0.5 + i * 0.2) SECONDS)
-			// Add napalm fire spread at the same location
-			addtimer(CALLBACK(GLOBAL_PROC, GLOBAL_PROC_REF(fire_spread), target_turf, create_cause_data(initial(name), source_mob), 3, 30, 25, "#EE6515"), (0.7 + i * 0.2) SECONDS)
+			// Schedule warning dot, explosion and fire (using global procs to avoid src dependency)
+			addtimer(CALLBACK(GLOBAL_PROC, GLOBAL_PROC_REF(fire_in_a_hole_incendiary), target_turf, 150, 50, cached_name, cached_source_mob), (0.3 + i * 0.1) SECONDS)
 
 	QDEL_IN(src, 0.5 SECONDS)
 
 /obj/structure/ship_ammo/bomb/bunkerbuster
 	name = "\improper AGM-98 'MOP'"
-	desc = "The latest cutting edge installment of heavy duty missiles, the AGM-98 'Massive Ordinance Penetrator' is a heavy duty bunker busting bomb designed to penetrate hardened structures and deliver a devastating payload. It is intentionally set to a delayed fuse to further maximize penetration before detonation. It is capable of being dropped from the LAB-107 Bomb Bay."
+	desc = "The latest cutting edge installment of heavy duty missiles, the AGM-98 'Massive Ordinance Penetrator' is a heavy duty bunker busting bomb designed to penetrate hardened structures and deliver a devastating payload. It is intentionally set to a delayed fuse to further maximize penetration before detonation. It is capable of piercing through caves. It is capable of being dropped from the LAB-107 Bomb Bay."
 	icon_state = "double"
 	ammo_id = ""
 	travelling_time = 80 // very slow but powerful and accurate
@@ -654,7 +663,7 @@
 
 // Physical bomb object that appears on the ground with a 0.5 second delayed fuse, giving xenos even MORE time to run away
 /obj/item/explosive/bomb_payload/bunker_buster
-	name = "AGM-98 'MOP' bomb"
+	name = "AGM-98 'MOP' warhead"
 	desc = "A massive ordnance penetrator bomb that has embedded itself halfway into the ground. It looks like it's about to explode, run!"
 	icon = 'icons/obj/structures/props/dropship/dropship_ammo.dmi'
 	icon_state = "minirocket"
@@ -865,3 +874,17 @@
 	else
 		to_chat(user, SPAN_WARNING("You can't pick this up by hand."))
 		return FALSE
+
+// Proc to create warning dots for cluster/incendiary bombs
+/obj/structure/ship_ammo/proc/create_warning_dot(turf/target_turf)
+	new /obj/effect/overlay/temp/blinking_laser(target_turf)
+
+// Global procedures for cluster/incendiary bomb effects (to avoid src dependency issues)
+/proc/fire_in_a_hole_cluster(turf/target_turf, explosion_power, explosion_falloff, weapon_name, mob/source_mob)
+	new /obj/effect/overlay/temp/blinking_laser(target_turf)
+	addtimer(CALLBACK(GLOBAL_PROC, GLOBAL_PROC_REF(cell_explosion), target_turf, explosion_power, explosion_falloff, EXPLOSION_FALLOFF_SHAPE_LINEAR, null, create_cause_data(weapon_name, source_mob)), 1 SECONDS)
+
+/proc/fire_in_a_hole_incendiary(turf/target_turf, explosion_power, explosion_falloff, weapon_name, mob/source_mob)
+	new /obj/effect/overlay/temp/blinking_laser(target_turf)
+	addtimer(CALLBACK(GLOBAL_PROC, GLOBAL_PROC_REF(cell_explosion), target_turf, explosion_power, explosion_falloff, EXPLOSION_FALLOFF_SHAPE_LINEAR, null, create_cause_data(weapon_name, source_mob)), 1 SECONDS)
+	addtimer(CALLBACK(GLOBAL_PROC, GLOBAL_PROC_REF(fire_spread), target_turf, create_cause_data(weapon_name, source_mob), 3, 30, 25, "#EE6515"), 1.2 SECONDS)

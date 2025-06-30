@@ -5,6 +5,7 @@ import type { DropshipEquipment } from '../DropshipWeaponsConsole';
 export interface ButtonProps {
   children?: ReactNode;
   onClick?: () => void;
+  disabled?: boolean;
 }
 
 export type LazeTarget = {
@@ -54,6 +55,8 @@ export type MedevacContext = {
 
 export type FiremissionContext = {
   firemission_data: Array<CasFiremission>;
+  firemission_state?: number;
+  firemission_message?: string;
 };
 
 export type SentrySpec = {

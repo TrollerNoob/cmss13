@@ -59,6 +59,8 @@ export type DropshipEquipment = {
   burst?: number;
   max_ammo?: number;
   firemission_delay?: number;
+  last_fired?: number;
+  firing_delay?: number;
   data?: any;
   stored_ammo?: Array<{
     name: string;

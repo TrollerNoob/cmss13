@@ -1,8 +1,9 @@
 import { range } from 'common/collections';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useBackend, useSharedState } from 'tgui/backend';
 import { Box, Icon, Stack } from 'tgui/components';
 
+import type { DropshipEquipment } from '../DropshipWeaponsConsole';
 import { MfdPanel, type MfdProps } from './MultifunctionDisplay';
 import {
   mfdState,
@@ -22,6 +23,58 @@ directionLookup['SOUTH'] = 2;
 directionLookup['NORTH'] = 1;
 directionLookup['WEST'] = 8;
 directionLookup['EAST'] = 4;
+
+// Hook for firing cooldown countdown
+const useFiringCooldown = (equipment?: DropshipEquipment) => {
+  const { data } = useBackend<{ worldtime: number }>();
+  const [, forceUpdate] = useState({});
+
+  // Force re-render every second to update countdown
+  useEffect(() => {
+    const interval = setInterval(() => {
+      forceUpdate({});
+    }, 1000);
+    return () => clearInterval(interval);
+  }, []);
+
+  if (!equipment?.last_fired || !equipment?.firing_delay) {
+    return { isOnCooldown: false, remainingTime: 0 };
+  }
+
+  const cooldownEndTime = equipment.last_fired + equipment.firing_delay;
+  const currentTime = data.worldtime;
+  const remainingTime = Math.max(
+    0,
+    Math.ceil((cooldownEndTime - currentTime) / 10),
+  ); // Convert deciseconds to seconds
+
+  return {
+    isOnCooldown: remainingTime > 0,
+    remainingTime: remainingTime,
+  };
+};
+
+// Hook for checking if firemission is underway
+const useFiremissionStatus = () => {
+  const { data } = useBackend<FiremissionContext>();
+  const [, forceUpdate] = useState({});
+
+  // Force re-render every second to update status
+  useEffect(() => {
+    const interval = setInterval(() => {
+      forceUpdate({});
+    }, 1000);
+    return () => clearInterval(interval);
+  }, []);
+
+  // Check if firemission is currently executing (not IDLE)
+  const isFiremissionActive =
+    data.firemission_state !== undefined && data.firemission_state !== 0; // 0 is FIRE_MISSION_STATE_IDLE
+
+  return {
+    isFiremissionActive,
+  };
+};
 
 const useStrikeMode = () => {
   const [data, set] = useSharedState<string | undefined>(
@@ -340,6 +393,13 @@ export const TargetAquisitionMfdPanel = (props: MfdProps) => {
   const { fmXOffsetValue } = useFiremissionXOffsetValue();
   const { fmYOffsetValue } = useFiremissionYOffsetValue();
 
+  // Get weapon cooldown status
+  const selectedWeapon = data.equipment_data?.find(
+    (x) => x.eqp_tag === weaponSelected,
+  );
+  const { isOnCooldown } = useFiringCooldown(selectedWeapon);
+  const { isFiremissionActive } = useFiremissionStatus();
+
   const strikeConfigLabel =
     strikeMode === 'weapon'
       ? data.equipment_data.find((x) => x.eqp_tag === weaponSelected)?.name
@@ -354,8 +414,25 @@ export const TargetAquisitionMfdPanel = (props: MfdProps) => {
     strikeDirection !== undefined &&
     ((strikeMode === 'weapon' &&
       weaponSelected !== undefined &&
-      data.equipment_data.find((x) => x.eqp_tag === weaponSelected)) ||
-      (strikeMode === 'firemission' && firemissionSelected !== undefined));
+      data.equipment_data.find((x) => x.eqp_tag === weaponSelected) &&
+      !isOnCooldown) ||
+      (strikeMode === 'firemission' &&
+        firemissionSelected !== undefined &&
+        !isFiremissionActive));
+
+  // Determine button text and disabled state
+  let fireButtonText = 'FIRE';
+  let fireButtonDisabled = false;
+
+  if (strikeMode === 'weapon' && isOnCooldown) {
+    fireButtonText = 'COOLING';
+    fireButtonDisabled = true;
+  } else if (strikeMode === 'firemission' && isFiremissionActive) {
+    fireButtonText = 'ACTIVE';
+    fireButtonDisabled = true;
+  } else if (!strikeReady) {
+    fireButtonDisabled = true;
+  }
 
   const targets = range(targetOffset, targetOffset + 5).map((x) =>
     lazeMapper(x),
@@ -374,9 +451,10 @@ export const TargetAquisitionMfdPanel = (props: MfdProps) => {
       panelStateId={panelStateId}
       topButtons={[
         {
-          children: 'FIRE',
+          children: fireButtonText,
+          disabled: fireButtonDisabled,
           onClick: () => {
-            if (strikeMode === undefined) {
+            if (strikeMode === undefined || fireButtonDisabled) {
               return;
             }
             if (strikeMode === 'firemission') {

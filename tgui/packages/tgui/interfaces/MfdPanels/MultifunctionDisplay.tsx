@@ -23,6 +23,7 @@ export const MfdButton = (props: ButtonProps) => {
   const { act } = useBackend();
   return (
     <Button
+      disabled={props.disabled}
       onClick={() => {
         act('button_push');
         if (props.onClick) {

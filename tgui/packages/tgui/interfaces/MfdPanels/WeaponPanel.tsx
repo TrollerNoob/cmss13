@@ -1,4 +1,5 @@
 import { range } from 'common/collections';
+import { useEffect, useState } from 'react';
 import { useBackend } from 'tgui/backend';
 import { Box, Icon, Stack } from 'tgui/components';
 
@@ -12,6 +13,36 @@ import {
   useTargetOffset,
 } from './TargetAquisition';
 import type { LazeTarget } from './types';
+
+// Hook for firing cooldown countdown
+const useFiringCooldown = (equipment: DropshipEquipment) => {
+  const { data } = useBackend<{ worldtime: number }>();
+  const [, forceUpdate] = useState({});
+
+  // Force re-render every second to update countdown
+  useEffect(() => {
+    const interval = setInterval(() => {
+      forceUpdate({});
+    }, 1000);
+    return () => clearInterval(interval);
+  }, []);
+
+  if (!equipment?.last_fired || !equipment?.firing_delay) {
+    return { isOnCooldown: false, remainingTime: 0 };
+  }
+
+  const cooldownEndTime = equipment.last_fired + equipment.firing_delay;
+  const currentTime = data.worldtime;
+  const remainingTime = Math.max(
+    0,
+    Math.ceil((cooldownEndTime - currentTime) / 10),
+  ); // Convert deciseconds to seconds
+
+  return {
+    isOnCooldown: remainingTime > 0,
+    remainingTime: remainingTime,
+  };
+};
 
 const EmptyWeaponPanel = (props) => {
   return <div>Nothing Listed</div>;
@@ -27,6 +58,7 @@ const WeaponPanel = (props: {
   readonly color?: string;
 }) => {
   const { data } = useBackend<EquipmentContext>();
+  const { isOnCooldown, remainingTime } = useFiringCooldown(props.equipment);
 
   return (
     <Stack>
@@ -92,6 +124,20 @@ const WeaponPanel = (props: {
                 Ammo {props.equipment.ammo} / {props.equipment.max_ammo}
               </h3>
             </Stack.Item>
+            {isOnCooldown && (
+              <Stack.Item>
+                <h3 style={{ color: '#ff8c00' }}>
+                  <Icon name="clock" /> Cooldown: {remainingTime}s
+                </h3>
+              </Stack.Item>
+            )}
+            {!isOnCooldown && props.equipment.is_weapon === 1 && (
+              <Stack.Item>
+                <h3 style={{ color: '#00e94e' }}>
+                  <Icon name="crosshairs" /> Ready to Fire
+                </h3>
+              </Stack.Item>
+            )}
           </Stack>
         </Box>
       </Stack.Item>
@@ -155,6 +201,7 @@ export const WeaponMfdPanel = (props: MfdProps) => {
   const { data, act } = useBackend<EquipmentContext>();
   const { targetOffset, setTargetOffset } = useTargetOffset(props.panelStateId);
   const weap = data.equipment_data.find((x) => x.mount_point === weaponState);
+  const { isOnCooldown } = useFiringCooldown(weap || ({} as DropshipEquipment));
   const targets = range(targetOffset, targetOffset + 5).map((x) =>
     lazeMapper(x),
   );
@@ -165,7 +212,8 @@ export const WeaponMfdPanel = (props: MfdProps) => {
       color={props.color}
       leftButtons={[
         {
-          children: 'FIRE',
+          children: isOnCooldown ? 'COOLING' : 'FIRE',
+          disabled: isOnCooldown,
           onClick: () => act('fire-weapon', { eqp_tag: weap?.eqp_tag }),
         },
       ]}

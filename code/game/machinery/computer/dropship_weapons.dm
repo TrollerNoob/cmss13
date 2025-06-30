@@ -870,6 +870,12 @@
 			"damaged" = equipment.damaged,
 			"data" = equipment.ui_data(user)
 		)
+		
+		// Add weapon firing timing data for cooldown display
+		if(istype(equipment, /obj/structure/dropship_equipment/weapon))
+			var/obj/structure/dropship_equipment/weapon/weapon = equipment
+			data["last_fired"] = weapon.last_fired
+			data["firing_delay"] = weapon.firing_delay
 		// If this is an autoreloader, add stored ammo info as a list
 		if(istype(equipment, /obj/structure/dropship_equipment/autoreloader))
 			var/obj/structure/dropship_equipment/autoreloader/auto = equipment
