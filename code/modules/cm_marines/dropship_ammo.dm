@@ -578,8 +578,8 @@
 /obj/structure/ship_ammo/bomb/cluster
 	name = "\improper SM-21 'Chubby'"
 	desc = "The SM-21 'Chubby' is a cluster-bomb type ordnance that only requires laser-guidance when first launched. Derived from the popular SM-17 'Fatty', this is a smaller and more compact version of its predecessor, primarily used against target rich environments. It is capable of being dropped from the LAB-107 Bomb Bay."
-	icon_state = "double"
-	ammo_id = ""
+	icon_state = "chubby"
+	ammo_id = "c"
 	travelling_time = 70 //slow but accurate
 	accuracy_range = 2
 	max_inaccuracy = 3
@@ -616,8 +616,8 @@
 /obj/structure/ship_ammo/bomb/incendiary
 	name = "\improper AGM-81 'Firecracker'"
 	desc = "The AGM-81 'Firecracker' is a cluster incendiary bomb designed for area denial and anti-personnel use. A more streamlined version of the AGM-99 'Napalm', it earned its nickname 'Firecracker' due to the crackling of its incendiary reaction upon detonation."
-	icon_state = "double"
-	ammo_id = ""
+	icon_state = "firecracker"
+	ammo_id = "fr"
 	travelling_time = 70 // slow but powerful
 	accuracy_range = 3
 	max_inaccuracy = 5
@@ -646,8 +646,8 @@
 /obj/structure/ship_ammo/bomb/bunkerbuster
 	name = "\improper AGM-98 'MOP'"
 	desc = "The latest cutting edge installment of heavy duty missiles, the AGM-98 'Massive Ordinance Penetrator' is a heavy duty bunker busting bomb designed to penetrate hardened structures and deliver a devastating payload. It is intentionally set to a delayed fuse to further maximize penetration before detonation. It is capable of piercing through caves. It is capable of being dropped from the LAB-107 Bomb Bay."
-	icon_state = "double"
-	ammo_id = ""
+	icon_state = "bunkerbuster"
+	ammo_id = "bb"
 	travelling_time = 80 // very slow but powerful and accurate
 	accuracy_range = 1
 	max_inaccuracy = 2
@@ -662,16 +662,16 @@
 	bomb_obj.fired_from_name = initial(name)
 
 	// Schedule the delayed explosion
-	addtimer(CALLBACK(bomb_obj, TYPE_PROC_REF(/obj/item/explosive/bomb_payload/bunker_buster, detonate)), 0.5 SECONDS)
+	addtimer(CALLBACK(bomb_obj, TYPE_PROC_REF(/obj/item/explosive/bomb_payload/bunker_buster, detonate)), 1 SECONDS)
 
 	QDEL_IN(src, 0.1 SECONDS)
 
-// Physical bomb object that appears on the ground with a 0.5 second delayed fuse, giving xenos even MORE time to run away
+// Physical bomb object that appears on the ground with a 1 second delayed fuse, giving xenos even MORE time to run away
 /obj/item/explosive/bomb_payload/bunker_buster
 	name = "AGM-98 'MOP' warhead"
 	desc = "A massive ordnance penetrator bomb that has embedded itself halfway into the ground. It looks like it's about to explode, run!"
-	icon = 'icons/obj/structures/props/dropship/dropship_ammo.dmi'
-	icon_state = "minirocket"
+	icon = 'icons/obj/items/weapons/grenade.dmi'
+	icon_state = "bunkerbuster_active"
 	w_class = SIZE_HUGE
 	density = TRUE
 	anchored = TRUE
@@ -679,12 +679,18 @@
 	var/mob/source_mob
 	var/fired_from_name
 
+/obj/item/explosive/bomb_payload/bunker_buster/Initialize()
+	. = ..()
+	// Add danger overlay and play warning sound
+	overlays += new /obj/effect/overlay/danger
+	playsound(src, 'sound/effects/bang.ogg', 50, 1)
+
 /obj/item/explosive/bomb_payload/bunker_buster/proc/detonate()
 	// One massive explosion with high power and wide range
-	addtimer(CALLBACK(GLOBAL_PROC, GLOBAL_PROC_REF(cell_explosion), get_turf(src), 500, 100, EXPLOSION_FALLOFF_SHAPE_LINEAR, null, create_cause_data(fired_from_name, source_mob)), 0.1 SECONDS)
+	addtimer(CALLBACK(GLOBAL_PROC, GLOBAL_PROC_REF(cell_explosion), get_turf(src), 500, 100, EXPLOSION_FALLOFF_SHAPE_LINEAR, null, create_cause_data(fired_from_name, source_mob)), 0.5 SECONDS)
 	// Add some dramatic effects
-	addtimer(CALLBACK(GLOBAL_PROC, GLOBAL_PROC_REF(explosion_particles), get_turf(src), 8), 0.1 SECONDS)
-	addtimer(CALLBACK(GLOBAL_PROC, GLOBAL_PROC_REF(smoke_spread), get_turf(src), 4, /obj/effect/particle_effect/smoke, null, 3), 0.5 SECONDS)
+	addtimer(CALLBACK(GLOBAL_PROC, GLOBAL_PROC_REF(explosion_particles), get_turf(src), 8), 0.5 SECONDS)
+	addtimer(CALLBACK(GLOBAL_PROC, GLOBAL_PROC_REF(smoke_spread), get_turf(src), 4, /obj/effect/particle_effect/smoke, null, 3), 1.0 SECONDS)
 
 	QDEL_IN(src, 0.1 SECONDS)
 
