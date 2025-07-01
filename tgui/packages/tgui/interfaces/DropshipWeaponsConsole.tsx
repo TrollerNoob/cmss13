@@ -61,6 +61,12 @@ export type DropshipEquipment = {
   firemission_delay?: number;
   last_fired?: number;
   firing_delay?: number;
+  medevac_cooldown?: number;
+  system_cooldown?: number;
+  deployment_cooldown?: number;
+  spotlights_cooldown?: number;
+  fulton_cooldown?: number;
+  reload_cooldown?: number;
   data?: any;
   stored_ammo?: Array<{
     name: string;

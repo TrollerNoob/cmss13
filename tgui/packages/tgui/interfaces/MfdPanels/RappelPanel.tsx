@@ -8,9 +8,14 @@ import { MfdPanel, type MfdProps } from './MultifunctionDisplay';
 import { mfdState, useEquipmentState } from './stateManagers';
 import { lazeMapper, useTargetOffset } from './TargetAquisition';
 import type { EquipmentContext } from './types';
+import { useSupportCooldown } from './WeaponPanel';
 
-const RappelPanel = (props: { readonly equipment: DropshipEquipment }) => {
-  const { equipment } = props;
+const RappelPanel = (props: {
+  readonly equipment: DropshipEquipment;
+  readonly isOnCooldown?: boolean;
+  readonly remainingTime?: number;
+}) => {
+  const { equipment, isOnCooldown, remainingTime } = props;
   const iconState = equipment.icon_state;
 
   let winchText: React.ReactNode = null;
@@ -42,6 +47,20 @@ const RappelPanel = (props: { readonly equipment: DropshipEquipment }) => {
             </h3>
           </Stack.Item>
           <Stack.Item>{winchText}</Stack.Item>
+          {isOnCooldown && (
+            <Stack.Item>
+              <h3 style={{ color: '#ff8c00' }}>
+                <Icon name="clock" /> Cooldown: {remainingTime}s
+              </h3>
+            </Stack.Item>
+          )}
+          {!isOnCooldown && equipment && (
+            <Stack.Item>
+              <h3 style={{ color: '#00e94e' }}>
+                <Icon name="crosshairs" /> Ready to Deploy
+              </h3>
+            </Stack.Item>
+          )}
         </Stack>
       </Stack.Item>
       <Stack.Item width="100px">
@@ -58,6 +77,11 @@ export const RappelMfdPanel = (props: MfdProps) => {
   const { targetOffset, setTargetOffset } = useTargetOffset(props.panelStateId);
   const rappel = data.equipment_data.find(
     (x) => x.mount_point === equipmentState,
+  );
+
+  // Get cooldown status for rappel equipment
+  const { isOnCooldown, remainingTime } = useSupportCooldown(
+    (rappel as any) || {},
   );
 
   // Use the same targeting system as WeaponPanel
@@ -83,7 +107,8 @@ export const RappelMfdPanel = (props: MfdProps) => {
       ]}
       leftButtons={[
         {
-          children: 'LOCK',
+          children: isOnCooldown ? 'COOLING' : 'LOCK',
+          disabled: isOnCooldown,
           onClick: () =>
             act('rappel-lock', {
               equipment_id: rappel?.mount_point,
@@ -91,6 +116,7 @@ export const RappelMfdPanel = (props: MfdProps) => {
         },
         {
           children: 'CANCEL',
+          disabled: isOnCooldown,
           onClick: () =>
             act('rappel-cancel', {
               equipment_id: rappel?.mount_point,
@@ -120,7 +146,13 @@ export const RappelMfdPanel = (props: MfdProps) => {
       ]}
     >
       <Box className="NavigationMenu">
-        {rappel && <RappelPanel equipment={rappel} />}
+        {rappel && (
+          <RappelPanel
+            equipment={rappel}
+            isOnCooldown={isOnCooldown}
+            remainingTime={remainingTime}
+          />
+        )}
       </Box>
     </MfdPanel>
   );

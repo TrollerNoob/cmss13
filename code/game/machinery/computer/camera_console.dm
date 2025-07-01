@@ -546,12 +546,12 @@
 			if(!istype(LT) || !LT.valid_signal() || !is_ground_level(object.z))
 				continue
 			var/area/laser_area = get_area(LT.signal_loc)
-			
+
 			// Get ceiling protection tier for this target
 			var/ceiling_tier = null
 			if(laser_area)
 				ceiling_tier = laser_area.ceiling
-				
+
 			.["targets_data"] += list(
 				list(
 					"target_name" = "[LT.name] ([laser_area.name])",
@@ -689,12 +689,6 @@
 				to_chat(usr, SPAN_WARNING("No rappel system installed on this dropship."))
 				return FALSE
 
-			//cooldown
-			if(rappel.system_cooldown > world.time)
-				to_chat(usr, SPAN_WARNING("You toggled the system too recently."))
-				return FALSE
-			rappel.system_cooldown = world.time + 5 SECONDS
-
 			var/datum/cas_signal/sig = get_cas_signal(camera_target_id)
 			if(!sig)
 				to_chat(usr, SPAN_WARNING("No signal chosen."))
@@ -702,7 +696,6 @@
 
 			if(rappel.locked_target && rappel.locked_target != sig)
 				rappel.cleanup_ropes(TRUE)
-				rappel.system_cooldown = world.time + 5 SECONDS
 
 			// Store the target in the rappel system for later use
 			rappel.locked_target = sig
@@ -949,9 +942,40 @@
 			var/obj/structure/dropship_equipment/weapon/weapon = equipment
 			data["last_fired"] = weapon.last_fired
 			data["firing_delay"] = weapon.firing_delay
+
+		// Add support equipment cooldown data
+		if(istype(equipment, /obj/structure/dropship_equipment/medevac_system))
+			var/obj/structure/dropship_equipment/medevac_system/medevac = equipment
+			data["medevac_cooldown"] = medevac.medevac_cooldown
+
+		if(istype(equipment, /obj/structure/dropship_equipment/rappel_system))
+			var/obj/structure/dropship_equipment/rappel_system/rappel = equipment
+			data["system_cooldown"] = rappel.system_cooldown
+
+		if(istype(equipment, /obj/structure/dropship_equipment/paradrop_system))
+			var/obj/structure/dropship_equipment/paradrop_system/paradrop = equipment
+			data["system_cooldown"] = paradrop.system_cooldown
+
+		if(istype(equipment, /obj/structure/dropship_equipment/sentry_holder))
+			var/obj/structure/dropship_equipment/sentry_holder/sentry = equipment
+			data["deployment_cooldown"] = sentry.deployment_cooldown
+
+		if(istype(equipment, /obj/structure/dropship_equipment/mg_holder))
+			var/obj/structure/dropship_equipment/mg_holder/mg = equipment
+			data["deployment_cooldown"] = mg.deployment_cooldown
+
+		if(istype(equipment, /obj/structure/dropship_equipment/electronics/spotlights))
+			var/obj/structure/dropship_equipment/electronics/spotlights/spotlight = equipment
+			data["spotlights_cooldown"] = spotlight.spotlights_cooldown
+
+		if(istype(equipment, /obj/structure/dropship_equipment/fulton_system))
+			var/obj/structure/dropship_equipment/fulton_system/fulton = equipment
+			data["fulton_cooldown"] = fulton.fulton_cooldown
+
 		// If this is an autoreloader, add stored ammo info as a list
 		if(istype(equipment, /obj/structure/dropship_equipment/autoreloader))
 			var/obj/structure/dropship_equipment/autoreloader/auto = equipment
+			data["reload_cooldown"] = auto.reload_cooldown
 			data["stored_ammo"] = list()
 			for(var/obj/structure/ship_ammo/A in auto.stored_ammo)
 				data["stored_ammo"] += list(list(

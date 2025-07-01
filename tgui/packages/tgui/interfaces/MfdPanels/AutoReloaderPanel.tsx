@@ -1,11 +1,12 @@
 import { useState } from 'react';
 import { useBackend } from 'tgui/backend';
-import { Box, Stack } from 'tgui/components';
+import { Box, Icon, Stack } from 'tgui/components';
 
 import type { DropshipEquipment } from '../DropshipWeaponsConsole';
 import { MfdPanel, type MfdProps } from './MultifunctionDisplay';
 import { mfdState } from './stateManagers';
 import type { AutoreloaderSpec } from './types';
+import { useSupportCooldown } from './WeaponPanel';
 
 export const AutoReloaderMfdPanel = (props: MfdProps) => {
   const { setPanelState } = mfdState(props.panelStateId);
@@ -17,6 +18,11 @@ export const AutoReloaderMfdPanel = (props: MfdProps) => {
     (eq) => eq.shorthand === 'RMT',
   );
   const weapons = data.equipment_data?.filter((eq) => eq.is_weapon);
+
+  // Get cooldown status for autoreloader equipment
+  const { isOnCooldown, remainingTime } = useSupportCooldown(
+    (autoreloader as any) || {},
+  );
 
   // Local state for which weapon is being selected for ammo
   const [pendingWeapon, setPendingWeapon] = useState<number | undefined>(
@@ -89,7 +95,7 @@ export const AutoReloaderMfdPanel = (props: MfdProps) => {
             <Stack.Item>
               <svg height="501" width="300" style={{ display: 'block' }}>
                 <text
-                  stroke={props.color || "#00e94e"}
+                  stroke={props.color || '#00e94e'}
                   x={60}
                   y={230}
                   textAnchor="start"
@@ -99,7 +105,7 @@ export const AutoReloaderMfdPanel = (props: MfdProps) => {
                 </text>
                 <path
                   fillOpacity="0"
-                  stroke={props.color || "#00e94e"}
+                  stroke={props.color || '#00e94e'}
                   d="M 80 210 l -20 0 l -20 -180 l -40 0"
                 />
               </svg>
@@ -119,6 +125,28 @@ export const AutoReloaderMfdPanel = (props: MfdProps) => {
                 <h3 style={{ textAlign: 'center', margin: 0 }}>
                   {autoreloader.name}
                 </h3>
+                {isOnCooldown && (
+                  <h3
+                    style={{
+                      color: '#ff8c00',
+                      textAlign: 'center',
+                      margin: '0.5em 0',
+                    }}
+                  >
+                    <Icon name="clock" /> Reload Cooldown: {remainingTime}s
+                  </h3>
+                )}
+                {!isOnCooldown && autoreloader && (
+                  <h3
+                    style={{
+                      color: '#00e94e',
+                      textAlign: 'center',
+                      margin: '0.5em 0',
+                    }}
+                  >
+                    <Icon name="check" /> Autoreloader Ready
+                  </h3>
+                )}
                 <h4
                   style={{
                     fontSize: '1.25em',

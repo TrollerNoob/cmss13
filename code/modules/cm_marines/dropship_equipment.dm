@@ -2227,6 +2227,7 @@
         if(target_turf)
             create_ropes(loc, target_turf)
             last_deployed_target = sig
+            system_cooldown = world.time + 5 SECONDS  // Set cooldown when rappel is actually deployed
     manual_cancel_cooldown = world.time + 6 SECONDS
     return
 

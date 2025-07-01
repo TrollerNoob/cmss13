@@ -44,6 +44,44 @@ const useFiringCooldown = (equipment: DropshipEquipment) => {
   };
 };
 
+// Hook for support equipment cooldown countdown (medevac, rappel, paradrop, etc.)
+export const useSupportCooldown = (equipment: DropshipEquipment) => {
+  const { data } = useBackend<{ worldtime: number }>();
+  const [, forceUpdate] = useState({});
+
+  // Force re-render every second to update countdown
+  useEffect(() => {
+    const interval = setInterval(() => {
+      forceUpdate({});
+    }, 1000);
+    return () => clearInterval(interval);
+  }, []);
+
+  // Check for different types of cooldowns
+  const cooldownValue =
+    equipment?.medevac_cooldown ||
+    equipment?.system_cooldown ||
+    equipment?.deployment_cooldown ||
+    equipment?.spotlights_cooldown ||
+    equipment?.fulton_cooldown ||
+    equipment?.reload_cooldown;
+
+  if (!cooldownValue) {
+    return { isOnCooldown: false, remainingTime: 0 };
+  }
+
+  const currentTime = data.worldtime;
+  const remainingTime = Math.max(
+    0,
+    Math.ceil((cooldownValue - currentTime) / 10),
+  ); // Convert deciseconds to seconds
+
+  return {
+    isOnCooldown: remainingTime > 0,
+    remainingTime: remainingTime,
+  };
+};
+
 const EmptyWeaponPanel = (props) => {
   return <div>Nothing Listed</div>;
 };

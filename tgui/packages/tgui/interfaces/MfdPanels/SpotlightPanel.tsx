@@ -8,9 +8,14 @@ import { MfdPanel, type MfdProps } from './MultifunctionDisplay';
 import { mfdState, useEquipmentState } from './stateManagers';
 import { lazeMapper, useTargetOffset } from './TargetAquisition';
 import type { EquipmentContext, SpotlightSpec } from './types';
+import { useSupportCooldown } from './WeaponPanel';
 
 const SpotPanel = (
-  props: DropshipEquipment & { readonly color?: 'green' | 'yellow' | 'blue' },
+  props: DropshipEquipment & {
+    readonly color?: 'green' | 'yellow' | 'blue';
+    readonly isOnCooldown?: boolean;
+    readonly remainingTime?: number;
+  },
 ) => {
   const spotData = props.data as SpotlightSpec;
 
@@ -30,7 +35,13 @@ const SpotPanel = (
   const themeColor = getThemeColor(props.color);
 
   let statusText: React.ReactNode = null;
-  if (spotData.deployed) {
+  if (props.isOnCooldown) {
+    statusText = (
+      <h3 style={{ color: '#ff8c00' }}>
+        <Icon name="clock" /> Spotlight Cooldown: {props.remainingTime}s
+      </h3>
+    );
+  } else if (spotData.deployed) {
     statusText = <h3 style={{ color: themeColor }}>Spotlight Active</h3>;
   } else {
     statusText = <h3 style={{ color: '#808080' }}>Spotlight Offline</h3>;
@@ -66,6 +77,11 @@ export const SpotlightMfdPanel = (props: MfdProps) => {
     (x) => x.mount_point === equipmentState,
   );
 
+  // Get cooldown status for spotlight equipment
+  const { isOnCooldown, remainingTime } = useSupportCooldown(
+    (spotlight as any) || {},
+  );
+
   const spotData = spotlight?.data as SpotlightSpec;
   const deployLabel = spotData?.deployed ? 'DISABLE' : 'ENABLE';
 
@@ -92,7 +108,10 @@ export const SpotlightMfdPanel = (props: MfdProps) => {
       ]}
       leftButtons={[
         {
-          children: deployLabel,
+          children: isOnCooldown
+            ? `${deployLabel} (${remainingTime}s)`
+            : deployLabel,
+          disabled: isOnCooldown,
           onClick: () =>
             act('deploy-equipment', { equipment_id: spotlight?.mount_point }),
         },
@@ -120,7 +139,14 @@ export const SpotlightMfdPanel = (props: MfdProps) => {
       ]}
     >
       <Box className="NavigationMenu">
-        {spotlight && <SpotPanel {...spotlight} color={props.color} />}
+        {spotlight && (
+          <SpotPanel
+            {...spotlight}
+            color={props.color}
+            isOnCooldown={isOnCooldown}
+            remainingTime={remainingTime}
+          />
+        )}
       </Box>
     </MfdPanel>
   );
