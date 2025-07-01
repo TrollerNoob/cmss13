@@ -546,10 +546,17 @@
 			if(!istype(LT) || !LT.valid_signal() || !is_ground_level(object.z))
 				continue
 			var/area/laser_area = get_area(LT.signal_loc)
+			
+			// Get ceiling protection tier for this target
+			var/ceiling_tier = null
+			if(laser_area)
+				ceiling_tier = laser_area.ceiling
+				
 			.["targets_data"] += list(
 				list(
 					"target_name" = "[LT.name] ([laser_area.name])",
-					"target_tag" = LT.target_id
+					"target_tag" = LT.target_id,
+					"ceiling_protection_tier" = ceiling_tier
 				)
 			)
 

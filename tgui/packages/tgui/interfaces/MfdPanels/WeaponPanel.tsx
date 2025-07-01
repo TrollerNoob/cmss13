@@ -5,7 +5,7 @@ import { Box, Icon, Stack } from 'tgui/components';
 
 import type { DropshipEquipment } from '../DropshipWeaponsConsole';
 import { MfdPanel, type MfdProps } from './MultifunctionDisplay';
-import { mfdState, useWeaponState } from './stateManagers';
+import { mfdState, useLazeTarget, useWeaponState } from './stateManagers';
 import {
   getLastTargetName,
   lazeMapper,
@@ -59,6 +59,13 @@ const WeaponPanel = (props: {
 }) => {
   const { data } = useBackend<EquipmentContext>();
   const { isOnCooldown, remainingTime } = useFiringCooldown(props.equipment);
+  const { selectedTarget } = useLazeTarget();
+
+  // Get the selected target data for ceiling protection tier
+  const selectedTargetData =
+    selectedTarget !== undefined && data.targets_data
+      ? data.targets_data.find((target) => target.target_tag === selectedTarget)
+      : undefined;
 
   return (
     <Stack>
@@ -135,6 +142,51 @@ const WeaponPanel = (props: {
               <Stack.Item>
                 <h3 style={{ color: '#00e94e' }}>
                   <Icon name="crosshairs" /> Ready to Fire
+                </h3>
+              </Stack.Item>
+            )}
+            {selectedTargetData && (
+              <Stack.Item>
+                <h3>
+                  Target Durability:{' '}
+                  <span
+                    style={{
+                      color:
+                        typeof selectedTargetData.ceiling_protection_tier ===
+                        'number'
+                          ? selectedTargetData.ceiling_protection_tier >= 1 &&
+                            selectedTargetData.ceiling_protection_tier < 2
+                            ? '#FFD700'
+                            : selectedTargetData.ceiling_protection_tier >= 2 &&
+                                selectedTargetData.ceiling_protection_tier < 4
+                              ? '#FF0000'
+                              : '#00FF00'
+                          : undefined,
+                      fontWeight: 'bold',
+                      fontSize: '0.9em',
+                    }}
+                  >
+                    {(() => {
+                      if (
+                        selectedTargetData.ceiling_protection_tier ===
+                          undefined ||
+                        selectedTargetData.ceiling_protection_tier === null
+                      ) {
+                        return 'N/A';
+                      }
+                      const tier = Math.floor(
+                        Number(selectedTargetData.ceiling_protection_tier),
+                      );
+                      if (tier < 1) {
+                        return 'All Weapons Clear';
+                      } else if (tier >= 1 && tier < 2) {
+                        return 'Firemission Required';
+                      } else if (tier >= 2) {
+                        return 'Bunker Buster Required';
+                      }
+                      return 'N/A';
+                    })()}
+                  </span>
                 </h3>
               </Stack.Item>
             )}
