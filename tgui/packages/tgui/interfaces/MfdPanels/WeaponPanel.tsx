@@ -111,10 +111,6 @@ const WeaponPanel = (props: {
   readonly allWeapons?: DropshipEquipment[];
 }) => {
   const { data } = useBackend<EquipmentContext>();
-  const ammoReadout =
-    props.equipment.ammo === null || props.equipment.ammo === undefined
-      ? 'DEPLETED'
-      : props.equipment.ammo + ' / ' + props.equipment.max_ammo;
   const { isOnCooldown, remainingTime } = useFiringCooldown(props.equipment);
   const { selectedTarget } = useLazeTarget();
 

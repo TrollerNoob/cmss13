@@ -616,6 +616,158 @@ const handleFireAction = (
   }
 };
 
+type TargetAcquisitionContext = EquipmentContext &
+  FiremissionContext &
+  TargetContext & {
+    offset_antiair_active?: boolean;
+    offset_chaff_active?: boolean;
+  };
+
+const getTargetDurabilityColor = (data: TargetAcquisitionContext) => {
+  if (data.offset_antiair_active) {
+    return '#FF0000';
+  }
+  if (data.offset_chaff_active) {
+    return '#FFD700';
+  }
+  if (typeof data.offset_ceiling_protection_tier !== 'number') {
+    return undefined;
+  }
+  if (
+    data.offset_ceiling_protection_tier >= 1 &&
+    data.offset_ceiling_protection_tier < 2
+  ) {
+    return '#FFD700';
+  }
+  if (
+    data.offset_ceiling_protection_tier >= 2 &&
+    data.offset_ceiling_protection_tier < 4
+  ) {
+    return '#FF0000';
+  }
+  return '#00FF00';
+};
+
+const getTargetDurabilityLabel = (data: TargetAcquisitionContext) => {
+  if (data.offset_antiair_active) {
+    return 'WARNING: DANGER';
+  }
+  if (data.offset_chaff_active) {
+    return 'ERROR: Signal Obstructed';
+  }
+  if (
+    data.offset_ceiling_protection_tier === undefined ||
+    data.offset_ceiling_protection_tier === null
+  ) {
+    return 'N/A';
+  }
+
+  const tier = Math.floor(Number(data.offset_ceiling_protection_tier));
+  if (tier < 1) {
+    return 'All Weapons Clear';
+  }
+  if (tier < 2) {
+    return 'Firemission Required';
+  }
+  return 'Bunker Buster Required';
+};
+
+const TargetStatus = (props: {
+  readonly data: TargetAcquisitionContext;
+  readonly firemissionSelected?: CasFiremission;
+  readonly fmXOffsetValue: number;
+  readonly fmYOffsetValue: number;
+  readonly quickMode: boolean;
+  readonly selectedTarget?: number;
+  readonly strikeConfigLabel?: string;
+  readonly strikeDirection?: string;
+  readonly strikeMode?: string;
+  readonly strikeReady: boolean;
+  readonly themeColor: string;
+}) => {
+  const {
+    data,
+    firemissionSelected,
+    fmXOffsetValue,
+    fmYOffsetValue,
+    quickMode,
+    selectedTarget,
+    strikeConfigLabel,
+    strikeDirection,
+    strikeMode,
+    strikeReady,
+    themeColor,
+  } = props;
+
+  return (
+    <Stack vertical align="center">
+      <Stack.Item height="50px">
+        <svg width="500px" height="50px" overflow="visible">
+          <path
+            stroke={themeColor}
+            strokeWidth="1"
+            fillOpacity="0"
+            d="M -1 0 l 50 50 l 392 0 l 50 -50"
+          />
+        </svg>
+      </Stack.Item>
+      <Stack.Item>
+        <h1>Target Aquisition</h1>
+      </Stack.Item>
+      <Stack.Item>
+        <h3>Strike mode: {strikeMode?.toUpperCase() ?? 'NONE'}</h3>
+      </Stack.Item>
+      <Stack.Item>
+        <h3>Strike configuration {strikeConfigLabel}</h3>
+      </Stack.Item>
+      {firemissionSelected !== undefined && (
+        <Stack.Item>
+          <h3>
+            Firemission Length: {firemissionSelected.mission_length ?? 'N/A'}
+          </h3>
+        </Stack.Item>
+      )}
+      <Stack.Item className="TargetText">
+        <h3>
+          Target selected:{' '}
+          {data.targets_data.find(
+            (target) => target.target_tag === selectedTarget,
+          )?.target_name ?? 'NONE'}
+        </h3>
+      </Stack.Item>
+      <Stack.Item>
+        <h3>Target mode: {quickMode ? 'QUICK' : 'STANDARD'}</h3>
+      </Stack.Item>
+      <Stack.Item>
+        <h3>Attack Vector {strikeDirection ?? 'NONE'}</h3>
+      </Stack.Item>
+      <Stack.Item>
+        <h3>
+          Offset {fmXOffsetValue},{fmYOffsetValue}
+        </h3>
+      </Stack.Item>
+      <Stack.Item>
+        <h3>
+          Target Durability Reading:{' '}
+          <span
+            style={{
+              color: getTargetDurabilityColor(data),
+              fontWeight: 'bold',
+              fontSize: '1em',
+            }}
+          >
+            {getTargetDurabilityLabel(data)}
+          </span>
+        </h3>
+      </Stack.Item>
+      <Stack.Item>
+        <h3>Guidance computer {strikeReady ? 'READY' : 'INCOMPLETE'}</h3>
+      </Stack.Item>
+      <FiremissionCountdownBar color={themeColor} />
+    </Stack>
+  );
+};
+
 export const TargetAquisitionMfdPanel = (props: MfdProps) => {
   const { panelStateId } = props;
 
@@ -634,9 +786,7 @@ export const TargetAquisitionMfdPanel = (props: MfdProps) => {
 
   const themeColor = getColorHex(props.color);
 
-  const { act, data } = useBackend<
-    EquipmentContext & FiremissionContext & TargetContext
-  >();
+  const { act, data } = useBackend<TargetAcquisitionContext>();
 
   const { setPanelState } = mfdState(panelStateId);
   const { selectedTarget, setSelectedTarget } = useLazeTarget();
@@ -879,111 +1029,19 @@ export const TargetAquisitionMfdPanel = (props: MfdProps) => {
             </svg>
           </Stack.Item>
           <Stack.Item width="390px">
-            <Stack vertical align="center">
-              <Stack.Item height="50px">
-                <svg width="500px" height="50px" overflow="visible">
-                  <path
-                    stroke={themeColor}
-                    strokeWidth="1"
-                    fillOpacity="0"
-                    d="M -1 0 l 50 50 l 392 0 l 50 -50"
-                  />
-                </svg>
-              </Stack.Item>
-              <Stack.Item>
-                <h1>Target Aquisition</h1>
-              </Stack.Item>
-              <Stack.Item>
-                <h3>Strike mode: {strikeMode?.toUpperCase() ?? 'NONE'}</h3>
-              </Stack.Item>
-              <Stack.Item>
-                <h3>Strike configuration {strikeConfigLabel}</h3>
-              </Stack.Item>
-              {firemissionSelected !== undefined && (
-                <Stack.Item>
-                  <h3>
-                    Firemission Length:{' '}
-                    {firemissionSelected?.mission_length ?? 'N/A'}
-                  </h3>
-                </Stack.Item>
-              )}
-              <Stack.Item className="TargetText">
-                <h3>
-                  Target selected:{' '}
-                  {data.targets_data.find(
-                    (x) => x?.target_tag === selectedTarget,
-                  )?.target_name ?? 'NONE'}
-                </h3>
-              </Stack.Item>
-              <Stack.Item>
-                <h3>Target mode: {quickMode ? 'QUICK' : 'STANDARD'}</h3>
-              </Stack.Item>
-              <Stack.Item>
-                <h3>Attack Vector {strikeDirection ?? 'NONE'}</h3>
-              </Stack.Item>
-              <Stack.Item>
-                <h3>
-                  Offset {fmXOffsetValue},{fmYOffsetValue}
-                </h3>
-              </Stack.Item>
-              <Stack.Item>
-                <h3>
-                  Target Durability Reading:{' '}
-                  <span
-                    style={{
-                      color: (data as any).offset_antiair_active
-                        ? '#FF0000'
-                        : (data as any).offset_chaff_active
-                          ? '#FFD700'
-                          : typeof data.offset_ceiling_protection_tier ===
-                              'number'
-                            ? data.offset_ceiling_protection_tier >= 1 &&
-                              data.offset_ceiling_protection_tier < 2
-                              ? '#FFD700'
-                              : data.offset_ceiling_protection_tier >= 2 &&
-                                  data.offset_ceiling_protection_tier < 4
-                                ? '#FF0000'
-                                : '#00FF00'
-                            : undefined,
-                      fontWeight: 'bold',
-                      fontSize: '1em',
-                    }}
-                  >
-                    {(() => {
-                      if ((data as any).offset_antiair_active) {
-                        return 'WARNING: DANGER';
-                      }
-                      if ((data as any).offset_chaff_active) {
-                        return 'ERROR: Signal Obstructed';
-                      }
-                      if (
-                        data.offset_ceiling_protection_tier === undefined ||
-                        data.offset_ceiling_protection_tier === null
-                      ) {
-                        return 'N/A';
-                      }
-                      const tier = Math.floor(
-                        Number(data.offset_ceiling_protection_tier),
-                      );
-                      if (tier < 1) {
-                        return 'All Weapons Clear';
-                      } else if (tier >= 1 && tier < 2) {
-                        return 'Firemission Required';
-                      } else if (tier >= 2) {
-                        return 'Bunker Buster Required';
-                      }
-                      return 'N/A';
-                    })()}
-                  </span>
-                </h3>
-              </Stack.Item>
-              <Stack.Item>
-                <h3>
-                  Guidance computer {strikeReady ? 'READY' : 'INCOMPLETE'}
-                </h3>
-              </Stack.Item>
-              <FiremissionCountdownBar color={themeColor} />
-            </Stack>
+            <TargetStatus
+              data={data}
+              firemissionSelected={firemissionSelected}
+              fmXOffsetValue={fmXOffsetValue}
+              fmYOffsetValue={fmYOffsetValue}
+              quickMode={quickMode}
+              selectedTarget={selectedTarget}
+              strikeConfigLabel={strikeConfigLabel}
+              strikeDirection={strikeDirection}
+              strikeMode={strikeMode}
+              strikeReady={strikeReady}
+              themeColor={themeColor}
+            />
           </Stack.Item>
           <Stack.Item>
             <svg width="50px" height="500px" overflow="visible">
