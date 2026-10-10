@@ -92,6 +92,7 @@
 #include "..\modules\unit_tests\spawn_humans.dm"
 #include "..\modules\unit_tests\spritesheets.dm"
 #include "..\modules\unit_tests\subsystem_init.dm"
+#include "..\modules\unit_tests\tactical_designator.dm"
 #include "..\modules\unit_tests\tgui_create_message.dm"
 #include "..\modules\unit_tests\timer_sanity.dm"
 #include "..\modules\unit_tests\tutorials.dm"

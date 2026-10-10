@@ -719,7 +719,7 @@
 					is_outside = TRUE
 				if(CEILING_GLASS)
 					is_outside = TRUE
-		if(!is_outside && !cavebreaker) //cavebreaker doesn't care
+		if(!is_outside && !cavebreaker && !LT.penetrates_roof) //cavebreaker doesn't care
 			to_chat(weapon_operator, SPAN_WARNING("INVALID TARGET: target must be visible from high altitude."))
 			return FALSE
 		if (protected_by_pylon(TURF_PROTECTION_CAS, TU))
@@ -728,7 +728,7 @@
 		if(!DEW.ammo_equipped.can_fire_at(TU, weapon_operator))
 			return FALSE
 
-		DEW.open_fire(LT.signal_loc)
+		DEW.open_fire(LT.signal_loc, weapon_operator)
 		return TRUE
 	return FALSE
 
@@ -824,8 +824,7 @@
 		to_chat(weapons_operator, SPAN_WARNING("Target lost or obstructed."))
 		return FALSE
 
-	update_location(weapons_operator, cas_sig)
-	return TRUE
+	return update_location(weapons_operator, cas_sig)
 
 /obj/structure/machinery/computer/dropship_weapons/proc/initiate_firemission(mob/user, fmId, dir, offset_x, offset_y)
 	set waitfor = 0

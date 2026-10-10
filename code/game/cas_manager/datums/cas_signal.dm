@@ -4,6 +4,10 @@
 	var/target_id = 0
 	var/obj/structure/machinery/camera/cas/linked_cam
 	var/z_initial
+	/// Moving tactical marks may only be used for direct fire.
+	var/direct_fire_only = FALSE
+	/// Tactical designators can transmit through any roof.
+	var/penetrates_roof = FALSE
 
 /datum/cas_signal/New(location)
 	z_initial = z_descend(location)
@@ -26,11 +30,11 @@
 	var/obj/object = signal_loc
 	var/area/laser_area = get_area(signal_loc)
 	var/new_z = z_descend(signal_loc)
-	return istype(object) && istype(object.loc,/turf/) && istype(laser_area) && laser_area.ceiling < CEILING_DEEP_UNDERGROUND_METAL  && new_z == z_initial
+	return istype(object) && istype(object.loc,/turf/) && istype(laser_area) && (penetrates_roof || laser_area.ceiling < CEILING_DEEP_UNDERGROUND_METAL) && new_z == z_initial
 
 /datum/cas_signal/proc/obstructed_signal()
 	var/area/laser_area = get_area(signal_loc)
-	return !istype(laser_area) || CEILING_IS_PROTECTED(laser_area.ceiling, CEILING_PROTECTION_TIER_2)
+	return !istype(laser_area) || (!penetrates_roof && CEILING_IS_PROTECTED(laser_area.ceiling, CEILING_PROTECTION_TIER_2))
 
 /proc/z_descend(loc)
 	var/sloc = loc

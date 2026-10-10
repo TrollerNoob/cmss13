@@ -707,6 +707,11 @@
 			break
 
 	msg_admin_niche("[key_name(user)] is direct-firing [SA] onto [selected_target] at ([target_turf.x],[target_turf.y],[target_turf.z]) [ADMIN_JMP(target_turf)]")
+	if(SA.laser_guided && istype(selected_target, /obj/effect/overlay/temp/laser_target/tactical))
+		var/obj/effect/overlay/temp/laser_target/tactical/mark = selected_target
+		if(mark.marked_target)
+			guide_missile(mark, SA, user, ammo_travelling_time, ammo_max_inaccuracy)
+			return
 	if(ammo_travelling_time && !istype(SA, /obj/structure/ship_ammo/rocket/thermobaric))
 		var/total_seconds = max(floor(ammo_travelling_time/10),1)
 		for(var/i in 0 to total_seconds)
@@ -733,6 +738,37 @@
 	sleep(10)
 	SA.source_mob = user
 	SA.detonate_on(impact, src)
+
+/// Reacquire only the original mark; losing it sends the missile toward its last known position.
+/obj/structure/dropship_equipment/weapon/proc/guide_missile(obj/effect/overlay/temp/laser_target/tactical/mark, obj/structure/ship_ammo/ammo, mob/user, travel_time, lost_accuracy)
+	var/mob/living/target = mark.marked_target
+	var/turf/impact = get_turf(mark)
+	var/image/warning = image('icons/effects/Targeted.dmi', icon_state = "lockon_sensor")
+	warning.pixel_x = -target.pixel_x + target.base_pixel_x
+	warning.pixel_y = (target.icon_size - world.icon_size) * 0.5 - target.pixel_y + target.base_pixel_y
+	target.overlays += warning
+	to_chat(target, SPAN_HIGHDANGER("A missile is tracking your laser designation! Break the spotter's line of sight!"))
+	playsound(target, 'sound/effects/IncomingRocket.ogg', 70, TRUE)
+	var/lock_lost = FALSE
+	// Include the normal final warning second in the guided transit.
+	var/arrival_time = world.time + travel_time + 1 SECONDS
+	while(world.time < arrival_time)
+		sleep(min(0.2 SECONDS, arrival_time - world.time))
+		if(!lock_lost)
+			if(QDELETED(mark) || !mark.designator?.can_designate(target) || !mark.signal?.valid_signal())
+				lock_lost = TRUE
+				if(!QDELETED(target))
+					target.overlays -= warning
+			else
+				impact = get_turf(target)
+	if(!QDELETED(target))
+		target.overlays -= warning
+	if(lock_lost)
+		impact = pick(RANGE_TURFS(lost_accuracy, impact))
+	if(QDELETED(ammo) || !impact || protected_by_pylon(TURF_PROTECTION_CAS, impact))
+		return
+	ammo.source_mob = user
+	ammo.detonate_on(impact, src)
 
 /obj/structure/dropship_equipment/weapon/proc/open_fire_firemission(obj/selected_target, mob/user = usr)
 	set waitfor = 0

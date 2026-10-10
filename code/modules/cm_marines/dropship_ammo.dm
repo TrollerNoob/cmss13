@@ -12,6 +12,8 @@
 	var/fire_mission_delay = 4
 	/// Time to impact in deciseconds
 	var/travelling_time = 100
+	/// Tracks an active tactical laser mark during direct-fire transit.
+	var/laser_guided = FALSE
 	/// Type of dropship equipment that accepts this type of ammo.
 	var/obj/structure/dropship_equipment/equipment_type
 	/// Ammunition count remaining
@@ -89,6 +91,8 @@
 /obj/structure/ship_ammo/get_examine_text(mob/user)
 	. = ..()
 	. += "Moving this will require some sort of lifter."
+	if(laser_guided)
+		. += SPAN_NOTICE("Direct fire can track a target marked by a tactical laser designator.")
 
 //what to show to the user that examines the weapon we're loaded on.
 /obj/structure/ship_ammo/proc/show_loaded_desc(mob/user)
@@ -286,6 +290,7 @@
 
 //this one is air-to-air only
 /obj/structure/ship_ammo/rocket/widowmaker
+	laser_guided = TRUE
 	name = "\improper AIM-224B 'Widowmaker'"
 	desc = "The AIM-224B missile is a retrofit of the latest in air-to-air missile technology. Earning the nickname of 'Widowmaker' from various dropship pilots after improvements to its guidance warhead prevents it from being jammed leading to its high kill rate. Not well suited for ground bombardment but its high velocity makes it reach its target quickly. This one has been modified to be a free-fall bomb as a result of dropship ammo shortages. Can be loaded into the LAU-444 Guided Missile Launcher."
 	icon_state = "single"
@@ -299,6 +304,7 @@
 	QDEL_IN(src, 0.5 SECONDS)
 
 /obj/structure/ship_ammo/rocket/banshee
+	laser_guided = TRUE
 	name = "\improper AGM-227 'Banshee'"
 	desc = "The AGM-227 missile is a mainstay of the overhauled dropship fleet against any mobile or armored ground targets. It's earned the nickname of 'Banshee' from the sudden wail that it emits right before hitting a target. Useful to clear out large areas. Can be loaded into the LAU-444 Guided Missile Launcher."
 	icon_state = "banshee"
@@ -312,6 +318,7 @@
 	QDEL_IN(src, 0.5 SECONDS)
 
 /obj/structure/ship_ammo/rocket/keeper
+	laser_guided = TRUE
 	name = "\improper GBU-67 'Keeper II'"
 	desc = "The GBU-67 'Keeper II' is the latest in a generation of laser guided weaponry that spans all the way back to the 20th century. Earning its nickname from a shortening of 'Peacekeeper' which comes from the program that developed its guidance system and the various uses of it during peacekeeping conflicts. Its payload is designed to devastate armored targets. Can be loaded into the LAU-444 Guided Missile Launcher."
 	icon_state = "paveway"
@@ -325,6 +332,7 @@
 	QDEL_IN(src, 0.5 SECONDS)
 
 /obj/structure/ship_ammo/rocket/harpoon
+	laser_guided = TRUE
 	name = "\improper AGM-184 'Harpoon II'"
 	desc = "The AGM-184 Harpoon II is an Anti-Ship Missile, designed and used to effectively take down enemy ships with a huge blast wave with low explosive power. This one is modified to use ground signals and can be seen as a cheaper alternative to conventional ordnance. Can be loaded into the LAU-444 Guided Missile Launcher."
 	icon_state = "harpoon"
@@ -339,6 +347,7 @@
 	QDEL_IN(src, 0.5 SECONDS)
 
 /obj/structure/ship_ammo/rocket/napalm
+	laser_guided = TRUE
 	name = "\improper AGM-99 'Napalm'"
 	desc = "The AGM-99 'Napalm' is an incendiary missile used to turn specific targeted areas into giant balls of fire for a long time. Can be loaded into the LAU-444 Guided Missile Launcher."
 	icon_state = "napalm"
