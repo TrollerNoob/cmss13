@@ -1,6 +1,7 @@
 /datum/xeno_strain/vampire
 	name = LURKER_VAMPIRE
-	description = "We lose all of our abilities and we forfeit a chunk of our health and damage in exchange for a large amount of armor, slightly increased movement speed, increased attack speed, and brand new abilities that turn us into a lethal assassin. Our Rush ability disorients enemies and our Flurry ability unleashes a forward cleave that can hit and slow three talls and heal us for every tall we hit. Our special AoE Tail Jab knocks talls away, doing more damage with direct hits and scoring stuns and extra damage if they smack into walls. Finally, after we subdue our enemies, we can execute them with a headbite to heal our wounds."
+	summary = "Heal by catching prey in a flurry or executing an unconscious target. Knock enemies into walls with tail jab to stun them."
+	description = "We replace our stealth abilities with four abilities that use no plasma. Rush closes the gap, damages prey and disorients them. Flurry sweeps the 3 tiles ahead of us, healing 30 health for each enemy hit. Tail Jab reaches up to 2 tiles, slows prey and pushes them away, directly targeting an enemy adds damage, while an obstacle impact adds damage and stuns. Headbite executes an adjacent unconscious enemy after a brief windup and restores 150 health."
 	flavor_description = "Blood for the queen! Show no mercy! Slaughter them all!"
 	icon_state_prefix = "Vampire"
 	plasma_mod = -(/datum/caste_datum/lurker::plasma_max) // no plasma

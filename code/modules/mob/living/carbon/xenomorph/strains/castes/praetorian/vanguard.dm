@@ -1,6 +1,7 @@
 /datum/xeno_strain/vanguard
 	name = PRAETORIAN_VANGUARD
-	description = "We forfeit all of our acid-based abilities and some health for some extra speed and a rechargeable shield that can block one attack. Use our Pierce from up to three paces away to stab through talls, while stabbing through two or more will completely recharge our shield. Use our charge to plow through enemies and use it again to unleash a powerful AoE slash that reaches up to three paces. We also have a Cleave ability, amplified by our shield, which we can toggle to either immobilize or fling a target away."
+	summary = "Move faster with a shield that gradually decays after 1 hit. Pierce multiple enemies to recharge it, at the cost of a smaller health pool."
+	description = "We forfeit all of our acid based abilities and some health for some extra speed and a rechargeable shield that decays after one attack. Use our Pierce from up to 3 paces away to stab through talls, while stabbing through 2 or more will completely recharge our shield. Use our charge to plow through enemies and use it again to unleash a powerful AoE slash that reaches up to 3 paces. We also have a Cleave ability, amplified by our shield, which we can toggle to either immobilize or fling a target away."
 	flavor_description = "Fearless it was born, fearless it now serves, and fearless it will die. This one will become my Vanguard."
 	icon_state_prefix = "Vanguard"
 	speed_mod = XENO_SPEED_FASTMOD_TIER_3
